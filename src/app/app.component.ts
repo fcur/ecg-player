@@ -1,10 +1,28 @@
 import { Component } from '@angular/core';
 
 @Component({
-  selector: 'app-root',
-  templateUrl: './app.component.html',
-  styleUrls: ['./app.component.css']
+	selector: 'app-root',
+	templateUrl: './app.component.html',
+	styleUrls: ['./app.component.css']
 })
+
+// -------------------------------------------------------------------------------------------------
+// AppComponent
+// -------------------------------------------------------------------------------------------------
 export class AppComponent {
-  title = 'app';
+
+	public title: string = 'app';
+
+
+	//-------------------------------------------------------------------------------------
+	ngOnInit() {
+		console.info("AppComponent: init");
+	}
+
+	//-------------------------------------------------------------------------------------
+	ngOnDestroy() {
+		console.info("AppComponent: destroy");
+	}
+
+
 }

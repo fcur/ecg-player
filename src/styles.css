@@ -1,1 +1,18 @@
-/* You can add global styles to this file, and also import other style files */
+html, body {
+  margin: 0;
+  height: 100%;
+  width: 100%;
+  cursor: default;
+  user-select: none;
+  line-height: normal;
+  padding: 0;
+  touch-action: none;
+}
+
+app-root {
+  display: flex;
+  flex: 1 auto;
+  height: 100%;
+  width: 100%;
+  flex-direction: column;
+}

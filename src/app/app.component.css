@@ -1,0 +1,48 @@
+
+
+.ch {
+  display: flex;
+  background-color: aqua;
+  background-color: aliceblue;
+  text-align: center;
+  min-height: 2vmin;
+}
+
+.cm {
+  display: flex;
+  flex: 1 auto;
+  background-color: antiquewhite;
+  /*background-color: aliceblue;*/
+  text-align: center;
+  flex-direction: row;
+}
+
+.cf {
+  display: flex;
+  background-color: brown;
+  background-color: aliceblue;
+  text-align: center;
+  min-height: 2vmin;
+}
+
+
+
+.cml {
+  display: flex;
+  background-color: crimson;
+  background-color: aliceblue;
+  min-width: 2vmin;
+}
+
+.cmr {
+  display: flex;
+  background-color: darkgreen;
+  background-color: aliceblue;
+  min-width: 2vmin;
+}
+
+
+.cmc {
+  display: flex;
+  flex: 1 auto;
+}
