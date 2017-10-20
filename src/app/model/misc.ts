@@ -1,3 +1,5 @@
+import { EcgLeadCode, EcgWavePoint } from "./ecgdata";
+
 // -------------------------------------------------------------------------------------------------
 // Drawing mode
 // -------------------------------------------------------------------------------------------------
@@ -19,29 +21,17 @@ export class XDrawingClient {
 
 }
 
-// -------------------------------------------------------------------------------------------------
-// Ecg lead code
-// -------------------------------------------------------------------------------------------------
-export enum EcgLeadCode {
-		// Standard 12 Leads
-		MDC_ECG_LEAD_I,
-		MDC_ECG_LEAD_II,
-		MDC_ECG_LEAD_III,
-		MDC_ECG_LEAD_V1,
-		MDC_ECG_LEAD_V2,
-		MDC_ECG_LEAD_V3,
-		MDC_ECG_LEAD_V4,
-		MDC_ECG_LEAD_V5,
-		MDC_ECG_LEAD_V6,
-		MDC_ECG_LEAD_AVR,
-		MDC_ECG_LEAD_AVL,
-		MDC_ECG_LEAD_AVF,
-		// EASI Leads
-		MDC_ECG_LEAD_ES,
-		MDC_ECG_LEAD_AS,
-		MDC_ECG_LEAD_AI
-}
 
+
+// -------------------------------------------------------------------------------------------------
+// Drawing object type
+// -------------------------------------------------------------------------------------------------
+export enum XDrawingObjectType {
+		Signal,
+		Beats,
+		Annotations,
+		PQRST
+}
 
 
 // -------------------------------------------------------------------------------------------------
@@ -182,7 +172,6 @@ export class XDrawingProxyState {
 		}
 
 
-
 }
 
 
@@ -190,12 +179,44 @@ export class XDrawingProxyState {
 // Drawing object
 // -------------------------------------------------------------------------------------------------
 export class XDrawingObject {
+		/** Object index. */
+		public index: number;
 		/** Object owner. */
 		public owner: XDrawingClient;
-		/** Object relative size & position. */
+		/** Object type. */
+		public type: XDrawingObjectType;
+		/** Container of drawing object (required). */
 		public container: XRectangle;
+		/**Drawing object points (relative coordinates, optional).
+    * Signal, beats */
+		public points: XPoint[];
+		/** Drawing object rectangels (relative coordinates, optional).
+    * Annotations background*/
+		public rectangles: XRectangle[];
+    /** Drawing object lines  (relative coordinates, optional).
+     * PQRST, measure tool */
+		public lines: XLine[];
+
+		public labels: XLabel[];
+		public peaks: XPeak[];
 
 
+		//-------------------------------------------------------------------------------------
+		static prepareWavePoint(i: number, ewp: EcgWavePoint, owner: XDrawingClient): XDrawingObject {
+				let result: XDrawingObject = new XDrawingObject();
+				result.index = i;
+				result.owner = owner;
+				// TODO: switch wavepoint type, add different elements for different types
+				result.type = XDrawingObjectType.PQRST;
+				result.container = new XRectangle(0, 0, 0, 0);
+				result.lines = new Array();
+				// TODO: Prepare lines
+				result.labels = new Array();
+				// TODO: Prepare labels (wavepoint type, length)
+				result.peaks = new Array();
+				// TODO: Prepare peaks (peak title + line)
+				return result;
+		}
 
 }
 
@@ -504,5 +525,33 @@ export class XLine {
 				this._a = a;
 				this._b = b;
 		}
+
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Label in position
+//-------------------------------------------------------------------------------------------------
+export class XLabel {
+		public position: XPoint;
+		public container: XRectangle;
+		public label: string;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Peak with line and label in position
+//-------------------------------------------------------------------------------------------------
+export class XPeak {
+		public container: XRectangle;
+		public label: XLabel;
+		public line: XLine;
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Drawing data
+//-------------------------------------------------------------------------------------------------
+export class XDrawingData {
 
 }
