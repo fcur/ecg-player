@@ -1,15 +1,15 @@
 import * as Long from "@types/long";
 import { EventEmitter } from "@angular/core";
-import { XDrChange, XDrMode, XDrProxyState, XDrClient, XDrObject } from "./misc";
+import { XDrawingChange, XDrawingMode, XDrawingProxyState, XDrawingClient, XDrawingObject } from "./misc";
 
 
 // -------------------------------------------------------------------------------------------------
 // DrawingProxy
 // -------------------------------------------------------------------------------------------------
 export class XDrawingProxy {
-	public state: XDrProxyState;
-	public onChangeState: EventEmitter<XDrChange>;
-	public drawingObjects: XDrObject[];
+	public state: XDrawingProxyState;
+	public onChangeState: EventEmitter<XDrawingChange>;
+	public drawingObjects: XDrawingObject[];
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
@@ -18,20 +18,20 @@ export class XDrawingProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public addDrawingObject(o: XDrObject) {
+	public addDrawingObject(o: XDrawingObject) {
 		this.drawingObjects.push(o);
 	}
 
 	//-------------------------------------------------------------------------------------
 	private init() {
-		this.onChangeState = new EventEmitter<XDrChange>();
+		this.onChangeState = new EventEmitter<XDrawingChange>();
 		this.drawingObjects = [];
 	}
 
 	//-------------------------------------------------------------------------------------
-	private collectChanges(): XDrChange {
+	private collectChanges(): XDrawingChange {
 		console.info("collect changes not implemented");
-		let result: XDrChange = new XDrChange();
+		let result: XDrawingChange = new XDrawingChange();
 		return result;
 	}
 
@@ -48,7 +48,7 @@ export class XDrawingProxy {
 
 	//-------------------------------------------------------------------------------------
 	public preformClick(event: MouseEvent | TouchEvent) {
-		let changes: XDrChange = this.collectChanges();
+		let changes: XDrawingChange = this.collectChanges();
 		this.onChangeState.emit(changes);
 	}
 

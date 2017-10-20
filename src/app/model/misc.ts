@@ -1,7 +1,7 @@
 // -------------------------------------------------------------------------------------------------
 // Drawing mode
 // -------------------------------------------------------------------------------------------------
-export enum XDrMode {
+export enum XDrawingMode {
 		Canvas = 0,
 		SVG,
 		Mix
@@ -10,8 +10,8 @@ export enum XDrMode {
 // -------------------------------------------------------------------------------------------------
 // Drawing client
 // -------------------------------------------------------------------------------------------------
-export class XDrClient {
-		public mode: XDrMode;
+export class XDrawingClient {
+		public mode: XDrawingMode;
 
 		public draw() {
 
@@ -19,16 +19,61 @@ export class XDrClient {
 
 }
 
+// -------------------------------------------------------------------------------------------------
+// Ecg lead code
+// -------------------------------------------------------------------------------------------------
+export enum EcgLeadCode {
+		// Standard 12 Leads
+		MDC_ECG_LEAD_I,
+		MDC_ECG_LEAD_II,
+		MDC_ECG_LEAD_III,
+		MDC_ECG_LEAD_V1,
+		MDC_ECG_LEAD_V2,
+		MDC_ECG_LEAD_V3,
+		MDC_ECG_LEAD_V4,
+		MDC_ECG_LEAD_V5,
+		MDC_ECG_LEAD_V6,
+		MDC_ECG_LEAD_AVR,
+		MDC_ECG_LEAD_AVL,
+		MDC_ECG_LEAD_AVF,
+		// EASI Leads
+		MDC_ECG_LEAD_ES,
+		MDC_ECG_LEAD_AS,
+		MDC_ECG_LEAD_AI
+}
 
 
+
+// -------------------------------------------------------------------------------------------------
+// Drawing grid cells mode
+// -------------------------------------------------------------------------------------------------
+export enum XDrawingGridMode {
+		EMPTY = 0,			// 
+		// 3 CH
+		LEADS3CH111,		// 3 channels, 1H + 1H + 1H
+		LEADS3CH211,		// 3 channels, 2H + 0.5H + 0.5H
+		LEADS3CH121,		// 3 channels, 0.5H + 2H + 0.5H
+		LEADS3CH112,		// 3 channels, 0.5H + 0.5H + 2H 
+		// 2 CH
+		LEADS2CH11,			// 2 channels, 1H + 1H
+		LEADS2CH21,			// 2 channels, 1.5H + 0.5H 
+		LEADS2CH12,			// 2 channels, 0.5H  + 1.5H 
+		// 1 CH
+		LEADS1CH1,			// 1 channel, 1H
+		// 12 CH
+		Leads12R3C4,		// 12 channels grid 3X4
+		// 15 CH
+		Leads15R3C5,		// 15 channels grid 4X3
+
+}
 
 
 // -------------------------------------------------------------------------------------------------
 // Drawing change
 // -------------------------------------------------------------------------------------------------
-export class XDrChange {
-		public prevState: XDrProxyState;
-		public curState: XDrProxyState;
+export class XDrawingChange {
+		public prevState: XDrawingProxyState;
+		public curState: XDrawingProxyState;
 
 		constructor() {
 
@@ -36,19 +81,46 @@ export class XDrChange {
 
 }
 
+
+
+// -------------------------------------------------------------------------------------------------
+// Drawing proxy grid cell
+// -------------------------------------------------------------------------------------------------
+export class XDrawingCell {
+		/** Cell relative size & position.*/
+		public container: XRectangle;
+		/** Cell index. */
+		public index: number;
+		/** Cell assigned lead code. */
+		public lead: EcgLeadCode;
+		/** Cell assigned lead text. */
+		public leadLabel: string;
+		/** Cell signal inversion. */
+		public invert: boolean;
+
+		/** Sample value to pixel convertion MUL coeficient. */
+		public sampleValueToPixel: number;
+		/** Microvolts value to pixel convertion MUL coeficient. */
+		public microvoltsToPixel: number;
+
+
+}
+
+
 // -------------------------------------------------------------------------------------------------
 // Drawing proxy state
 // -------------------------------------------------------------------------------------------------
-export class XDrProxyState {
+export class XDrawingProxyState {
 		//devicePixelRatio = window.devicePixelRatio
 
-
+		/** Creation time. */
 		public timestamp: number;
 
-		/** Samples to pixel convertion MUL coeficient. */
+		/** Samples count to pixel convertion MUL coeficient. */
 		public sampleToPixelRatio: number
-		/** Samples to time convertion MUL coeficient. */
+		/** Samples count to time convertion MUL coeficient. */
 		public sampleToTimeRatio: number;
+
 		/** Scale coeficient 1X1. */
 		public scale: number = 1;
 		/** Absolute surfce left offset in pixels. */
@@ -56,17 +128,17 @@ export class XDrProxyState {
 		/** Absolute surfce width in pixels. */
 		public limitPx: number;
 
-		/** Surface relative position.*/
+		/** Surface relative size & position.*/
 		public container: XRectangle;
 		/** Pixels in millimeter MUL coeficient . */
 		public apxmm: number;
 		/** Maximum declared sample value. */
 		public maxSample: number;
 
-		/** Maximum/minimum visible (calculated) sample value. */
-		public signalSamplesClip: number;
 		/** Maximum/minimum visible (calculated) sample value in microvolts. */
 		public signalMicrovoltsClip: number; // signalClip
+		/** Maximum/minimum visible (calculated) sample value. */
+		public signalSamplesClip: number;
 
 		/** Signal sample rate.*/
 		public sampleRate: number;
@@ -74,24 +146,38 @@ export class XDrProxyState {
 		public devMode: boolean;
 		/** Maximum sample value in microvolts from input signal. */
 		public signalScale: number;
+		/** Surface grid cells array.*/
+		public gridCells: XDrawingCell[];
+		/**  Surface grid cells mode.*/
+		public gridMode: XDrawingGridMode;
 
 
 		//-------------------------------------------------------------------------------------------------
 		constructor() {
+				this.devMode = true;
 				this.timestamp = Date.now();            // drawing proxy state creation time
+				this.scale = 1;                         // default scale = 1   
+				this.apxmm = 3;                         // for default dpi
 				this.signalScale = 5000;                // from input signal
 				this.signalMicrovoltsClip = 5000;       // from settings
 				this.maxSample = 32767;                 // from input signal
-
-
-
+				this.gridCells = [];
+				this.skipPx = 0;
+				this.limitPx = 0;
 				this.signalSamplesClip = Math.floor(this.maxSample * this.signalMicrovoltsClip / this.signalScale);
 
-
-				this.apxmm = 3;
-
+		}
 
 
+		//-------------------------------------------------------------------------------------------------
+		/** Returns signal cells by row index. */
+		public getGridRowCells(ri: number): XDrawingCell[] {
+				console.info("getGridRowCells not implemented.")
+				return [];
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public prepareGrid(leads: EcgLeadCode[], leadLabels: string[]) {
 
 		}
 
@@ -103,9 +189,14 @@ export class XDrProxyState {
 // -------------------------------------------------------------------------------------------------
 // Drawing object
 // -------------------------------------------------------------------------------------------------
-export class XDrObject {
-		public owner: XDrClient;
-		public contsainer: XRectangle;
+export class XDrawingObject {
+		/** Object owner. */
+		public owner: XDrawingClient;
+		/** Object relative size & position. */
+		public container: XRectangle;
+
+
+
 }
 
 

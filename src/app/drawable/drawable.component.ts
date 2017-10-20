@@ -1,7 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { XDrawingProxy } from "../model/drawing-proxy"
 import { DataService } from "../service/data.service"
-import { XDrClient, XDrMode, XDrChange, XDrProxyState }
+import { XDrawingClient, XDrawingMode, XDrawingChange, XDrawingProxyState }
 	from "../model/misc";
 
 
@@ -18,7 +18,7 @@ import { XDrClient, XDrMode, XDrChange, XDrProxyState }
 export class DrawableComponent implements OnInit {
 
 	private _dp: XDrawingProxy;
-	private _drawingClients: XDrClient[];
+	private _drawingClients: XDrawingClient[];
 
 	//-------------------------------------------------------------------------------------
 	constructor(private _ds: DataService) {
@@ -39,11 +39,11 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private prepareClients() {
-		let ansClient: XDrClient = new XDrClient();
-		ansClient.mode = XDrMode.Mix;
+		let ansClient: XDrawingClient = new XDrawingClient();
+		ansClient.mode = XDrawingMode.Mix;
 
-		let pqrstClient: XDrClient = new XDrClient();
-		pqrstClient.mode = XDrMode.SVG;
+		let pqrstClient: XDrawingClient = new XDrawingClient();
+		pqrstClient.mode = XDrawingMode.SVG;
 
 		this._drawingClients.push(ansClient, pqrstClient);
 
