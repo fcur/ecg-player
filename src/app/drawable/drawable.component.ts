@@ -1,4 +1,9 @@
 import { Component, OnInit } from '@angular/core';
+import { DrawingProxy } from "../model/drawing-proxy"
+import { DataService } from "../service/data.service"
+import { XDrClient, XDrMode, XDrChange, XDrProxyState }
+	from "../model/misc";
+
 
 @Component({
 	selector: 'app-drawable',
@@ -12,8 +17,15 @@ import { Component, OnInit } from '@angular/core';
 // -------------------------------------------------------------------------------------------------
 export class DrawableComponent implements OnInit {
 
+	private _dp: DrawingProxy;
+	private _drawingClients: XDrClient[];
+
 	//-------------------------------------------------------------------------------------
-	constructor() { }
+	constructor(private _ds: DataService) {
+		console.info("DrawableComponent constructor");
+		this._dp = new DrawingProxy();
+		this._drawingClients = new Array();
+	}
 
 	//-------------------------------------------------------------------------------------
 	ngOnInit() {
@@ -25,5 +37,15 @@ export class DrawableComponent implements OnInit {
 		console.info("DrawableComponent: destroy");
 	}
 
+	//-------------------------------------------------------------------------------------
+	private prepareClients() {
+		let ansClient: XDrClient = new XDrClient();
+		ansClient.mode = XDrMode.Mix;
 
+		let pqrstClient: XDrClient = new XDrClient();
+		pqrstClient.mode = XDrMode.SVG;
+
+		this._drawingClients.push(ansClient, pqrstClient);
+
+	}
 }
