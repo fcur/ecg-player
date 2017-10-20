@@ -1,5 +1,5 @@
 import { Component, OnInit } from '@angular/core';
-import { DrawingProxy } from "../model/drawing-proxy"
+import { XDrawingProxy } from "../model/drawing-proxy"
 import { DataService } from "../service/data.service"
 import { XDrClient, XDrMode, XDrChange, XDrProxyState }
 	from "../model/misc";
@@ -17,13 +17,13 @@ import { XDrClient, XDrMode, XDrChange, XDrProxyState }
 // -------------------------------------------------------------------------------------------------
 export class DrawableComponent implements OnInit {
 
-	private _dp: DrawingProxy;
+	private _dp: XDrawingProxy;
 	private _drawingClients: XDrClient[];
 
 	//-------------------------------------------------------------------------------------
 	constructor(private _ds: DataService) {
 		console.info("DrawableComponent constructor");
-		this._dp = new DrawingProxy();
+		this._dp = new XDrawingProxy();
 		this._drawingClients = new Array();
 	}
 

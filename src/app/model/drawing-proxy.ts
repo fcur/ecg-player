@@ -6,43 +6,20 @@ import { XDrChange, XDrMode, XDrProxyState, XDrClient, XDrObject } from "./misc"
 // -------------------------------------------------------------------------------------------------
 // DrawingProxy
 // -------------------------------------------------------------------------------------------------
-export class DrawingProxy {
+export class XDrawingProxy {
 	public state: XDrProxyState;
 	public onChangeState: EventEmitter<XDrChange>;
 	public drawingObjects: XDrObject[];
 
-	//-------------------------------------------------------------------------------------
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		console.info("DrawingProxy constructor");
 		this.init();
 	}
 
-
-	//-------------------------------------------------------------------------------------
-	public preformClick(event: MouseEvent | TouchEvent) {
-		let changes: XDrChange = this.collectChanges();
-		this.onChangeState.emit(changes);
-	}
-
-	//-------------------------------------------------------------------------------------
-	public preformDbClick(event: MouseEvent) {
-		console.info("not implemented");
-	}
-
 	//-------------------------------------------------------------------------------------
 	public addDrawingObject(o: XDrObject) {
 		this.drawingObjects.push(o);
-	}
-
-	//-------------------------------------------------------------------------------------
-	public performDrag() {
-
-	}
-
-	//-------------------------------------------------------------------------------------
-	public performMouseMove() {
-
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -65,4 +42,29 @@ export class DrawingProxy {
 	}
 
 
+
+
+
+
+	//-------------------------------------------------------------------------------------
+	public preformClick(event: MouseEvent | TouchEvent) {
+		let changes: XDrChange = this.collectChanges();
+		this.onChangeState.emit(changes);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public preformDbClick(event: MouseEvent) {
+		console.info("not implemented");
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	public performDrag() {
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public performMouseMove() {
+
+	}
 }
