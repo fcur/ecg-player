@@ -1,5 +1,4 @@
 
-
 .ch {
   display: flex;
   background-color: aqua;
@@ -25,8 +24,6 @@
   min-height: 2vmin;
 }
 
-
-
 .cml {
   display: flex;
   background-color: crimson;
@@ -41,8 +38,12 @@
   min-width: 2vmin;
 }
 
-
 .cmc {
+  display: flex;
+  flex: 1 auto;
+}
+
+app-drawable{
   display: flex;
   flex: 1 auto;
 }

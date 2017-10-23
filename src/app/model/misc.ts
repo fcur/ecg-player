@@ -1,4 +1,4 @@
-import { EcgLeadCode, EcgWavePoint } from "./ecgdata";
+import { EcgLeadCode, EcgWavePoint, EcgAnnotation } from "./ecgdata";
 
 // -------------------------------------------------------------------------------------------------
 // Drawing mode
@@ -57,12 +57,25 @@ export enum XDrawingGridMode {
 
 }
 
+// -------------------------------------------------------------------------------------------------
+// Drawing change sender
+// -------------------------------------------------------------------------------------------------
+export enum XDrawingChangeSender {
+		MouseClick,
+		MouseHover,
+		MouseDbClick,
+		Tap,
+		Drag,
+		MouseMove
+}
+
 
 // -------------------------------------------------------------------------------------------------
 // Drawing change
 // -------------------------------------------------------------------------------------------------
 export class XDrawingChange {
-		public prevState: XDrawingProxyState;
+		public sender: XDrawingChangeSender;
+
 		public curState: XDrawingProxyState;
 
 		constructor() {
@@ -92,6 +105,7 @@ export class XDrawingCell {
 		public sampleValueToPixel: number;
 		/** Microvolts value to pixel convertion MUL coeficient. */
 		public microvoltsToPixel: number;
+
 
 
 }
@@ -155,7 +169,7 @@ export class XDrawingProxyState {
 				this.skipPx = 0;
 				this.limitPx = 0;
 				this.signalSamplesClip = Math.floor(this.maxSample * this.signalMicrovoltsClip / this.signalScale);
-
+				this.gridMode = XDrawingGridMode.EMPTY;
 		}
 
 
@@ -167,7 +181,20 @@ export class XDrawingProxyState {
 		}
 
 		//-------------------------------------------------------------------------------------------------
-		public prepareGrid(leads: EcgLeadCode[], leadLabels: string[]) {
+		public prepareGridCells(leads: EcgLeadCode[], leadLabels: string[]) {
+				if (leads.length === 3) this.gridMode = XDrawingGridMode.LEADS3CH111;
+				else if (leads.length === 12) this.gridMode = XDrawingGridMode.Leads12R3C4;
+
+				this.gridCells = new Array(leads.length);
+				for (let z: number = 0; z < leads.length; z++) {
+						this.gridCells[z] = new XDrawingCell();
+						this.gridCells[z].index = z;
+						// TODO calc container for each cell | use parent on default
+						this.gridCells[z].container = this.container;
+						this.gridCells[z].lead = leads[z];
+						this.gridCells[z].leadLabel = leadLabels[z];
+
+				}
 
 		}
 
@@ -218,6 +245,14 @@ export class XDrawingObject {
 				return result;
 		}
 
+		//-------------------------------------------------------------------------------------
+		static prepareAnnotation(i: number, an: EcgAnnotation, owner: XDrawingClient): XDrawingObject {
+				let result: XDrawingObject = new XDrawingObject();
+				result.index = i;
+				result.owner = owner;
+				//console.warn("NOT IMPLEMENTED");
+				return result;
+		}
 }
 
 
@@ -554,4 +589,62 @@ export class XPeak {
 //-------------------------------------------------------------------------------------------------
 export class XDrawingData {
 
+}
+
+
+import { ElementRef } from "@angular/core";
+//-------------------------------------------------------------------------------------------------
+// Canvas tool
+//-------------------------------------------------------------------------------------------------
+export class XCanvasTool {
+
+		public width: number;
+		public height: number;
+
+		public ctx: CanvasRenderingContext2D;
+		public drawingElement: ElementRef;
+
+		//-------------------------------------------------------------------------------------------------
+		constructor(de: ElementRef) {
+				this.drawingElement = de;
+				this.ctx = this.drawingElement.nativeElement.getContext("2d");
+				this.ctx.scale(this.devicePixelRatio, this.devicePixelRatio);
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public get devicePixelRatio(): number {
+				return window.devicePixelRatio || 1;
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public clear() {
+				this.ctx.clearRect(0, 0, this.width, this.height);
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public resize(width: number, height: number): boolean {
+			if(Number.isNaN(width)|| Number.isNaN(height)) return false;
+			width = Math.floor(width);
+			height = Math.floor(height);
+			this.drawingElement.nativeElement.style.width = `${width}px`;
+			this.drawingElement.nativeElement.style.height = `${height}px`;
+			this.width = width * this.devicePixelRatio;
+			this.height = height* this.devicePixelRatio;
+			this.drawingElement.nativeElement.width = this.width;
+			this.drawingElement.nativeElement.height = this.height;
+			return true;
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public drawInfo() {
+				this.ctx.save();
+				this.clear();
+				this.ctx.fillStyle = "#ccc";
+				this.ctx.font = "10mm Roboto";
+				this.ctx.textBaseline = "middle";
+				this.ctx.textAlign = "center";
+				let text: string = `${Math.floor(this.width)}X${Math.floor(this.height)}`
+				this.ctx.fillText(text, this.width / 2,  this.height / 2);
+				this.ctx.restore();
+		}
 }
