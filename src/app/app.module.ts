@@ -4,7 +4,7 @@ import { NgModule } from '@angular/core';
 import { AppComponent } from './app.component';
 import { DrawableComponent } from './drawable/drawable.component';
 import { DataService } from "./service/data.service"
-
+import { FileDropModule } from "ngx-file-drop/lib/ngx-drop";
 
 @NgModule({
 	declarations: [
@@ -12,7 +12,8 @@ import { DataService } from "./service/data.service"
 		DrawableComponent
 	],
 	imports: [
-		BrowserModule
+			BrowserModule,
+			FileDropModule
 	],
 	providers: [DataService],
 	bootstrap: [AppComponent]

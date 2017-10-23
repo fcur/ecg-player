@@ -43,7 +43,9 @@
   flex: 1 auto;
 }
 
-app-drawable{
+app-drawable {
   display: flex;
   flex: 1 auto;
+  flex-direction: column;
+  justify-content: center;
 }

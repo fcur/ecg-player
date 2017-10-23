@@ -34,6 +34,7 @@ export enum XDrawingObjectType {
 }
 
 
+
 // -------------------------------------------------------------------------------------------------
 // Drawing grid cells mode
 // -------------------------------------------------------------------------------------------------
@@ -75,7 +76,6 @@ export enum XDrawingChangeSender {
 // -------------------------------------------------------------------------------------------------
 export class XDrawingChange {
 		public sender: XDrawingChangeSender;
-
 		public curState: XDrawingProxyState;
 
 		constructor() {
@@ -195,7 +195,7 @@ export class XDrawingProxyState {
 						this.gridCells[z].leadLabel = leadLabels[z];
 
 				}
-
+				this.limitPx = this.gridCells[0].container.width;
 		}
 
 
@@ -258,10 +258,38 @@ export class XDrawingObject {
 
 
 
+
+
+
+//-------------------------------------------------------------------------------------------------
+// Drawing primitives
+//-------------------------------------------------------------------------------------------------
+export class XDrawingPrimitive {
+		zindex: number;
+		state: XDrawingPrimitiveState;
+
+		//-------------------------------------------------------------------------------------
+		constructor() {
+				this.zindex = 0;
+				this.state = XDrawingPrimitiveState.Default;
+		}
+
+}
+
+//-------------------------------------------------------------------------------------------------
+// Drawing primitive state
+//-------------------------------------------------------------------------------------------------
+export enum XDrawingPrimitiveState {
+		Default = 0,
+		Activated,
+		Selected,
+		Hidden
+}
+
 //-------------------------------------------------------------------------------------------------
 // Rectangle
 //-------------------------------------------------------------------------------------------------
-export class XRectangle {
+export class XRectangle extends XDrawingPrimitive {
 		private _l: number = 0;
 		private _t: number = 0;
 		private _w: number = 0;
@@ -300,6 +328,7 @@ export class XRectangle {
 		 * @param h height in pixels
 		 */
 		constructor(l: number, t: number, w: number, h: number) {
+				super();
 				this.init(l, t, w, h);
 		}
 
@@ -443,7 +472,7 @@ export class XRectangle {
 //-------------------------------------------------------------------------------------------------
 // Point
 //-------------------------------------------------------------------------------------------------
-export class XPoint {
+export class XPoint extends XDrawingPrimitive {
 		private _l: number = 0;
 		private _t: number = 0;
 
@@ -463,6 +492,7 @@ export class XPoint {
 		 * @param l position on X axis in pixels
 		 */
 		constructor(l: number, t: number) {
+				super();
 				this.init(l, t);
 		}
 
@@ -510,7 +540,7 @@ export class XPoint {
 //-------------------------------------------------------------------------------------------------
 // Line
 //-------------------------------------------------------------------------------------------------
-export class XLine {
+export class XLine extends XDrawingPrimitive {
 		private _a: XPoint = null;
 		private _b: XPoint = null;
 
@@ -547,6 +577,7 @@ export class XLine {
 
 		//-------------------------------------------------------------------------------------------------
 		constructor(a: XPoint, b: XPoint) {
+				super();
 				this.init(a, b);
 		}
 
@@ -577,19 +608,22 @@ export class XLabel {
 //-------------------------------------------------------------------------------------------------
 // Peak with line and label in position
 //-------------------------------------------------------------------------------------------------
-export class XPeak {
+export class XPeak extends XDrawingPrimitive {
 		public container: XRectangle;
 		public label: XLabel;
 		public line: XLine;
 }
 
 
+
+
+
 //-------------------------------------------------------------------------------------------------
 // Drawing data
 //-------------------------------------------------------------------------------------------------
-export class XDrawingData {
+//export class XDrawingData {
 
-}
+//}
 
 
 import { ElementRef } from "@angular/core";
@@ -623,16 +657,16 @@ export class XCanvasTool {
 
 		//-------------------------------------------------------------------------------------------------
 		public resize(width: number, height: number): boolean {
-			if(Number.isNaN(width)|| Number.isNaN(height)) return false;
-			width = Math.floor(width);
-			height = Math.floor(height);
-			this.drawingElement.nativeElement.style.width = `${width}px`;
-			this.drawingElement.nativeElement.style.height = `${height}px`;
-			this.width = width * this.devicePixelRatio;
-			this.height = height* this.devicePixelRatio;
-			this.drawingElement.nativeElement.width = this.width;
-			this.drawingElement.nativeElement.height = this.height;
-			return true;
+				if (Number.isNaN(width) || Number.isNaN(height)) return false;
+				width = Math.floor(width);
+				height = Math.floor(height);
+				this.drawingElement.nativeElement.style.width = `${width}px`;
+				this.drawingElement.nativeElement.style.height = `${height}px`;
+				this.width = width * this.devicePixelRatio;
+				this.height = height * this.devicePixelRatio;
+				this.drawingElement.nativeElement.width = this.width;
+				this.drawingElement.nativeElement.height = this.height;
+				return true;
 		}
 
 		//-------------------------------------------------------------------------------------------------
@@ -644,7 +678,7 @@ export class XCanvasTool {
 				this.ctx.textBaseline = "middle";
 				this.ctx.textAlign = "center";
 				let text: string = `${Math.floor(this.width)}X${Math.floor(this.height)}`
-				this.ctx.fillText(text, this.width / 2,  this.height / 2);
+				this.ctx.fillText(text, this.width / 2, this.height / 2);
 				this.ctx.restore();
 		}
 }

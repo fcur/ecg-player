@@ -53,12 +53,11 @@ export enum EcgWavePointType {
 // -------------------------------------------------------------------------------------------------
 export class EcgRecord {
 		public id: string;
-		public sessionId: string;
 		public time: number;
 		public signal: EcgSignal;
 		public sampleRateForCls: number;
 		public totalBeatsCount: number;
-		public beats: number;
+		public beats: number[];
 		public wavePoints: EcgWavePoint[];
 		public annotations: EcgAnnotation[];
 
@@ -69,6 +68,11 @@ export class EcgRecord {
 // Ecg signal
 // -------------------------------------------------------------------------------------------------
 export class EcgSignal {
+		public sampleFormat: number;
+		public sampleCount: number;
+		public channels: number[][];
+		public sampleRate: number;
+		public leads: EcgLeadCode[];
 }
 
 // -------------------------------------------------------------------------------------------------

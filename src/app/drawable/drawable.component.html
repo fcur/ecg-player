@@ -4,9 +4,34 @@
     top: 0px;
     left: 0px;
   }
+
+  .file-drop-cont {
+  }
+
+  .canvas-cont {
+    display: flex;
+    flex: 1 auto;
+  }
+
+  .filedrop-style {
+    text-align: center;
+  }
 </style>
 
-<canvas #waveformCanvas class="ewc"></canvas>
+<!--customstyle="filedrop-style"-->
+<div *ngIf="!_hideFileDrop"
+     class="file-drop-cont">
+  <file-drop headertext="Drop signal here"
+             customstyle="filedrop-style"
+             (onFileDrop)="dropped($event)"
+             (onFileOver)="fileOver($event)"
+             (onFileLeave)="fileLeave($event)">
+  </file-drop>
+</div>
+<div class="canvas-cont" #canvasCont>
+  <canvas #waveformCanvas class="ewc"></canvas>
+</div>
+
 
 
 

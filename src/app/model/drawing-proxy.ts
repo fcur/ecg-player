@@ -63,8 +63,8 @@ export class XDrawingProxy {
 
 		//-------------------------------------------------------------------------------------
 		public gc() {
-			// handle proxy limits
-			// remove unused objects
+				// handle proxy limits
+				// remove unused objects
 		}
 
 
