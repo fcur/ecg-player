@@ -5,7 +5,10 @@ import {
 		XDrawingClient, XDrawingObject, XDrawingObjectType,
 		XDrawingChangeSender
 } from "./misc";
-import { EcgWavePoint, EcgWavePointType, EcgAnnotation } from "./ecgdata"
+import {
+		EcgWavePoint, EcgWavePointType, EcgAnnotation,
+		EcgSignal, EcgAnnotationCode, EcgLeadCode, EcgRecord
+} from "./ecgdata"
 
 // -------------------------------------------------------------------------------------------------
 // DrawingProxy
@@ -32,6 +35,14 @@ export class XDrawingProxy {
 		}
 
 		//-------------------------------------------------------------------------------------
+		public buildSignal(list: EcgSignal[], client: XDrawingClient) {
+				let o: XDrawingObject;
+				for (let z: number = 0; z < list.length; z++) {
+
+				}
+		}
+
+		//-------------------------------------------------------------------------------------
 		public buildAnnotations(list: EcgAnnotation[], client: XDrawingClient) {
 				let o: XDrawingObject;
 				for (let z: number = 0; z < list.length; z++) {
@@ -39,7 +50,6 @@ export class XDrawingProxy {
 						this.drawingObjects.push(o)
 				}
 		}
-
 
 		//-------------------------------------------------------------------------------------
 		public addDrawingObject(o: XDrawingObject) {
@@ -66,9 +76,6 @@ export class XDrawingProxy {
 				// handle proxy limits
 				// remove unused objects
 		}
-
-
-
 
 
 		//-------------------------------------------------------------------------------------

@@ -1,20 +1,3 @@
-
-// -------------------------------------------------------------------------------------------------
-// Ecg input
-// -------------------------------------------------------------------------------------------------
-export class EcgInput {
-		public annotations: EcgAnnotation;
-		public beats: number[];
-		public leads_data: Map<EcgLeadCode, number[]>;
-		public recording_time: Date;
-		public sample_multiplier: number;
-		public sample_rate: number;
-		public wavepoints: EcgWavePoint[];
-}
-
-
-
-
 // -------------------------------------------------------------------------------------------------
 // Ecg lead code
 // -------------------------------------------------------------------------------------------------

@@ -30,7 +30,7 @@ export class DataService {
 		static SAMPLE_RATE_KEY: string = "sample_rate";
 		static WAVEPOINTS_KEY: string = "wavepoints";
 
-		public onLoadData: BehaviorSubject<EcgRecord>;
+		public onLoadDataBs: BehaviorSubject<EcgRecord>;
 
 		//-------------------------------------------------------------------------------------
 		public get leads(): EcgLeadCode[] {
@@ -59,7 +59,7 @@ export class DataService {
 		//-------------------------------------------------------------------------------------
 		constructor() {
 				this._ecgleadsDescriptionMap = new Map<EcgLeadCode, string>();
-				this.onLoadData = new BehaviorSubject<EcgRecord>(null);
+				this.onLoadDataBs = new BehaviorSubject<EcgRecord>(null);
 				//console.info("DataService constructor");
 		}
 
@@ -147,8 +147,14 @@ export class DataService {
 						ecgrecord.wavePoints = this.parseWavepoints(input[DataService.ANNOTATIONS_KEY]);
 				}
 
-				this.onLoadData.next(ecgrecord);
+				this.onLoadDataBs.next(ecgrecord);
 		}
+
+    //-------------------------------------------------------------------------------------
+		public get ecgrecord(): EcgRecord {
+				return this.onLoadDataBs.value;
+		}
+
 
 		//-------------------------------------------------------------------------------------
 		public parseLeadsData(input: any): EcgSignal {

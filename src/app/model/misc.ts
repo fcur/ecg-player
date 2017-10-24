@@ -101,12 +101,12 @@ export class XDrawingCell {
 		/** Cell signal inversion. */
 		public invert: boolean;
 
-		/** Sample value to pixel convertion MUL coeficient. */
+		/** Sample value to pixel convertion MUL coeficient. pixels = sample_value * coef */
 		public sampleValueToPixel: number;
-		/** Microvolts value to pixel convertion MUL coeficient. */
+		/** Microvolts value to pixel convertion MUL coeficient. pixels = microvolts * coef */
 		public microvoltsToPixel: number;
 
-
+		static FLOATING_MUL: number = 100000;
 
 }
 
@@ -117,11 +117,12 @@ export class XDrawingCell {
 export class XDrawingProxyState {
 		//devicePixelRatio = window.devicePixelRatio
 
+
 		/** Creation time. */
 		public timestamp: number;
 
 		/** Samples count to pixel convertion MUL coeficient. */
-		public sampleToPixelRatio: number
+		public sampleToPixelRatio: number;
 		/** Samples count to time convertion MUL coeficient. */
 		public sampleToTimeRatio: number;
 
@@ -185,6 +186,7 @@ export class XDrawingProxyState {
 				if (leads.length === 3) this.gridMode = XDrawingGridMode.LEADS3CH111;
 				else if (leads.length === 12) this.gridMode = XDrawingGridMode.Leads12R3C4;
 
+				let cellContainer: XRectangle;
 				this.gridCells = new Array(leads.length);
 				for (let z: number = 0; z < leads.length; z++) {
 						this.gridCells[z] = new XDrawingCell();
@@ -193,7 +195,9 @@ export class XDrawingProxyState {
 						this.gridCells[z].container = this.container;
 						this.gridCells[z].lead = leads[z];
 						this.gridCells[z].leadLabel = leadLabels[z];
-
+						// prepare mul coeficients
+						this.gridCells[z].sampleValueToPixel = Math.floor((this.gridCells[z].container.height / this.maxSample) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
+						this.gridCells[z].microvoltsToPixel = Math.floor((this.gridCells[z].container.height / this.signalSamplesClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
 				}
 				this.limitPx = this.gridCells[0].container.width;
 		}

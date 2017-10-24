@@ -10,8 +10,7 @@ import {
 } from "../model/misc";
 import {
 		EcgAnnotation, EcgAnnotationCode, EcgLeadCode,
-		EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType,
-		EcgInput
+		EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType
 } from "../model/ecgdata";
 import { Subscription, BehaviorSubject } from "rxjs";
 
@@ -30,6 +29,7 @@ export class DrawableComponent implements OnInit {
 		private _dp: XDrawingProxy;
 		private _ansClient: XDrawingClient;
 		private _pqrstClient: XDrawingClient;
+		private _signalClient: XDrawingClient;
 		private _fileReader: FileReader;
 		private _hideFileDrop: boolean;
 		/**Canvas tool. */
@@ -65,7 +65,7 @@ export class DrawableComponent implements OnInit {
 		ngOnInit() {
 				//console.info("DrawableComponent: init");
 				this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
-				this._loadDataSubs = this._ds.onLoadData.subscribe(v => this.onReceiveData(v as EcgRecord));
+				this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord));
 				this._canvasContainer.nativeElement.addEventListener("dragover", this.onDragOver.bind(this), false);
 				this._canvasContainer.nativeElement.addEventListener("drop", this.onDragDrop.bind(this), false);
 		}
@@ -103,8 +103,8 @@ export class DrawableComponent implements OnInit {
 		//-------------------------------------------------------------------------------------
 		private onReceiveData(v: EcgRecord) {
 				if (!v || v === null) return;
-				console.info("receive", v, "prepare drawings");
-				//this.prepareDrawingObjects();
+				//console.info("receive", v, "prepare drawings");
+				this.prepareDrawingObjects();
 		}
 
 		//-------------------------------------------------------------------------------------
@@ -118,22 +118,16 @@ export class DrawableComponent implements OnInit {
 				this._ansClient.mode = XDrawingMode.Mix;
 				this._pqrstClient = new XDrawingClient();
 				this._pqrstClient.mode = XDrawingMode.SVG;
+				this._signalClient = new XDrawingClient();
+				this._signalClient.mode = XDrawingMode.Canvas;
 				//this._drawingClients.push(ansClient, pqrstClient);
 		}
 
 		//-------------------------------------------------------------------------------------
 		private prepareDrawingObjects() {
-				let fakeWavepoints: EcgWavePoint[] = new Array(30); // wavepoints from solid record
-				this._dp.buildWavepoints(fakeWavepoints, this._pqrstClient);
-
-				let fakeAns: EcgAnnotation[] = new Array(30);
-				this._dp.buildAnnotations(fakeAns, this._ansClient);
-
-
-				let fakeSignal: number[][] = new Array();
-
-
-
+				this._dp.buildSignal([this._ds.ecgrecord.signal], this._signalClient);
+				this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
+				this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
 		}
 
 		//-------------------------------------------------------------------------------------
