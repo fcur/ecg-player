@@ -1,7 +1,25 @@
+
+// -------------------------------------------------------------------------------------------------
+// Ecg input
+// -------------------------------------------------------------------------------------------------
+export class EcgInput {
+		public annotations: EcgAnnotation;
+		public beats: number[];
+		public leads_data: Map<EcgLeadCode, number[]>;
+		public recording_time: Date;
+		public sample_multiplier: number;
+		public sample_rate: number;
+		public wavepoints: EcgWavePoint[];
+}
+
+
+
+
 // -------------------------------------------------------------------------------------------------
 // Ecg lead code
 // -------------------------------------------------------------------------------------------------
 export enum EcgLeadCode {
+		UNKNOWN_LEAD_CODE,
 		// Standard 12 Leads
 		MDC_ECG_LEAD_I,
 		MDC_ECG_LEAD_II,
@@ -68,7 +86,6 @@ export class EcgRecord {
 // Ecg signal
 // -------------------------------------------------------------------------------------------------
 export class EcgSignal {
-		public sampleFormat: number;
 		public sampleCount: number;
 		public channels: number[][];
 		public sampleRate: number;
@@ -91,4 +108,7 @@ export class EcgAnnotation {
 		public start: number; // sample index
 		public end: number; // sample index
 		public code: EcgAnnotationCode;
+		public beatsCount: number;
+		public clusterIndex: number;
+		public codesMap: Map<string, number>;
 }

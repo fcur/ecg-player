@@ -1,0 +1,10 @@
+.canvas-cont {
+  display: flex;
+  flex: 1 auto;
+}
+
+.ewc {
+  position: static;
+  top: 0px;
+  left: 0px;
+}

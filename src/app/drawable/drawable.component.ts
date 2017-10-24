@@ -10,11 +10,10 @@ import {
 } from "../model/misc";
 import {
 		EcgAnnotation, EcgAnnotationCode, EcgLeadCode,
-		EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType
+		EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType,
+		EcgInput
 } from "../model/ecgdata";
-import {
-		FileDropModule, UploadFile, UploadEvent
-} from "ngx-file-drop/lib/ngx-drop";
+import { Subscription, BehaviorSubject } from "rxjs";
 
 @Component({
 		selector: 'app-drawable',
@@ -31,9 +30,12 @@ export class DrawableComponent implements OnInit {
 		private _dp: XDrawingProxy;
 		private _ansClient: XDrawingClient;
 		private _pqrstClient: XDrawingClient;
-		private _hideFileDrop: boolean = false;
+		private _fileReader: FileReader;
+		private _hideFileDrop: boolean;
+		/**Canvas tool. */
+		private _ct: XCanvasTool;
 
-
+		private _loadDataSubs: Subscription = null;
 
 		//-------------------------------------------------------------------------------------
 		@ViewChild("waveformCanvas")
@@ -43,29 +45,29 @@ export class DrawableComponent implements OnInit {
 		//-------------------------------------------------------------------------------------
 		@HostListener("window:resize", ["$event"]) onWindowResize(event: Event) {
 				// TODO: fix resize bug
-				console.log("dpr:", window.devicePixelRatio);
+				//console.log("dpr:", window.devicePixelRatio);
 				this.prepareCanvasSize();
 				this._ct.drawInfo();
 		}
-		//private _drawingClients: XDrawingClient[];
-
-		/**Canvas tool. */
-		private _ct: XCanvasTool;
-
 
 		//-------------------------------------------------------------------------------------
 		constructor(private _el: ElementRef,
 				private _ds: DataService) {
-				console.info("DrawableComponent constructor");
+				//console.info("DrawableComponent constructor");
+				this._hideFileDrop = false;
 				this._dp = new XDrawingProxy();
+				this._fileReader = new FileReader();
 				this.prepareClients();
 				//this._drawingClients = new Array();
 		}
 
 		//-------------------------------------------------------------------------------------
 		ngOnInit() {
-				console.info("DrawableComponent: init");
-
+				//console.info("DrawableComponent: init");
+				this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
+				this._loadDataSubs = this._ds.onLoadData.subscribe(v => this.onReceiveData(v as EcgRecord));
+				this._canvasContainer.nativeElement.addEventListener("dragover", this.onDragOver.bind(this), false);
+				this._canvasContainer.nativeElement.addEventListener("drop", this.onDragDrop.bind(this), false);
 		}
 
 		//-------------------------------------------------------------------------------------
@@ -74,58 +76,41 @@ export class DrawableComponent implements OnInit {
 				this.prepareCanvasSize();
 				this._dp.state.limitPx = this._ct.width;
 				this.prepareGrid();
-				this.prepareDrawingObjects();
 				this._ct.drawInfo();
 		}
 
 		//-------------------------------------------------------------------------------------
 		ngOnDestroy() {
-				console.info("DrawableComponent: destroy");
-		}
-
-
-
-
-		//-------------------------------------------------------------------------------------
-		public dropped(event: UploadEvent) {
-				let files: UploadFile[] = event.files;
-
-
-				//for (var file of event.files) {
-				//		file.fileEntry.file(info => {
-				//				console.log(info);
-				//		});
-				//}
-				
-				let reader: FileReader = new FileReader();
-				reader.onload = (function (file) {
-						console.log(file);
-
-				});
-
-				//reader.readAsDataURL(files[0].);
-
-				this._hideFileDrop = true;
-				this.prepareCanvasSize();
-				this._ct.drawInfo();
+				//console.info("DrawableComponent: destroy");
+				if (this._loadDataSubs) this._loadDataSubs.unsubscribe();
 		}
 
 		//-------------------------------------------------------------------------------------
-		public fileOver(event) {
-				//console.log(event);
+		private onDragOver(event: DragEvent) {
+				event.stopPropagation();
+				event.preventDefault();
+				event.dataTransfer.dropEffect = 'copy';
 		}
 
 		//-------------------------------------------------------------------------------------
-		public fileLeave(event) {
-				//console.log(event);
+		private onDragDrop(event: DragEvent) {
+				event.stopPropagation();
+				event.preventDefault();
+				let files: FileList = event.dataTransfer.files;
+				this._fileReader.readAsText(files[0]);
 		}
 
+		//-------------------------------------------------------------------------------------
+		private onReceiveData(v: EcgRecord) {
+				if (!v || v === null) return;
+				console.info("receive", v, "prepare drawings");
+				//this.prepareDrawingObjects();
+		}
 
-
-
-
-
-
+		//-------------------------------------------------------------------------------------
+		public onLoadFile(event: ProgressEvent) {
+				this._ds.parseJsonFile(JSON.parse(this._fileReader.result));
+		}
 
 		//-------------------------------------------------------------------------------------
 		private prepareClients() {
