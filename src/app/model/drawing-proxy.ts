@@ -24,6 +24,11 @@ export class XDrawingProxy {
 				this.init();
 		}
 
+    	//-------------------------------------------------------------------------------------
+		public reset() {
+				console.info("drawing proxy not implemented");
+		}
+
 		//-------------------------------------------------------------------------------------
 		public buildWavepoints(list: EcgWavePoint[], client: XDrawingClient) {
 				//console.info("prepare wavepoints for client", "create XDrawingObject for eacg  EcgWavePoint element.");

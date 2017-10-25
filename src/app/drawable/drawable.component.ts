@@ -109,6 +109,7 @@ export class DrawableComponent implements OnInit {
 		//-------------------------------------------------------------------------------------
 		private onReceiveData(v: EcgRecord) {
 				if (!v || v === null) return;
+				this._dp.reset();
 				//console.info("receive", v, "prepare drawings");
 				this.prepareDrawingObjects();
 				this._dp.refreshDrawings();
@@ -157,15 +158,31 @@ export class DrawableComponent implements OnInit {
 		private prepareCanvasSize() {
 				this._ct.resize(this._el.nativeElement.offsetWidth as number,
 						this._el.nativeElement.offsetHeight as number);
-
-				let padding: number = 10;
-				let proxyContainer: XRectangle = new XRectangle(padding, padding, this._ct.width - padding, this._ct.height - padding);
+				let space: number = 33;
+				let proxyContainer: XRectangle = new XRectangle(space, space, this._ct.width - space * 2, this._ct.height - space * 2);
 				this._dp.state.container = proxyContainer;
 		}
 
 		//-------------------------------------------------------------------------------------
 		private drawSignal(obj: XDrawingObject) {
-				console.info("draw singal object", obj);
-
+				//console.info("draw singal object", obj);
+				let state: XDrawingProxyState = this._dp.state;
+				this._ct.clear();
+				this._ct.ctx.save();
+				this._ct.ctx.beginPath();
+				let skipPoints: number = 0;
+				let points: XPoint[];
+				let z: number = 0, y: number = 0;
+				for (z = 0; z < state.gridCells.length; z++) { // z - cell index, polyline index
+						points = obj.polylines[z].points
+						y = state.skipPx;
+						this._ct.ctx.moveTo(points[y].left + 0.5, points[y].top + 0.5); // y - point index
+						for (y++; y < state.maxPx; y++) {
+								this._ct.ctx.lineTo(points[y].left + 0.5, points[y].top + 0.5);
+						}
+				}
+				this._ct.ctx.stroke();
+				this._ct.ctx.closePath();
+				this._ct.ctx.restore();
 		}
 }

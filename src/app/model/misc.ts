@@ -199,23 +199,36 @@ export class XDrawingProxyState {
 
 		//-------------------------------------------------------------------------------------------------
 		public prepareGridCells(leads: EcgLeadCode[], leadLabels: string[]) {
+				if (!Array.isArray(leads) || !Array.isArray(leadLabels)) return;
 				if (leads.length === 3) this.gridMode = XDrawingGridMode.LEADS3CH111;
 				else if (leads.length === 12) this.gridMode = XDrawingGridMode.Leads12R3C4;
 
+				// prepare grid
+				let rwCount: number = 3;
+				let clCount: number = leads.length / rwCount;
+				let space: number = 10;
+				let aviableHeight: number = this.container.height - (rwCount - 1) * space;
+				let aviableWidth: number = this.container.width - (clCount - 1) * space;
+				let cellHeight: number = Math.floor(aviableHeight / rwCount);
+				let cellWidth: number = Math.floor(aviableWidth / clCount);
+				let signalHeight: number = Math.floor(cellHeight / 2);
+				let cellLeft: number, cellTop: number, z: number, y: number;
 				let cellContainer: XRectangle;
+				cellLeft = this.container.left;
 				this.gridCells = new Array(leads.length);
-				let signalHeight: number;
-				for (let z: number = 0; z < leads.length; z++) {
-						this.gridCells[z] = new XDrawingCell();
-						this.gridCells[z].index = z;
-						// TODO calc container for each cell | use parent on default
-						this.gridCells[z].container = this.container;
-						this.gridCells[z].lead = leads[z];
-						this.gridCells[z].leadLabel = leadLabels[z];
-						// prepare mul coefficients
-						signalHeight = this.gridCells[z].container.height / 2;
-						this.gridCells[z].sampleValueToPixel = Math.floor((signalHeight / this.signalSamplesClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
-						this.gridCells[z].microvoltsToPixel = Math.floor((signalHeight / this.signalMicrovoltsClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
+				for (z = 0, cellTop = 0; z < leads.length; z++) {
+						for (y = 0; y < rwCount; y++ , z++) {
+								this.gridCells[z] = new XDrawingCell();
+								this.gridCells[z].index = z;
+								this.gridCells[z].container = new XRectangle(cellLeft, cellTop, cellWidth, cellHeight);
+								this.gridCells[z].lead = leads[z];
+								this.gridCells[z].leadLabel = leadLabels[z];
+								// prepare mul coefficients
+								this.gridCells[z].sampleValueToPixel = Math.floor((signalHeight / this.signalSamplesClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
+								this.gridCells[z].microvoltsToPixel = Math.floor((signalHeight / this.signalMicrovoltsClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
+								cellTop = this.gridCells[z].container.maxOy + space;
+						}
+						cellLeft += cellWidth + space;
 				}
 				this.limitPx = this.gridCells[0].container.width;
 		}
@@ -672,6 +685,18 @@ export class XLine extends XDrawingPrimitive {
 //-------------------------------------------------------------------------------------------------
 export class XPolyline extends XDrawingPrimitive {
 		private _points: XPoint[];
+
+		//-------------------------------------------------------------------------------------------------
+		public get points(): XPoint[] {
+				if (Array.isArray(this._points)) return this._points;
+				return [];
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public get sections(): number {
+				if (Array.isArray(this._points)) return this._points.length;
+				return 0;
+		}
 
 		//-------------------------------------------------------------------------------------------------
 		constructor(p: XPoint[]) {
