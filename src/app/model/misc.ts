@@ -18,10 +18,8 @@ export enum XDrawingMode {
 // -------------------------------------------------------------------------------------------------
 export class XDrawingClient {
 		public mode: XDrawingMode;
+		public draw: Function;
 
-		public draw() {
-
-		}
 
 }
 
@@ -66,6 +64,7 @@ export enum XDrawingGridMode {
 // Drawing change sender
 // -------------------------------------------------------------------------------------------------
 export enum XDrawingChangeSender {
+		UpdateDrawings,
 		MouseClick,
 		MouseHover,
 		MouseDbClick,
@@ -81,7 +80,11 @@ export enum XDrawingChangeSender {
 export class XDrawingChange {
 		public sender: XDrawingChangeSender;
 		public curState: XDrawingProxyState;
+		public objects: XDrawingObject[];
+		public clients: XDrawingClient[];
 
+
+		//-------------------------------------------------------------------------------------------------
 		constructor() {
 
 		}
@@ -160,6 +163,16 @@ export class XDrawingProxyState {
 		/**  Surface grid cells mode.*/
 		public gridMode: XDrawingGridMode;
 
+
+		//-------------------------------------------------------------------------------------------------
+		public get minPx(): number {
+				return this.skipPx;
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public get maxPx(): number {
+				return this.skipPx + this.limitPx;
+		}
 
 		//-------------------------------------------------------------------------------------------------
 		constructor() {
@@ -277,33 +290,40 @@ export class XDrawingObject {
      * @param state proxy state
      * @param owner object owner
      */
-		static PrepareSignal(i: number, s: EcgSignal, state: XDrawingProxyState, owner: XDrawingClient): XDrawingObject {
+		static PrepareSignal(i: number, s: EcgSignal, state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0): XDrawingObject {
 				let result: XDrawingObject = new XDrawingObject();
+				result.index = i;
+				result.owner = owner;
 				result.polylines = new Array(state.gridCells.length);
+				result.type = XDrawingObjectType.Signal;
 				/** channel index */
 				let chIndex: number;
 				let points: XPoint[];
 				let cell: XDrawingCell;
 				/** transform coefficient */
 				let coef: number;
-				let samples: number[];
-				let y: number, z: number, dy: number, top: number, left: number;
+				let data: number[];
+				let y: number = 0, z: number = 0, dy: number = 0, top: number = 0, left: number = 0;
 				for (z = 0; z < state.gridCells.length; z++) {
 						cell = state.gridCells[z];
 						coef = s.asSamples ? cell.sampleValueToPixel : cell.microvoltsToPixel;
 						result.polylines[z] = new XPolyline([]);
 						chIndex = s.leads.indexOf(cell.lead);
 						if (chIndex < 0) continue;
-						samples = s.channels[chIndex];
-						points = new Array(samples.length);
-						for (y = 0; y < samples.length; y++) {
-								dy = Math.round(samples[y] * coef);
+						data = s.channels[chIndex];
+						points = new Array(data.length);
+						for (y = 0; y < data.length; y++) {
+								dy = Math.round(data[y] * coef);
 								left = cell.container.left + y;
 								top = cell.invert ? (cell.container.midOy + dy) : (cell.container.midOy - dy);
 								points[y] = new XPoint(left, top);
 						}
 						result.polylines[z].rebuild(points);
 				}
+				result.container.left = skipPixels;
+				result.container.width = y;
+				result.container.height = state.container.height;
+
 				return result;
 		}
 }

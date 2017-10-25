@@ -119,7 +119,7 @@ export class DataService {
 
 		//-------------------------------------------------------------------------------------
 		public parseJsonFile(input: any) {
-				console.info(input);
+				//console.info(input);
 
 				let ecgrecord: EcgRecord = new EcgRecord();
 				ecgrecord.id = "record_id";

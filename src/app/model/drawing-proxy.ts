@@ -8,6 +8,7 @@ import {
 		EcgWavePoint, EcgWavePointType, EcgAnnotation,
 		EcgSignal, EcgAnnotationCode, EcgLeadCode, EcgRecord
 } from "./ecgdata"
+import { BehaviorSubject } from "rxjs";
 
 // -------------------------------------------------------------------------------------------------
 // DrawingProxy
@@ -19,7 +20,7 @@ export class XDrawingProxy {
 
 		//-------------------------------------------------------------------------------------
 		constructor() {
-				console.info("DrawingProxy constructor");
+				//console.info("DrawingProxy constructor");
 				this.init();
 		}
 
@@ -37,9 +38,11 @@ export class XDrawingProxy {
 		public buildSignal(list: EcgSignal[], client: XDrawingClient) {
 				let o: XDrawingObject;
 				let s: EcgSignal;
+				let skipPx: number = 0;
 				for (let z: number = 0; z < list.length; z++) {
-					o = XDrawingObject.PrepareSignal(z, list[z], this.state, client);
-					this.drawingObjects.push(o);
+						o = XDrawingObject.PrepareSignal(z, list[z], this.state, client, skipPx);
+						skipPx = o.container.maxOx;
+						this.drawingObjects.push(o);
 				}
 		}
 
@@ -65,9 +68,18 @@ export class XDrawingProxy {
 		}
 
 		//-------------------------------------------------------------------------------------
-		private collectChanges(): XDrawingChange {
-				console.info("collect changes not implemented");
+		private collectChanges(sender: XDrawingChangeSender, event: any = null): XDrawingChange {
+				//console.info("collect changes not implemented");
 				let result: XDrawingChange = new XDrawingChange();
+				result.sender = sender;
+				result.curState = this.state;
+				result.objects = new Array();
+				result.clients = new Array();
+				for (let z: number = 0; z < this.drawingObjects.length; z++) {
+						if (this.drawingObjects[z].container.maxOx < this.state.minPx || this.drawingObjects[z].container.minOx > this.state.maxPx) continue;
+						result.objects.push(this.drawingObjects[z]);
+						//if (this.drawingObjects[z].container.left < this.state.skipPx)
+				}
 				return result;
 		}
 
@@ -82,31 +94,35 @@ export class XDrawingProxy {
 		//-------------------------------------------------------------------------------------
 		// Action emmiters
 		//-------------------------------------------------------------------------------------
+
+		//-------------------------------------------------------------------------------------
+		public refreshDrawings() {
+				let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.UpdateDrawings);
+				this.onChangeState.emit(changes);
+		}
+
+		//-------------------------------------------------------------------------------------
 		public preformClick(event: MouseEvent | TouchEvent) {
-				let changes: XDrawingChange = this.collectChanges();
-				changes.sender = XDrawingChangeSender.MouseClick;
+				let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseClick, event);
 				this.onChangeState.emit(changes);
 		}
 
 		//-------------------------------------------------------------------------------------
 		public preformDbClick(event: MouseEvent) {
-				let changes: XDrawingChange = this.collectChanges();
-				changes.sender = XDrawingChangeSender.MouseDbClick;
+				let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseDbClick, event);
 				this.onChangeState.emit(changes);
 		}
 
 
 		//-------------------------------------------------------------------------------------
 		public performDrag(event: any) {
-				let changes: XDrawingChange = this.collectChanges();
-				changes.sender = XDrawingChangeSender.Drag;
+				let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.Drag, event);
 				this.onChangeState.emit(changes);
 		}
 
 		//-------------------------------------------------------------------------------------
 		public performMouseMove(event: any) {
-				let changes: XDrawingChange = this.collectChanges();
-				changes.sender = XDrawingChangeSender.MouseMove;
+				let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseMove, event);
 				this.onChangeState.emit(changes);
 		}
 }

@@ -6,7 +6,12 @@ import { XDrawingProxy } from "../model/drawing-proxy"
 import { DataService } from "../service/data.service"
 import {
 		XDrawingClient, XDrawingMode, XDrawingChange,
-		XDrawingProxyState, XCanvasTool, XRectangle
+		XDrawingProxyState, XCanvasTool, XRectangle,
+		XDrawingCell, XDrawingChangeSender, XLabel,
+		XDrawingGridMode, XDrawingObject, XLine,
+		XDrawingPrimitiveState, XPolyline, XPeak,
+		XDrawingObjectType, XDrawingPrimitive,
+		XPoint
 } from "../model/misc";
 import {
 		EcgAnnotation, EcgAnnotationCode, EcgLeadCode,
@@ -56,6 +61,7 @@ export class DrawableComponent implements OnInit {
 				//console.info("DrawableComponent constructor");
 				this._hideFileDrop = false;
 				this._dp = new XDrawingProxy();
+				this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
 				this._fileReader = new FileReader();
 				this.prepareClients();
 				//this._drawingClients = new Array();
@@ -105,11 +111,20 @@ export class DrawableComponent implements OnInit {
 				if (!v || v === null) return;
 				//console.info("receive", v, "prepare drawings");
 				this.prepareDrawingObjects();
+				this._dp.refreshDrawings();
 		}
 
 		//-------------------------------------------------------------------------------------
 		public onLoadFile(event: ProgressEvent) {
 				this._ds.parseJsonFile(JSON.parse(this._fileReader.result));
+		}
+
+		//-------------------------------------------------------------------------------------
+		private onProxyStateChanges(change: XDrawingChange) {
+				//console.info("onProxyStateChanges:", change);
+				for (let z: number = 0; z < change.objects.length; z++) {
+						change.objects[z].owner.draw(change.objects[z]);//
+				}
 		}
 
 		//-------------------------------------------------------------------------------------
@@ -120,12 +135,13 @@ export class DrawableComponent implements OnInit {
 				this._pqrstClient.mode = XDrawingMode.SVG;
 				this._signalClient = new XDrawingClient();
 				this._signalClient.mode = XDrawingMode.Canvas;
+				this._signalClient.draw = this.drawSignal.bind(this);
 				//this._drawingClients.push(ansClient, pqrstClient);
 		}
 
 		//-------------------------------------------------------------------------------------
 		private prepareDrawingObjects() {
-				this._dp.buildSignal([this._ds.ecgrecord.signal], this._signalClient);
+				this._dp.buildSignal([this._ds.ecgrecord.signal/*, this._ds.ecgrecord.signal*/], this._signalClient);
 				//this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
 				//this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
 		}
@@ -147,4 +163,9 @@ export class DrawableComponent implements OnInit {
 				this._dp.state.container = proxyContainer;
 		}
 
+		//-------------------------------------------------------------------------------------
+		private drawSignal(obj: XDrawingObject) {
+				console.info("draw singal object", obj);
+
+		}
 }
