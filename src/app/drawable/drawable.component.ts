@@ -126,8 +126,8 @@ export class DrawableComponent implements OnInit {
 		//-------------------------------------------------------------------------------------
 		private prepareDrawingObjects() {
 				this._dp.buildSignal([this._ds.ecgrecord.signal], this._signalClient);
-				this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
-				this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
+				//this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
+				//this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
 		}
 
 		//-------------------------------------------------------------------------------------

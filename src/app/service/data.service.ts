@@ -124,7 +124,7 @@ export class DataService {
 				let ecgrecord: EcgRecord = new EcgRecord();
 				ecgrecord.id = "record_id";
 				ecgrecord.signal = new EcgSignal();
-
+				ecgrecord.signal.asSamples = false;
 				if (input.hasOwnProperty(DataService.RECORDING_TIME_KEY)) {
 						ecgrecord.time = new Date(input[DataService.RECORDING_TIME_KEY] as string).getTime();
 				}
@@ -150,7 +150,7 @@ export class DataService {
 				this.onLoadDataBs.next(ecgrecord);
 		}
 
-    //-------------------------------------------------------------------------------------
+		//-------------------------------------------------------------------------------------
 		public get ecgrecord(): EcgRecord {
 				return this.onLoadDataBs.value;
 		}

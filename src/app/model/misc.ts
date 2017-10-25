@@ -105,9 +105,9 @@ export class XDrawingCell {
 		/** Cell signal inversion. */
 		public invert: boolean;
 
-		/** Sample value to pixel convertion MUL coeficient. pixels = sample_value * coef */
+		/** Sample value to pixel convertion MUL coefficient. pixels = sample_value * coef */
 		public sampleValueToPixel: number;
-		/** Microvolts value to pixel convertion MUL coeficient. pixels = microvolts * coef */
+		/** Microvolts value to pixel convertion MUL coefficient. pixels = microvolts * coef */
 		public microvoltsToPixel: number;
 
 		static FLOATING_MUL: number = 100000;
@@ -125,12 +125,12 @@ export class XDrawingProxyState {
 		/** Creation time. */
 		public timestamp: number;
 
-		/** Samples count to pixel convertion MUL coeficient. */
+		/** Samples count to pixel convertion MUL coefficient. */
 		public sampleToPixelRatio: number;
-		/** Samples count to time convertion MUL coeficient. */
+		/** Samples count to time convertion MUL coefficient. */
 		public sampleToTimeRatio: number;
 
-		/** Scale coeficient 1X1. */
+		/** Scale coefficient 1X1. */
 		public scale: number = 1;
 		/** Absolute surfce left offset in pixels. */
 		public skipPx: number;
@@ -139,7 +139,7 @@ export class XDrawingProxyState {
 
 		/** Surface relative size & position.*/
 		public container: XRectangle;
-		/** Pixels in millimeter MUL coeficient . */
+		/** Pixels in millimeter MUL coefficient. */
 		public apxmm: number;
 		/** Maximum declared sample value. */
 		public maxSample: number;
@@ -199,10 +199,10 @@ export class XDrawingProxyState {
 						this.gridCells[z].container = this.container;
 						this.gridCells[z].lead = leads[z];
 						this.gridCells[z].leadLabel = leadLabels[z];
-						// prepare mul coeficients
+						// prepare mul coefficients
 						signalHeight = this.gridCells[z].container.height / 2;
-						this.gridCells[z].sampleValueToPixel = Math.floor((signalHeight / this.maxSample) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
-						this.gridCells[z].microvoltsToPixel = Math.floor((signalHeight / this.signalSamplesClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
+						this.gridCells[z].sampleValueToPixel = Math.floor((signalHeight / this.signalSamplesClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
+						this.gridCells[z].microvoltsToPixel = Math.floor((signalHeight / this.signalMicrovoltsClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
 				}
 				this.limitPx = this.gridCells[0].container.width;
 		}
@@ -280,20 +280,24 @@ export class XDrawingObject {
 		static PrepareSignal(i: number, s: EcgSignal, state: XDrawingProxyState, owner: XDrawingClient): XDrawingObject {
 				let result: XDrawingObject = new XDrawingObject();
 				result.polylines = new Array(state.gridCells.length);
-				let channelIndex: number;
+				/** channel index */
+				let chIndex: number;
 				let points: XPoint[];
 				let cell: XDrawingCell;
+				/** transform coefficient */
+				let coef: number;
 				let samples: number[];
 				let y: number, z: number, dy: number, top: number, left: number;
 				for (z = 0; z < state.gridCells.length; z++) {
 						cell = state.gridCells[z];
+						coef = s.asSamples ? cell.sampleValueToPixel : cell.microvoltsToPixel;
 						result.polylines[z] = new XPolyline([]);
-						channelIndex = s.leads.indexOf(cell.lead);
-						if (channelIndex < 0) continue;
-						samples = s.channels[channelIndex];
+						chIndex = s.leads.indexOf(cell.lead);
+						if (chIndex < 0) continue;
+						samples = s.channels[chIndex];
 						points = new Array(samples.length);
 						for (y = 0; y < samples.length; y++) {
-								dy = Math.floor(samples[y] * cell.sampleValueToPixel);
+								dy = Math.round(samples[y] * coef);
 								left = cell.container.left + y;
 								top = cell.invert ? (cell.container.midOy + dy) : (cell.container.midOy - dy);
 								points[y] = new XPoint(left, top);
@@ -302,7 +306,6 @@ export class XDrawingObject {
 				}
 				return result;
 		}
-
 }
 
 

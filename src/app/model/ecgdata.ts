@@ -70,9 +70,11 @@ export class EcgRecord {
 // -------------------------------------------------------------------------------------------------
 export class EcgSignal {
 		public sampleCount: number;
-		public channels: number[][];
+		public channels: number[][]; // [channel_index], [microvolts_value]
 		public sampleRate: number;
 		public leads: EcgLeadCode[];
+
+		public asSamples: boolean;
 }
 
 // -------------------------------------------------------------------------------------------------
