@@ -1,4 +1,3 @@
-import * as Long from "@types/long";
 import { EventEmitter } from "@angular/core";
 import {
 		XDrawingChange, XDrawingMode, XDrawingProxyState,
@@ -29,16 +28,18 @@ export class XDrawingProxy {
 				//console.info("prepare wavepoints for client", "create XDrawingObject for eacg  EcgWavePoint element.");
 				let o: XDrawingObject;
 				for (let z: number = 0; z < list.length; z++) {
-						o = XDrawingObject.prepareWavePoint(z, list[z], client);
-						this.drawingObjects.push(o)
+						o = XDrawingObject.PrepareWavePoint(z, list[z], this.state, client);
+						this.drawingObjects.push(o);
 				}
 		}
 
 		//-------------------------------------------------------------------------------------
 		public buildSignal(list: EcgSignal[], client: XDrawingClient) {
 				let o: XDrawingObject;
+				let s: EcgSignal;
 				for (let z: number = 0; z < list.length; z++) {
-
+					o = XDrawingObject.PrepareSignal(z, list[z], this.state, client);
+					this.drawingObjects.push(o);
 				}
 		}
 
@@ -46,7 +47,7 @@ export class XDrawingProxy {
 		public buildAnnotations(list: EcgAnnotation[], client: XDrawingClient) {
 				let o: XDrawingObject;
 				for (let z: number = 0; z < list.length; z++) {
-						o = XDrawingObject.prepareAnnotation(z, list[z], client);
+						o = XDrawingObject.PrepareAnnotation(z, list[z], this.state, client);
 						this.drawingObjects.push(o)
 				}
 		}

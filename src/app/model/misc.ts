@@ -1,4 +1,8 @@
-import { EcgLeadCode, EcgWavePoint, EcgAnnotation } from "./ecgdata";
+import {
+		EcgLeadCode, EcgWavePoint, EcgAnnotation,
+		EcgAnnotationCode, EcgRecord, EcgSignal,
+		EcgWavePointType
+} from "./ecgdata";
 
 // -------------------------------------------------------------------------------------------------
 // Drawing mode
@@ -173,7 +177,6 @@ export class XDrawingProxyState {
 				this.gridMode = XDrawingGridMode.EMPTY;
 		}
 
-
 		//-------------------------------------------------------------------------------------------------
 		/** Returns signal cells by row index. */
 		public getGridRowCells(ri: number): XDrawingCell[] {
@@ -188,6 +191,7 @@ export class XDrawingProxyState {
 
 				let cellContainer: XRectangle;
 				this.gridCells = new Array(leads.length);
+				let signalHeight: number;
 				for (let z: number = 0; z < leads.length; z++) {
 						this.gridCells[z] = new XDrawingCell();
 						this.gridCells[z].index = z;
@@ -196,8 +200,9 @@ export class XDrawingProxyState {
 						this.gridCells[z].lead = leads[z];
 						this.gridCells[z].leadLabel = leadLabels[z];
 						// prepare mul coeficients
-						this.gridCells[z].sampleValueToPixel = Math.floor((this.gridCells[z].container.height / this.maxSample) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
-						this.gridCells[z].microvoltsToPixel = Math.floor((this.gridCells[z].container.height / this.signalSamplesClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
+						signalHeight = this.gridCells[z].container.height / 2;
+						this.gridCells[z].sampleValueToPixel = Math.floor((signalHeight / this.maxSample) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
+						this.gridCells[z].microvoltsToPixel = Math.floor((signalHeight / this.signalSamplesClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
 				}
 				this.limitPx = this.gridCells[0].container.width;
 		}
@@ -218,9 +223,10 @@ export class XDrawingObject {
 		public type: XDrawingObjectType;
 		/** Container of drawing object (required). */
 		public container: XRectangle;
-		/**Drawing object points (relative coordinates, optional).
-    * Signal, beats */
+		/**Drawing object points (relative coordinates, optional). Beats */
 		public points: XPoint[];
+		/** Drawing object polylines. Signal*/
+		public polylines: XPolyline[];
 		/** Drawing object rectangels (relative coordinates, optional).
     * Annotations background*/
 		public rectangles: XRectangle[];
@@ -231,9 +237,13 @@ export class XDrawingObject {
 		public labels: XLabel[];
 		public peaks: XPeak[];
 
+		//-------------------------------------------------------------------------------------
+		constructor() {
+				this.container = new XRectangle(0, 0, 0, 0);
+		}
 
 		//-------------------------------------------------------------------------------------
-		static prepareWavePoint(i: number, ewp: EcgWavePoint, owner: XDrawingClient): XDrawingObject {
+		static PrepareWavePoint(i: number, ewp: EcgWavePoint, state: XDrawingProxyState, owner: XDrawingClient): XDrawingObject {
 				let result: XDrawingObject = new XDrawingObject();
 				result.index = i;
 				result.owner = owner;
@@ -250,13 +260,49 @@ export class XDrawingObject {
 		}
 
 		//-------------------------------------------------------------------------------------
-		static prepareAnnotation(i: number, an: EcgAnnotation, owner: XDrawingClient): XDrawingObject {
+		static PrepareAnnotation(i: number, an: EcgAnnotation, state: XDrawingProxyState, owner: XDrawingClient): XDrawingObject {
 				let result: XDrawingObject = new XDrawingObject();
 				result.index = i;
 				result.owner = owner;
 				//console.warn("NOT IMPLEMENTED");
 				return result;
 		}
+
+		//-------------------------------------------------------------------------------------
+    /**
+     * Create XDrawingObject for each EcgSignal.
+     * XPoints[count][], count = EcgSignal.leads.count.
+     * @param i index
+     * @param s signal
+     * @param state proxy state
+     * @param owner object owner
+     */
+		static PrepareSignal(i: number, s: EcgSignal, state: XDrawingProxyState, owner: XDrawingClient): XDrawingObject {
+				let result: XDrawingObject = new XDrawingObject();
+				result.polylines = new Array(state.gridCells.length);
+				let channelIndex: number;
+				let points: XPoint[];
+				let cell: XDrawingCell;
+				let samples: number[];
+				let y: number, z: number, dy: number, top: number, left: number;
+				for (z = 0; z < state.gridCells.length; z++) {
+						cell = state.gridCells[z];
+						result.polylines[z] = new XPolyline([]);
+						channelIndex = s.leads.indexOf(cell.lead);
+						if (channelIndex < 0) continue;
+						samples = s.channels[channelIndex];
+						points = new Array(samples.length);
+						for (y = 0; y < samples.length; y++) {
+								dy = Math.floor(samples[y] * cell.sampleValueToPixel);
+								left = cell.container.left + y;
+								top = cell.invert ? (cell.container.midOy + dy) : (cell.container.midOy - dy);
+								points[y] = new XPoint(left, top);
+						}
+						result.polylines[z].rebuild(points);
+				}
+				return result;
+		}
+
 }
 
 
@@ -598,6 +644,30 @@ export class XLine extends XDrawingPrimitive {
 
 }
 
+//-------------------------------------------------------------------------------------------------
+// Polyline 
+//-------------------------------------------------------------------------------------------------
+export class XPolyline extends XDrawingPrimitive {
+		private _points: XPoint[];
+
+		//-------------------------------------------------------------------------------------------------
+		constructor(p: XPoint[]) {
+				super();
+				this.init(p);
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public rebuild(p: XPoint[]) {
+				this.init(p);
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public init(p: XPoint[]) {
+				this._points = [];
+				this._points = p;
+		}
+
+}
 
 //-------------------------------------------------------------------------------------------------
 // Label in position
