@@ -35,6 +35,7 @@ export class DrawableComponent implements OnInit {
 		private _ansClient: XDrawingClient;
 		private _pqrstClient: XDrawingClient;
 		private _signalClient: XDrawingClient;
+		private _testBeatsClient: XDrawingClient;
 		private _fileReader: FileReader;
 		private _hideFileDrop: boolean;
 		/**Canvas tool. */
@@ -247,12 +248,16 @@ export class DrawableComponent implements OnInit {
 				this._signalClient = new XDrawingClient();
 				this._signalClient.mode = XDrawingMode.Canvas;
 				this._signalClient.draw = this.drawSignal.bind(this);
+				this._testBeatsClient = new XDrawingClient();
+				this._testBeatsClient.mode = XDrawingMode.Canvas;
+				this._testBeatsClient.draw = this.drawTestBeats.bind(this);
 				//this._drawingClients.push(ansClient, pqrstClient);
 		}
 
 		//-------------------------------------------------------------------------------------
 		private prepareDrawingObjects() {
 				this._dp.buildSignal([this._ds.ecgrecord.signal/*, this._ds.ecgrecord.signal*/], this._signalClient);
+				this._dp.buildTestBeats(this._ds.ecgrecord.beats, this._testBeatsClient);
 				//this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
 				//this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
 		}
@@ -298,6 +303,11 @@ export class DrawableComponent implements OnInit {
 				this._ct.ctx.stroke();
 				this._ct.ctx.closePath();
 				this._ct.ctx.restore();
+		}
+
+    //-------------------------------------------------------------------------------------
+		private drawTestBeats(obj: XDrawingObject) {
+
 		}
 
 		//-------------------------------------------------------------------------------------

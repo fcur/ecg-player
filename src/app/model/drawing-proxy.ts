@@ -57,6 +57,15 @@ export class XDrawingProxy {
 		}
 
 		//-------------------------------------------------------------------------------------
+		public buildTestBeats(list: number[], client: XDrawingClient) {
+				let o: XDrawingObject;
+				for (let z: number = 0; z < list.length; z++) {
+
+						this.drawingObjects.push(o);
+				}
+		}
+
+		//-------------------------------------------------------------------------------------
 		public buildAnnotations(list: EcgAnnotation[], client: XDrawingClient) {
 				let o: XDrawingObject;
 				for (let z: number = 0; z < list.length; z++) {
