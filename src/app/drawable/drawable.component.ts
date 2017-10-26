@@ -39,7 +39,6 @@ export class DrawableComponent implements OnInit {
 		private _hideFileDrop: boolean;
 		/**Canvas tool. */
 		private _ct: XCanvasTool;
-
 		private _loadDataSubs: Subscription = null;
 
 		//-------------------------------------------------------------------------------------
@@ -47,6 +46,66 @@ export class DrawableComponent implements OnInit {
 		private _drawingElement: ElementRef;
 		@ViewChild("canvasCont")
 		private _canvasContainer: ElementRef;
+
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:mouseenter", ["$event"]) onWindowMouseenter(event: MouseEvent) {
+				//console.info("window:mouseenter", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:mouseover", ["$event"]) onWindowMouseover(event: MouseEvent) {
+				//console.info("window:mouseover", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:mousemove", ["$event"]) onWindowMousemove(event: MouseEvent) {
+				//console.info("window:mousemove", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:mousedown", ["$event"]) onWindowMousedown(event: MouseEvent) {
+				//console.info("window:mousedown", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:mouseleave", ["$event"]) onWindowMouseleave(event: MouseEvent) {
+				//console.info("window:mouseleave", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:mouseout", ["$event"]) onWindowMouse(event: MouseEvent) {
+				//console.info("window:mouseout", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:mouseup", ["$event"]) onWindowMouseup(event: MouseEvent) {
+				//console.info("window:mouseup", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:auxclick", ["$event"]) onWindowAuxclick(event: MouseEvent) {
+				//console.info("window:auxclick", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:click", ["$event"]) onWindowClick(event: MouseEvent) {
+				//console.info("window:click", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:dblclick", ["$event"]) onWindowDblclick(event: MouseEvent) {
+				//console.info("window:dblclick", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:touchcancel", ["$event"]) onWindowTouchcancel(event: TouchEvent) {
+				//console.info("window:touchcancel", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:touchend", ["$event"]) onWindowTouchend(event: TouchEvent) {
+				//console.info("window:touchend", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:touchmove", ["$event"]) onWindowTouchmove(event: TouchEvent) {
+				//console.info("window:touchmove", event);
+		}
+		//-------------------------------------------------------------------------------------
+		@HostListener("window:touchstart", ["$event"]) onWindowTouchstart(event: TouchEvent) {
+				//console.info("window:touchstart", event);
+		}
+
+
+
 		//-------------------------------------------------------------------------------------
 		@HostListener("window:resize", ["$event"]) onWindowResize(event: Event) {
 				// TODO: fix resize bug
