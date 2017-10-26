@@ -4,7 +4,7 @@
   background-color: aqua;
   background-color: aliceblue;
   text-align: center;
-  min-height: 4vmin;
+  min-height: 2vmin;
 }
 
 .cm {
@@ -21,21 +21,21 @@
   background-color: brown;
   background-color: aliceblue;
   text-align: center;
-  min-height: 4vmin;
+  min-height: 2vmin;
 }
 
 .cml {
   display: flex;
   background-color: crimson;
   background-color: aliceblue;
-  min-width: 4vmin;
+  min-width: 2vmin;
 }
 
 .cmr {
   display: flex;
   background-color: darkgreen;
   background-color: aliceblue;
-  min-width: 4vmin;
+  min-width: 2vmin;
 }
 
 .cmc {

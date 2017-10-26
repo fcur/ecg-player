@@ -39,7 +39,9 @@ export class DrawableComponent implements OnInit {
 		private _hideFileDrop: boolean;
 		/**Canvas tool. */
 		private _ct: XCanvasTool;
-		private _loadDataSubs: Subscription = null;
+		private _loadDataSubs: Subscription;
+		private _waveformDragStartPosition: XPoint;
+
 
 		//-------------------------------------------------------------------------------------
 		@ViewChild("waveformCanvas")
@@ -48,63 +50,85 @@ export class DrawableComponent implements OnInit {
 		private _canvasContainer: ElementRef;
 
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:mouseenter", ["$event"]) onWindowMouseenter(event: MouseEvent) {
+		@HostListener("window:mouseenter", ["$event"])
+		private onWindowMouseenter(event: MouseEvent) {
 				//console.info("window:mouseenter", event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:mouseover", ["$event"]) onWindowMouseover(event: MouseEvent) {
+		@HostListener("window:mouseover", ["$event"])
+		private onWindowMouseover(event: MouseEvent) {
 				//console.info("window:mouseover", event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:mousemove", ["$event"]) onWindowMousemove(event: MouseEvent) {
+		@HostListener("window:mousemove", ["$event"])
+		private onWindowMousemove(event: MouseEvent) {
 				//console.info("window:mousemove", event);
+				//console.info(event);
+				this.onDragMove(event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:mousedown", ["$event"]) onWindowMousedown(event: MouseEvent) {
+		@HostListener("window:mousedown", ["$event"])
+		private onWindowMousedown(event: MouseEvent) {
 				//console.info("window:mousedown", event);
+				this.onDragStart(event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:mouseleave", ["$event"]) onWindowMouseleave(event: MouseEvent) {
+		@HostListener("window:mouseleave", ["$event"])
+		private onWindowMouseleave(event: MouseEvent) {
 				//console.info("window:mouseleave", event);
+				this.onDragEnd(event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:mouseout", ["$event"]) onWindowMouse(event: MouseEvent) {
+		@HostListener("window:mouseout", ["$event"])
+		private onWindowMouse(event: MouseEvent) {
 				//console.info("window:mouseout", event);
+				this.onDragEnd(event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:mouseup", ["$event"]) onWindowMouseup(event: MouseEvent) {
+		@HostListener("window:mouseup", ["$event"])
+		private onWindowMouseup(event: MouseEvent) {
 				//console.info("window:mouseup", event);
+				this.onDragEnd(event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:auxclick", ["$event"]) onWindowAuxclick(event: MouseEvent) {
+		@HostListener("window:auxclick", ["$event"])
+		private onWindowAuxclick(event: MouseEvent) {
 				//console.info("window:auxclick", event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:click", ["$event"]) onWindowClick(event: MouseEvent) {
+		@HostListener("window:click", ["$event"])
+		private onWindowClick(event: MouseEvent) {
 				//console.info("window:click", event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:dblclick", ["$event"]) onWindowDblclick(event: MouseEvent) {
+		@HostListener("window:dblclick", ["$event"])
+		private onWindowDblclick(event: MouseEvent) {
 				//console.info("window:dblclick", event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:touchcancel", ["$event"]) onWindowTouchcancel(event: TouchEvent) {
+		@HostListener("window:touchcancel", ["$event"])
+		private onWindowTouchcancel(event: TouchEvent) {
 				//console.info("window:touchcancel", event);
+				this.onDragEnd(event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:touchend", ["$event"]) onWindowTouchend(event: TouchEvent) {
+		@HostListener("window:touchend", ["$event"])
+		private onWindowTouchend(event: TouchEvent) {
 				//console.info("window:touchend", event);
+				this.onDragEnd(event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:touchmove", ["$event"]) onWindowTouchmove(event: TouchEvent) {
+		@HostListener("window:touchmove", ["$event"])
+		private onWindowTouchmove(event: TouchEvent) {
 				//console.info("window:touchmove", event);
+				this.onDragMove(event);
 		}
 		//-------------------------------------------------------------------------------------
-		@HostListener("window:touchstart", ["$event"]) onWindowTouchstart(event: TouchEvent) {
+		@HostListener("window:touchstart", ["$event"])
+		private onWindowTouchstart(event: TouchEvent) {
 				//console.info("window:touchstart", event);
+				this.onDragStart(event);
 		}
-
-
 
 		//-------------------------------------------------------------------------------------
 		@HostListener("window:resize", ["$event"]) onWindowResize(event: Event) {
@@ -119,6 +143,8 @@ export class DrawableComponent implements OnInit {
 				private _ds: DataService) {
 				//console.info("DrawableComponent constructor");
 				this._hideFileDrop = false;
+				this._loadDataSubs = null;
+				this._waveformDragStartPosition = null;
 				this._dp = new XDrawingProxy();
 				this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
 				this._fileReader = new FileReader();
@@ -127,7 +153,7 @@ export class DrawableComponent implements OnInit {
 		}
 
 		//-------------------------------------------------------------------------------------
-		ngOnInit() {
+		public ngOnInit() {
 				//console.info("DrawableComponent: init");
 				this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
 				this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord));
@@ -136,7 +162,7 @@ export class DrawableComponent implements OnInit {
 		}
 
 		//-------------------------------------------------------------------------------------
-		ngAfterContentInit() {
+		public ngAfterContentInit() {
 				this._ct = new XCanvasTool(this._drawingElement);
 				this.prepareCanvasSize();
 				this._dp.state.limitPx = this._ct.width;
@@ -145,7 +171,7 @@ export class DrawableComponent implements OnInit {
 		}
 
 		//-------------------------------------------------------------------------------------
-		ngOnDestroy() {
+		public ngOnDestroy() {
 				//console.info("DrawableComponent: destroy");
 				if (this._loadDataSubs) this._loadDataSubs.unsubscribe();
 		}
@@ -163,6 +189,31 @@ export class DrawableComponent implements OnInit {
 				event.preventDefault();
 				let files: FileList = event.dataTransfer.files;
 				this._fileReader.readAsText(files[0]);
+		}
+
+		//-------------------------------------------------------------------------------------
+		private onDragStart(event: any) {
+				this._waveformDragStartPosition = this.getEventPosition(event);
+		}
+
+		//-------------------------------------------------------------------------------------
+		private onDragMove(event: any) {
+				if (!this._waveformDragStartPosition) return;
+				this.scroll(event);
+		}
+
+		//-------------------------------------------------------------------------------------
+		private onDragEnd(event: any) {
+				if (!this._waveformDragStartPosition) return;
+				this._waveformDragStartPosition = null;
+		}
+
+		//----------------------------------------------------------------------------------------------
+		private getEventPosition(event: any): XPoint {
+				if (event.clientX) return new XPoint(event.clientX, event.clientY);
+				else if (event.touches && event.touches[0])
+						return new XPoint(event.touches[0].clientX, event.touches[0].clientY);
+				else return new XPoint(0, 0);
 		}
 
 		//-------------------------------------------------------------------------------------
@@ -231,17 +282,31 @@ export class DrawableComponent implements OnInit {
 				this._ct.ctx.beginPath();
 				let skipPoints: number = 0;
 				let points: XPoint[];
-				let z: number = 0, y: number = 0;
+				let z: number = 0, y: number = 0, left: number = 0, top: number = 0;
 				for (z = 0; z < state.gridCells.length; z++) { // z - cell index, polyline index
 						points = obj.polylines[z].points
-						y = state.skipPx;
-						this._ct.ctx.moveTo(points[y].left + 0.5, points[y].top + 0.5); // y - point index
+						y = state.minPx;
+						left = points[y].left + 0.5 - state.minPx;
+						top = points[y].top + 0.5;
+						this._ct.ctx.moveTo(left, top); // y - point index
 						for (y++; y < state.maxPx; y++) {
-								this._ct.ctx.lineTo(points[y].left + 0.5, points[y].top + 0.5);
+								left = points[y].left + 0.5 - state.minPx;
+								top = points[y].top + 0.5;
+								this._ct.ctx.lineTo(left, top);
 						}
 				}
 				this._ct.ctx.stroke();
 				this._ct.ctx.closePath();
 				this._ct.ctx.restore();
 		}
+
+		//-------------------------------------------------------------------------------------
+		private scroll(event: any) {
+				let endpoint: XPoint = this.getEventPosition(event);
+				let actionPoint: XPoint = this._waveformDragStartPosition.subtract(endpoint);
+				this._waveformDragStartPosition = endpoint;
+				this._dp.scroll(actionPoint.left);
+				this._dp.refreshDrawings();
+		}
+
 }

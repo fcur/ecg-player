@@ -163,6 +163,10 @@ export class XDrawingProxyState {
 		/**  Surface grid cells mode.*/
 		public gridMode: XDrawingGridMode;
 
+		//-------------------------------------------------------------------------------------------------
+		public set scroll(delta: number) {
+				this.skipPx = Math.max(Math.floor(this.skipPx + delta), 0);
+		}
 
 		//-------------------------------------------------------------------------------------------------
 		public get minPx(): number {
