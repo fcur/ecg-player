@@ -35,7 +35,7 @@ export class DrawableComponent implements OnInit {
 		private _ansClient: XDrawingClient;
 		private _pqrstClient: XDrawingClient;
 		private _signalClient: XDrawingClient;
-		private _testBeatsClient: XDrawingClient;
+		private _beatsClient: XDrawingClient;
 		private _fileReader: FileReader;
 		private _hideFileDrop: boolean;
 		/**Canvas tool. */
@@ -248,16 +248,16 @@ export class DrawableComponent implements OnInit {
 				this._signalClient = new XDrawingClient();
 				this._signalClient.mode = XDrawingMode.Canvas;
 				this._signalClient.draw = this.drawSignal.bind(this);
-				this._testBeatsClient = new XDrawingClient();
-				this._testBeatsClient.mode = XDrawingMode.Canvas;
-				this._testBeatsClient.draw = this.drawTestBeats.bind(this);
+				this._beatsClient = new XDrawingClient();
+				this._beatsClient.mode = XDrawingMode.Canvas;
+				this._beatsClient.draw = this.drawBeats.bind(this);
 				//this._drawingClients.push(ansClient, pqrstClient);
 		}
 
 		//-------------------------------------------------------------------------------------
 		private prepareDrawingObjects() {
 				this._dp.buildSignal([this._ds.ecgrecord.signal/*, this._ds.ecgrecord.signal*/], this._signalClient);
-				this._dp.buildTestBeats(this._ds.ecgrecord.beats, this._testBeatsClient);
+				this._dp.buildTestBeats([this._ds.ecgrecord.beats], this._beatsClient);
 				//this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
 				//this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
 		}
@@ -305,9 +305,29 @@ export class DrawableComponent implements OnInit {
 				this._ct.ctx.restore();
 		}
 
-    //-------------------------------------------------------------------------------------
-		private drawTestBeats(obj: XDrawingObject) {
-
+		//-------------------------------------------------------------------------------------
+		private drawBeats(obj: XDrawingObject) {
+				//console.info("draw beats", obj);
+				let state: XDrawingProxyState = this._dp.state;
+				this._ct.ctx.save();
+				let radius: number = 1;
+				this._ct.ctx.beginPath();
+				let z: number = 0, y: number = 0,
+						left: number = 0, top: number = 0,
+						absLeft: number = 0;
+				let curPoint: XPoint;
+				for (z = 0; z < obj.points.length; z++) {
+						curPoint = obj.points[z];
+						absLeft = curPoint.left + obj.container.left;
+						if (absLeft < state.minPx) continue;
+						if (absLeft > state.maxPx) break;
+						left = absLeft - state.minPx;
+						top = obj.container.top + curPoint.top;
+						this._ct.ctx.moveTo(left + 0.5, top + 0.5);
+						this._ct.ctx.arc(left + 0.5, top + 0.5, radius, 0, 2 * Math.PI, false);
+				}
+				this._ct.ctx.stroke();
+				this._ct.ctx.restore();
 		}
 
 		//-------------------------------------------------------------------------------------

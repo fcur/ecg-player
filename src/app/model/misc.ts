@@ -299,6 +299,32 @@ export class XDrawingObject {
 		}
 
 		//-------------------------------------------------------------------------------------
+		static PrepareBeats(i: number, beats: number[], state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0, pin: boolean = true): XDrawingObject {
+				let result: XDrawingObject = new XDrawingObject();
+				pin = false;
+				result.index = i;
+				result.owner = owner;
+				result.points = new Array(beats.length);
+				let left: number;
+				let staticTop: number = state.container.top + 10; // top position
+				for (let z: number = 0; z < beats.length; z++) {
+						left = beats[z] + state.container.left;
+						if (!pin) {
+								// add beat on top of container
+								result.points[z] = new XPoint(left, staticTop);
+						} else {
+								// add beat on each cell sample
+								// find sample position
+						}
+				}
+				result.container.left = skipPixels;
+				result.container.width = beats[beats.length - 1] + 1; // add extra pixel
+				result.container.height = state.container.height;
+
+				return result;
+		}
+
+		//-------------------------------------------------------------------------------------
     /**
      * Create XDrawingObject for each EcgSignal.
      * XPoints[count][], count = EcgSignal.leads.count.
@@ -742,21 +768,13 @@ export class XPeak extends XDrawingPrimitive {
 
 
 
-
-
-//-------------------------------------------------------------------------------------------------
-// Drawing data
-//-------------------------------------------------------------------------------------------------
-//export class XDrawingData {
-
-//}
-
-
 import { ElementRef } from "@angular/core";
 //-------------------------------------------------------------------------------------------------
 // Canvas tool
 //-------------------------------------------------------------------------------------------------
 export class XCanvasTool {
+		// TODO: group&draw primitives on canvas
+		// group by: z-index, color, type
 
 		public width: number;
 		public height: number;

@@ -46,6 +46,7 @@ export class XDrawingProxy {
 
 		//-------------------------------------------------------------------------------------
 		public buildSignal(list: EcgSignal[], client: XDrawingClient) {
+				if (!Array.isArray(list) || !client) return;
 				let o: XDrawingObject;
 				let s: EcgSignal;
 				let skipPx: number = 0;
@@ -57,11 +58,15 @@ export class XDrawingProxy {
 		}
 
 		//-------------------------------------------------------------------------------------
-		public buildTestBeats(list: number[], client: XDrawingClient) {
+		public buildTestBeats(list: number[][], client: XDrawingClient) {
+				if (!Array.isArray(list) || !client) return;
 				let o: XDrawingObject;
+				let skipPx: number = 0;
 				for (let z: number = 0; z < list.length; z++) {
-
+						if (!Array.isArray(list[z])) continue; // beats
+						o = XDrawingObject.PrepareBeats(z, list[z], this.state, client, skipPx);
 						this.drawingObjects.push(o);
+						skipPx = o.container.maxOx;
 				}
 		}
 
