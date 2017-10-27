@@ -288,22 +288,20 @@ export class DrawableComponent implements OnInit {
 				this._ct.ctx.beginPath();
 				let skipPoints: number = 0;
 				let points: XPoint[];
-				let axisY: number = 0;
 				let z: number = 0, y: number = 0, left: number = 0, top: number = 0;
 				let dy: number;
 				for (z = 0; z < obj.polylines.length; z++) { // z - cell index, polyline index
 						points = obj.polylines[z].points;
-						axisY = state.gridCells[z].container.midOy;
-						y = state.minPx;
+						y = state.minPx; // y - point index
 
 						left = points[y].left + 0.5 - state.minPx;
-						dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel) + axisY;
-						top = dy + 0.5;
-						this._ct.ctx.moveTo(left, top); // y - point index
+						dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
+						top = dy + 0.5 + state.gridCells[z].container.midOy;
+						this._ct.ctx.moveTo(left, top);
 						for (y++; y < state.maxPx; y++) {
 								left = points[y].left + 0.5 - state.minPx;
-								dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel) + axisY;
-								top = dy + 0.5;
+								dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
+								top = dy + 0.5 + state.gridCells[z].container.midOy;
 								this._ct.ctx.lineTo(left, top);
 						}
 				}
