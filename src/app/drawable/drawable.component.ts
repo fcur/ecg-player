@@ -73,6 +73,7 @@ export class DrawableComponent implements OnInit {
 				//console.info("window:mousedown", event);
 				this.onDragStart(event);
 		}
+
 		//-------------------------------------------------------------------------------------
 		@HostListener("window:mouseleave", ["$event"])
 		private onWindowMouseleave(event: MouseEvent) {
@@ -288,7 +289,7 @@ export class DrawableComponent implements OnInit {
 				let skipPoints: number = 0;
 				let points: XPoint[];
 				let z: number = 0, y: number = 0, left: number = 0, top: number = 0;
-				for (z = 0; z < state.gridCells.length; z++) { // z - cell index, polyline index
+				for (z = 0; z < obj.polylines.length; z++) { // z - cell index, polyline index
 						points = obj.polylines[z].points
 						y = state.minPx;
 						left = points[y].left + 0.5 - state.minPx;
