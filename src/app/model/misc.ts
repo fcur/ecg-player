@@ -101,6 +101,11 @@ export class XDrawingCell {
 		public container: XRectangle;
 		/** Cell index. */
 		public index: number;
+		/** Cell ROW index. */
+		public cellRowIndex: number;
+		/** Cell COLUMN index. */
+		public cellColumnIndex: number;
+
 		/** Cell assigned lead code. */
 		public lead: EcgLeadCode;
 		/** Cell assigned lead text. */
@@ -112,6 +117,8 @@ export class XDrawingCell {
 		public sampleValueToPixel: number;
 		/** Microvolts value to pixel convertion MUL coefficient. pixels = microvolts * coef */
 		public microvoltsToPixel: number;
+    /** Cell signal height to pixels.  */
+		public vhp: number;
 
 		static FLOATING_MUL: number = 100000;
 
@@ -219,11 +226,14 @@ export class XDrawingProxyState {
 				let cellLeft: number, cellTop: number, z: number, y: number;
 				let cellContainer: XRectangle;
 				cellLeft = this.container.left;
+				let ci: number; // column indx
 				this.gridCells = new Array(leads.length);
-				for (z = 0, cellTop = 0; z < leads.length; z++) {
+				for (z = 0, cellTop = 0, ci = 0; z < leads.length; z++ , ci++) {
 						for (y = 0; y < rwCount; y++ , z++) {
 								this.gridCells[z] = new XDrawingCell();
 								this.gridCells[z].index = z;
+								this.gridCells[z].cellRowIndex = y;
+								this.gridCells[z].cellColumnIndex = ci;
 								this.gridCells[z].container = new XRectangle(cellLeft, cellTop, cellWidth, cellHeight);
 								this.gridCells[z].lead = leads[z];
 								this.gridCells[z].leadLabel = leadLabels[z];
@@ -231,6 +241,7 @@ export class XDrawingProxyState {
 								this.gridCells[z].sampleValueToPixel = Math.floor((signalHeight / this.signalSamplesClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
 								this.gridCells[z].microvoltsToPixel = Math.floor((signalHeight / this.signalMicrovoltsClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
 								cellTop = this.gridCells[z].container.maxOy + space;
+								//console.info("z:", this.gridCells[z].index, "row:", this.gridCells[z].cellRowIndex, "column:", this.gridCells[z].cellColumnIndex);
 						}
 						cellLeft += cellWidth + space;
 				}
@@ -344,21 +355,23 @@ export class XDrawingObject {
 				let points: XPoint[];
 				let cell: XDrawingCell;
 				/** transform coefficient */
-				let coef: number;
+				//let coef: number;
 				let data: number[];
 				let y: number = 0, z: number = 0, dy: number = 0, top: number = 0, left: number = 0;
 				for (z = 0; z < state.gridCells.length; z++) {
 						cell = state.gridCells[z];
-						coef = s.asSamples ? cell.sampleValueToPixel : cell.microvoltsToPixel;
+						//coef = s.asSamples ? cell.sampleValueToPixel : cell.microvoltsToPixel;
 						result.polylines[z] = new XPolyline([]);
 						chIndex = s.leads.indexOf(cell.lead);
 						if (chIndex < 0) continue;
 						data = s.channels[chIndex];
 						points = new Array(data.length);
 						for (y = 0; y < data.length; y++) {
-								dy = Math.round(data[y] * coef);
+								//dy = Math.round(data[y] * coef);
 								left = cell.container.left + y;
-								top = cell.invert ? (cell.container.midOy + dy) : (cell.container.midOy - dy);
+								//top = cell.invert ? (cell.container.midOy + dy) : (cell.container.midOy - dy);
+								//top = cell.invert ? dy : -dy;
+								top = data[y];// save microvolts as responsive top position
 								points[y] = new XPoint(left, top);
 						}
 						result.polylines[z].rebuild(points);
