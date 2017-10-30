@@ -117,7 +117,7 @@ export class XDrawingCell {
 		public sampleValueToPixel: number;
 		/** Microvolts value to pixel convertion MUL coefficient. pixels = microvolts * coef */
 		public microvoltsToPixel: number;
-    /** Cell signal height to pixels.  */
+		/** Cell signal height to pixels.  */
 		public vhp: number;
 
 		static FLOATING_MUL: number = 100000;
@@ -258,6 +258,8 @@ export class XDrawingProxyState {
 export class XDrawingObject {
 		/** Object index. */
 		public index: number;
+		/** Object inner indexes. */
+		public indexes: number[];
 		/** Object owner. */
 		public owner: XDrawingClient;
 		/** Object type. */
@@ -284,9 +286,10 @@ export class XDrawingObject {
 		}
 
 		//-------------------------------------------------------------------------------------
-		static PrepareWavePoint(i: number, ewp: EcgWavePoint, state: XDrawingProxyState, owner: XDrawingClient): XDrawingObject {
+		static PrepareWavePoint(i: number, ewp: EcgWavePoint[], ewpinx: number[], state: XDrawingProxyState, owner: XDrawingClient): XDrawingObject {
 				let result: XDrawingObject = new XDrawingObject();
-				result.index = i;
+				result.index = i; // drawing object index
+				result.indexes = ewpinx; // wavepoint index
 				result.owner = owner;
 				// TODO: switch wavepoint type, add different elements for different types
 				result.type = XDrawingObjectType.PQRST;

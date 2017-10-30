@@ -38,8 +38,9 @@ export class XDrawingProxy {
 		public buildWavepoints(list: EcgWavePoint[], client: XDrawingClient) {
 				//console.info("prepare wavepoints for client", "create XDrawingObject for eacg  EcgWavePoint element.");
 				let o: XDrawingObject;
-				for (let z: number = 0; z < list.length; z++) {
-						o = XDrawingObject.PrepareWavePoint(z, list[z], this.state, client);
+				// TODO group wavepoints
+				for (let z: number = 0; z < list.length - 1; z++) {
+						o = XDrawingObject.PrepareWavePoint(z, [list[z], list[z + 1]], [z, z + 1], this.state, client);
 						this.drawingObjects.push(o);
 				}
 		}
