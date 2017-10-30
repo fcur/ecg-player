@@ -42,7 +42,7 @@ export class DrawableComponent implements OnInit {
 		private _ct: XCanvasTool;
 		private _loadDataSubs: Subscription;
 		private _waveformDragStartPosition: XPoint;
-
+		private _pinBeatsToSignal: boolean;
 
 		//-------------------------------------------------------------------------------------
 		@ViewChild("waveformCanvas")
@@ -145,6 +145,7 @@ export class DrawableComponent implements OnInit {
 				private _ds: DataService) {
 				//console.info("DrawableComponent constructor");
 				this._hideFileDrop = false;
+				this._pinBeatsToSignal = true;
 				this._loadDataSubs = null;
 				this._waveformDragStartPosition = null;
 				this._dp = new XDrawingProxy();
@@ -267,7 +268,7 @@ export class DrawableComponent implements OnInit {
 		//-------------------------------------------------------------------------------------
 		private prepareDrawingObjects() {
 				this._dp.buildSignal([this._ds.ecgrecord], this._signalClient);
-				this._dp.buildBeats([this._ds.ecgrecord], this._beatsClient);
+				this._dp.buildBeats([this._ds.ecgrecord], this._beatsClient, this._pinBeatsToSignal);
 				//this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
 				//this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
 		}
@@ -348,18 +349,22 @@ export class DrawableComponent implements OnInit {
 				let radius: number = 1;
 				this._ct.ctx.beginPath();
 				let z: number = 0, y: number = 0,
-						left: number = 0, top: number = 0
-				//let curPoint: XPoint;
+						left: number = 0, top: number = 0;
+
+				let cell: XDrawingCell = state.gridCells[0];
 				for (z = 0; z < obj.points.length; z++) {
-						//curPoint = obj.points[z];
 						if (obj.points[z].left < state.minPx + state.container.left + 1) continue;
 						if (obj.points[z].left > state.maxPx + state.container.left - 1) break;
 
 						left = obj.points[z].left - state.minPx;
-						top = obj.container.top + obj.points[z].top;
+						top = this._pinBeatsToSignal ?
+								Math.round(obj.points[z].top * state.gridCells[0].microvoltsToPixel) + state.gridCells[0].container.midOy :
+								obj.container.top + obj.points[z].top;
 						this._ct.ctx.moveTo(left + 0.5, top + 0.5);
 						this._ct.ctx.arc(left + 0.5, top + 0.5, radius, 0, 2 * Math.PI, false);
 				}
+
+
 				this._ct.ctx.stroke();
 				this._ct.ctx.restore();
 		}

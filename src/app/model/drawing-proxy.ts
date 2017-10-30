@@ -64,19 +64,33 @@ export class XDrawingProxy {
 		}
 
 		//-------------------------------------------------------------------------------------
-		public buildBeats(list: EcgRecord[], client: XDrawingClient) {
+		public buildBeats(list: EcgRecord[], client: XDrawingClient, pinBeats: boolean) {
 				if (!Array.isArray(list) || !client) return;
 				let o: XDrawingObject;
 				let skipPx: number = 0;
 				for (let z: number = 0; z < list.length; z++) {
 						if (!Array.isArray(list[z].beats)) continue; // beats
-						o = XDrawingObject.PrepareBeats(
-								z, list[z].beats, this.state, client, skipPx,
-								list[z].signal.channels[0].length);
+
+						let signalObjects: XDrawingObject[] = this.findSignal(skipPx, this.state);
+
+						o = XDrawingObject.PrepareBeats(z, signalObjects, list[z].beats, this.state, client, skipPx, list[z].signal.channels[0].length, pinBeats);
 						this.drawingObjects.push(o);
 						skipPx = o.container.maxOx;
 				}
 		}
+
+		//-------------------------------------------------------------------------------------
+		private findSignal(skipPx: number, state: XDrawingProxyState): XDrawingObject[] {
+				let result = new Array();
+				for (let z: number = 0; z < this.drawingObjects.length; z++) {
+						if (this.drawingObjects[z].container.maxOx < state.minPx
+								|| this.drawingObjects[z].container.minOx > state.maxPx
+								|| this.drawingObjects[z].type != XDrawingObjectType.Signal) continue;
+						result.push(this.drawingObjects[z]);
+				}
+				return result;
+		}
+
 
 		//-------------------------------------------------------------------------------------
 		public buildAnnotations(list: EcgRecord[], client: XDrawingClient) {

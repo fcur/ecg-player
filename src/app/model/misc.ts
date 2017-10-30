@@ -317,24 +317,39 @@ export class XDrawingObject {
 		}
 
 		//-------------------------------------------------------------------------------------
-		static PrepareBeats(i: number, beats: number[], state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0, limitPixels: number = 0, pin: boolean = true): XDrawingObject {
+		static PrepareBeats(i: number, signal: XDrawingObject[], beats: number[], state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0, limitPixels: number = 0, pin: boolean = true): XDrawingObject {
 				let result: XDrawingObject = new XDrawingObject();
-				pin = false;
 				result.index = i;
 				result.owner = owner;
 				result.points = new Array(beats.length);
 				let left: number;
-				let staticTop: number = state.container.top + 10; // top position
-				for (let z: number = 0; z < beats.length; z++) {
-						left = beats[z] + state.container.left;
-						if (!pin) {
+
+				if (!pin) {
+						let staticTop: number = state.container.top + 10; // top position
+						for (let z: number = 0; z < beats.length; z++) {
+								left = beats[z] + state.container.left;
 								// add beat on top of container
 								result.points[z] = new XPoint(left, staticTop);
-						} else {
-								// add beat on each cell sample
-								// find sample position
 						}
+				} else {
+
+						let signalPoints: XPoint[] = signal[0].polylines[0].points;
+						let y: number = 0;
+						for (let z: number = 0; z < beats.length; z++) {
+								left = beats[z] + state.container.left;
+								let microvolts: number = signalPoints[beats[z]].top;
+								result.points[z] = new XPoint(left, microvolts);
+						}
+						//for (let z: number = 0; z < signalPoints.length; z++) {
+						//		let beatIndex: number = beats.indexOf(signalPoints[z].left - state.container.left);
+						//		if (beatIndex < 0) continue;
+						//		let microvolts: number = signalPoints[z].top;
+
+						//		result.points[y] = new XPoint(beats[beatIndex] + state.container.left, microvolts);
+						//}
 				}
+
+
 				result.container.left = skipPixels;
 				result.container.width = limitPixels;
 				result.container.height = state.container.height;
