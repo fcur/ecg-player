@@ -235,6 +235,15 @@ export class DrawableComponent implements OnInit {
 		//-------------------------------------------------------------------------------------
 		private onProxyStateChanges(change: XDrawingChange) {
 				//console.info("onProxyStateChanges:", change);
+				// refresh drawings
+				this._ct.clear();
+
+				//this._ct.ctx.save();
+				//let state: XDrawingProxyState = this._dp.state;
+				//this._ct.ctx.rect(state.container.left, state.container.top, state.container.width, state.container.height);
+				//this._ct.ctx.stroke();
+				//this._ct.ctx.restore();
+
 				for (let z: number = 0; z < change.objects.length; z++) {
 						change.objects[z].owner.draw(change.objects[z]);//
 				}
@@ -257,8 +266,8 @@ export class DrawableComponent implements OnInit {
 
 		//-------------------------------------------------------------------------------------
 		private prepareDrawingObjects() {
-				this._dp.buildSignal([this._ds.ecgrecord.signal/*, this._ds.ecgrecord.signal*/], this._signalClient);
-				this._dp.buildTestBeats([this._ds.ecgrecord.beats], this._beatsClient);
+				this._dp.buildSignal([this._ds.ecgrecord], this._signalClient);
+				this._dp.buildBeats([this._ds.ecgrecord], this._beatsClient);
 				//this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
 				//this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
 		}
@@ -283,13 +292,31 @@ export class DrawableComponent implements OnInit {
 		private drawSignal(obj: XDrawingObject) {
 				//console.info("draw singal object", obj);
 				let state: XDrawingProxyState = this._dp.state;
-				this._ct.clear();
 				this._ct.ctx.save();
-				this._ct.ctx.beginPath();
 				let skipPoints: number = 0;
 				let points: XPoint[];
 				let z: number = 0, y: number = 0, left: number = 0, top: number = 0;
 				let dy: number;
+
+				this._ct.ctx.beginPath();
+				for (z = 0; z < state.gridCells.length; z++) {
+						// borders
+						this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
+						this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.minOy);
+						this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.maxOy);
+						this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.maxOy);
+						this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
+						// ox axis
+						this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.midOy);
+						this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.midOy);
+				}
+				this._ct.ctx.strokeStyle = "red";
+				this._ct.ctx.globalAlpha = 0.15;
+				this._ct.ctx.closePath();
+				this._ct.ctx.stroke();
+				this._ct.ctx.closePath();
+
+				this._ct.ctx.beginPath();
 				for (z = 0; z < obj.polylines.length; z++) { // z - cell index, polyline index
 						points = obj.polylines[z].points;
 						y = state.minPx; // y - point index
@@ -307,6 +334,7 @@ export class DrawableComponent implements OnInit {
 				}
 				this._ct.ctx.lineWidth = 1;
 				this._ct.ctx.strokeStyle = "#008662";
+				this._ct.ctx.globalAlpha = 1;
 				this._ct.ctx.stroke();
 				this._ct.ctx.closePath();
 				this._ct.ctx.restore();
@@ -320,16 +348,15 @@ export class DrawableComponent implements OnInit {
 				let radius: number = 1;
 				this._ct.ctx.beginPath();
 				let z: number = 0, y: number = 0,
-						left: number = 0, top: number = 0,
-						absLeft: number = 0;
-				let curPoint: XPoint;
+						left: number = 0, top: number = 0
+				//let curPoint: XPoint;
 				for (z = 0; z < obj.points.length; z++) {
-						curPoint = obj.points[z];
-						absLeft = curPoint.left + obj.container.left;
-						if (absLeft < state.minPx) continue;
-						if (absLeft > state.maxPx) break;
-						left = absLeft - state.minPx;
-						top = obj.container.top + curPoint.top;
+						//curPoint = obj.points[z];
+						if (obj.points[z].left < state.minPx + state.container.left + 1) continue;
+						if (obj.points[z].left > state.maxPx + state.container.left - 1) break;
+
+						left = obj.points[z].left - state.minPx;
+						top = obj.container.top + obj.points[z].top;
 						this._ct.ctx.moveTo(left + 0.5, top + 0.5);
 						this._ct.ctx.arc(left + 0.5, top + 0.5, radius, 0, 2 * Math.PI, false);
 				}

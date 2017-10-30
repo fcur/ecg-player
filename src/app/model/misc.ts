@@ -165,7 +165,7 @@ export class XDrawingProxyState {
 		public devMode: boolean;
 		/** Maximum sample value in microvolts from input signal. */
 		public signalScale: number;
-		/** Surface grid cells array.*/
+		/** Surface grid cells array. Position on canvas. */
 		public gridCells: XDrawingCell[];
 		/**  Surface grid cells mode.*/
 		public gridMode: XDrawingGridMode;
@@ -228,7 +228,7 @@ export class XDrawingProxyState {
 				cellLeft = this.container.left;
 				let ci: number; // column indx
 				this.gridCells = new Array(leads.length);
-				for (z = 0, cellTop = 0, ci = 0; z < leads.length; z++ , ci++) {
+				for (z = 0, cellTop = this.container.top, ci = 0; z < leads.length; z++ , ci++) {
 						for (y = 0; y < rwCount; y++ , z++) {
 								this.gridCells[z] = new XDrawingCell();
 								this.gridCells[z].index = z;
@@ -286,7 +286,7 @@ export class XDrawingObject {
 		}
 
 		//-------------------------------------------------------------------------------------
-		static PrepareWavePoint(i: number, ewp: EcgWavePoint[], ewpinx: number[], state: XDrawingProxyState, owner: XDrawingClient): XDrawingObject {
+		static PreparePqrstComplex(i: number, ewp: EcgWavePoint[], ewpinx: number[], state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0): XDrawingObject {
 				let result: XDrawingObject = new XDrawingObject();
 				result.index = i; // drawing object index
 				result.indexes = ewpinx; // wavepoint index
@@ -300,6 +300,10 @@ export class XDrawingObject {
 				// TODO: Prepare labels (wavepoint type, length)
 				result.peaks = new Array();
 				// TODO: Prepare peaks (peak title + line)
+				if (Array.isArray(ewp && ewp.length > 1)) {
+						result.container.left = skipPixels + ewp[0].start;
+						result.container.width = ewp[1].start - ewp[0].start;
+				}
 				return result;
 		}
 
@@ -313,7 +317,7 @@ export class XDrawingObject {
 		}
 
 		//-------------------------------------------------------------------------------------
-		static PrepareBeats(i: number, beats: number[], state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0, pin: boolean = true): XDrawingObject {
+		static PrepareBeats(i: number, beats: number[], state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0, limitPixels: number = 0, pin: boolean = true): XDrawingObject {
 				let result: XDrawingObject = new XDrawingObject();
 				pin = false;
 				result.index = i;
@@ -332,9 +336,8 @@ export class XDrawingObject {
 						}
 				}
 				result.container.left = skipPixels;
-				result.container.width = beats[beats.length - 1] + 1; // add extra pixel
+				result.container.width = limitPixels;
 				result.container.height = state.container.height;
-
 				return result;
 		}
 
@@ -371,7 +374,7 @@ export class XDrawingObject {
 						points = new Array(data.length);
 						for (y = 0; y < data.length; y++) {
 								//dy = Math.round(data[y] * coef);
-								left = cell.container.left + y;
+								left = cell.container.left + skipPixels + y;
 								//top = cell.invert ? (cell.container.midOy + dy) : (cell.container.midOy - dy);
 								//top = cell.invert ? dy : -dy;
 								top = data[y];// save microvolts as responsive top position
@@ -380,7 +383,7 @@ export class XDrawingObject {
 						result.polylines[z].rebuild(points);
 				}
 				result.container.left = skipPixels;
-				result.container.width = y;
+				result.container.width = y - 1;
 				result.container.height = state.container.height;
 
 				return result;

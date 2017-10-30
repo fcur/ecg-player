@@ -35,48 +35,57 @@ export class XDrawingProxy {
 		}
 
 		//-------------------------------------------------------------------------------------
-		public buildWavepoints(list: EcgWavePoint[], client: XDrawingClient) {
+		public buildWavepoints(list: EcgRecord[], client: XDrawingClient) {
 				//console.info("prepare wavepoints for client", "create XDrawingObject for eacg  EcgWavePoint element.");
 				let o: XDrawingObject;
 				// TODO group wavepoints
 				for (let z: number = 0; z < list.length - 1; z++) {
-						o = XDrawingObject.PrepareWavePoint(z, [list[z], list[z + 1]], [z, z + 1], this.state, client);
-						this.drawingObjects.push(o);
+						for (let y: number = 0; y < list[z].wavePoints.length; y++) {
+								o = XDrawingObject.PreparePqrstComplex(y,
+										[list[z].wavePoints[y], list[z].wavePoints[y + 1]],
+										[y, y + 1],
+										this.state, client, list[z].signal.channels[0].length);
+								this.drawingObjects.push(o);
+						}
 				}
 		}
 
 		//-------------------------------------------------------------------------------------
-		public buildSignal(list: EcgSignal[], client: XDrawingClient) {
+		public buildSignal(list: EcgRecord[], client: XDrawingClient) {
 				if (!Array.isArray(list) || !client) return;
 				let o: XDrawingObject;
 				let s: EcgSignal;
 				let skipPx: number = 0;
 				for (let z: number = 0; z < list.length; z++) {
-						o = XDrawingObject.PrepareSignal(z, list[z], this.state, client, skipPx);
+						o = XDrawingObject.PrepareSignal(z, list[z].signal, this.state, client, skipPx);
 						skipPx = o.container.maxOx;
 						this.drawingObjects.push(o);
 				}
 		}
 
 		//-------------------------------------------------------------------------------------
-		public buildTestBeats(list: number[][], client: XDrawingClient) {
+		public buildBeats(list: EcgRecord[], client: XDrawingClient) {
 				if (!Array.isArray(list) || !client) return;
 				let o: XDrawingObject;
 				let skipPx: number = 0;
 				for (let z: number = 0; z < list.length; z++) {
-						if (!Array.isArray(list[z])) continue; // beats
-						o = XDrawingObject.PrepareBeats(z, list[z], this.state, client, skipPx);
+						if (!Array.isArray(list[z].beats)) continue; // beats
+						o = XDrawingObject.PrepareBeats(
+								z, list[z].beats, this.state, client, skipPx,
+								list[z].signal.channels[0].length);
 						this.drawingObjects.push(o);
 						skipPx = o.container.maxOx;
 				}
 		}
 
 		//-------------------------------------------------------------------------------------
-		public buildAnnotations(list: EcgAnnotation[], client: XDrawingClient) {
+		public buildAnnotations(list: EcgRecord[], client: XDrawingClient) {
 				let o: XDrawingObject;
 				for (let z: number = 0; z < list.length; z++) {
-						o = XDrawingObject.PrepareAnnotation(z, list[z], this.state, client);
-						this.drawingObjects.push(o)
+						for (let y: number = 0; y < list[z].annotations.length; y++) {
+								o = XDrawingObject.PrepareAnnotation(z, list[z].annotations[y], this.state, client);
+								this.drawingObjects.push(o)
+						}
 				}
 		}
 
