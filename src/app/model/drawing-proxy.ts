@@ -182,7 +182,12 @@ export class XDrawingProxy {
 				//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseMove, event);
 				//this.onChangeState.emit(changes);
 
-				console.info("proxy: mouse move");
+				let proxyX: number = event.clientX - this.state.screen.left;
+				let proxyY: number = event.clientY - this.state.screen.top;
+				if (proxyX < 0 || proxyX > this.state.container.width ||
+						proxyY < 0 || proxyY > this.state.container.height) return;
+				// TODO handle floating pointer
+				console.info("proxy: mouse move", proxyX, proxyY);
 
 		}
 }

@@ -309,6 +309,12 @@ export class DrawableComponent implements OnInit {
 				let space: number = 33;
 				let proxyContainer: XRectangle = new XRectangle(space, space, this._ct.width - space * 2, this._ct.height - space * 2);
 				this._dp.state.container = proxyContainer;
+				let clientContainer: XRectangle = new XRectangle(
+						space + this._drawingElement.nativeElement.offsetLeft,
+						space + this._drawingElement.nativeElement.offsetTop,
+						proxyContainer.width,
+						proxyContainer.height);
+				this._dp.state.screen = clientContainer;
 		}
 
 		//-------------------------------------------------------------------------------------

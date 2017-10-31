@@ -151,6 +151,9 @@ export class XDrawingProxyState {
 
 		/** Surface relative size & position.*/
 		public container: XRectangle;
+
+		public screen: XRectangle;
+
 		/** Pixels in millimeter MUL coefficient. */
 		public apxmm: number;
 		/** Maximum declared sample value. */
