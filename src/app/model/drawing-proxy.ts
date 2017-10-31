@@ -80,6 +80,11 @@ export class XDrawingProxy {
 		}
 
 		//-------------------------------------------------------------------------------------
+		public buildFloatingPoint(client: XDrawingClient, pinSample: boolean = false) {
+
+		}
+
+		//-------------------------------------------------------------------------------------
 		private findSignal(skipPx: number, state: XDrawingProxyState): XDrawingObject[] {
 				let result = new Array();
 				for (let z: number = 0; z < this.drawingObjects.length; z++) {

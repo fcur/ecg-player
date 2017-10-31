@@ -35,7 +35,8 @@ export class DrawableComponent implements OnInit {
 		private _ansClient: XDrawingClient;
 		private _pqrstClient: XDrawingClient;
 		private _signalClient: XDrawingClient;
-		private _beatsClient: XDrawingClient;
+    private _beatsClient: XDrawingClient;
+    private _floatingPointClient: XDrawingClient;
 		private _fileReader: FileReader;
 		private _hideFileDrop: boolean;
 		/**Canvas tool. */
@@ -73,7 +74,6 @@ export class DrawableComponent implements OnInit {
 				//console.info("window:mousedown", event);
 				this.onDragStart(event);
 		}
-
 		//-------------------------------------------------------------------------------------
 		@HostListener("window:mouseleave", ["$event"])
 		private onWindowMouseleave(event: MouseEvent) {
@@ -131,7 +131,6 @@ export class DrawableComponent implements OnInit {
 				//console.info("window:touchstart", event);
 				this.onDragStart(event);
 		}
-
 		//-------------------------------------------------------------------------------------
 		@HostListener("window:resize", ["$event"]) onWindowResize(event: Event) {
 				// TODO: fix resize bug
@@ -262,6 +261,9 @@ export class DrawableComponent implements OnInit {
 				this._beatsClient = new XDrawingClient();
 				this._beatsClient.mode = XDrawingMode.Canvas;
 				this._beatsClient.draw = this.drawBeats.bind(this);
+				this._floatingPointClient = new XDrawingClient();
+				this._floatingPointClient.mode = XDrawingMode.Canvas;
+				this._floatingPointClient.draw = this.drawFloadingPoint.bind(this);
 				//this._drawingClients.push(ansClient, pqrstClient);
 		}
 
@@ -269,6 +271,7 @@ export class DrawableComponent implements OnInit {
 		private prepareDrawingObjects() {
 				this._dp.buildSignal([this._ds.ecgrecord], this._signalClient);
 				this._dp.buildBeats([this._ds.ecgrecord], this._beatsClient, this._pinBeatsToSignal);
+				this._dp.buildFloatingPoint(this._floatingPointClient);
 				//this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
 				//this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
 		}
@@ -368,6 +371,14 @@ export class DrawableComponent implements OnInit {
 				this._ct.ctx.stroke();
 				this._ct.ctx.restore();
 		}
+
+		//-------------------------------------------------------------------------------------
+		private drawFloadingPoint(obj: XDrawingObject) {
+				// TODO draw point on nearest channel + line in cursor position
+				// handle point click
+
+		}
+
 
 		//-------------------------------------------------------------------------------------
 		private scroll(event: any) {
