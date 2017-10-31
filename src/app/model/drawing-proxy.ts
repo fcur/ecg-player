@@ -133,7 +133,7 @@ export class XDrawingProxy {
 				for (let z: number = 0; z < this.drawingObjects.length; z++) {
 						outOfRange = this.drawingObjects[z].container.maxOx < this.state.minPx
 								|| this.drawingObjects[z].container.minOx > this.state.maxPx;
-						if (outOfRange && this.drawingObjects[z].container.left != -1) continue;
+						if (outOfRange) continue;
 						result.objects.push(this.drawingObjects[z]);
 						//if (this.drawingObjects[z].container.left < this.state.skipPx)
 				}
@@ -151,11 +151,13 @@ export class XDrawingProxy {
 		//-------------------------------------------------------------------------------------
 		private prepareFloatingObjects(left: number, top: number) {
 				for (let z: number = 0; z < this.drawingObjects.length; z++) {
-						if (this.drawingObjects[z].type != XDrawingObjectType.Floating
-								&& this.drawingObjects[z].type != XDrawingObjectType.FloatingX
-								&& this.drawingObjects[z].type != XDrawingObjectType.FloatingY) continue;
+						if (this.drawingObjects[z].type != XDrawingObjectType.Floating &&
+								this.drawingObjects[z].type != XDrawingObjectType.FloatingX &&
+								this.drawingObjects[z].type != XDrawingObjectType.FloatingY) continue;
 
-						this.drawingObjects[z].foatTo(this.state.skipPx + left + this.state.container.left, this.state.container.top + top);
+						this.drawingObjects[z].foatTo(
+								this.state.skipPx + left,
+								this.state.container.top + top);
 				}
 		}
 
@@ -196,9 +198,8 @@ export class XDrawingProxy {
 				if (proxyX < 0 || proxyX > this.state.container.width ||
 						proxyY < 0 || proxyY > this.state.container.height) return;
 				// TODO handle floating pointer
-				//console.info("proxy: mouse move", proxyX, proxyY);
+				console.info("proxy: mouse move", proxyX, proxyY);
 				this.prepareFloatingObjects(proxyX, proxyY);
-
 				let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseMove, event);
 				this.onChangeState.emit(changes);
 		}

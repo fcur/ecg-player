@@ -50,9 +50,7 @@ export class DrawableComponent implements OnInit {
 		private _pinBeatsToSignal: boolean;
 
 		private _threshold: number;
-		private _timeout: number;
 		private _lastEmitTime: number;
-		private _prepareSizeTimeout: any;
 
 		//-------------------------------------------------------------------------------------
 		@ViewChild("waveformCanvas")
@@ -156,8 +154,7 @@ export class DrawableComponent implements OnInit {
 				this._pinBeatsToSignal = true;
 				this._loadDataSubs = null;
 				this._waveformDragStartPosition = null;
-				this._threshold = 300;
-				this._timeout = 400;
+				this._threshold = 100;
 				this._lastEmitTime = 0;
 				this._dp = new XDrawingProxy();
 				this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
@@ -407,8 +404,8 @@ export class DrawableComponent implements OnInit {
 				let z: number;
 				if (Array.isArray(obj.lines)) {
 						for (z = 0; z < obj.lines.length; z++) {
-								this._ct.ctx.moveTo(obj.lines[0].ax - state.minPx + 0.5, obj.lines[0].ay + 0.5);
-								this._ct.ctx.lineTo(obj.lines[0].bx - state.minPx + 0.5, obj.lines[0].by + 0.5);
+								this._ct.ctx.moveTo(obj.lines[0].ax + state.container.left - state.minPx + 0.5, obj.lines[0].ay + 0.5);
+								this._ct.ctx.lineTo(obj.lines[0].bx + state.container.left - state.minPx + 0.5, obj.lines[0].by + 0.5);
 						}
 				}
 
