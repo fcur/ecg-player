@@ -32,7 +32,9 @@ export enum XDrawingObjectType {
 		Signal,
 		Beats,
 		Annotations,
-		PQRST
+		PQRST,
+		Measure,
+		FloatingPoint
 }
 
 
@@ -353,6 +355,22 @@ export class XDrawingObject {
 				result.container.left = skipPixels;
 				result.container.width = limitPixels;
 				result.container.height = state.container.height;
+				return result;
+		}
+
+		//-------------------------------------------------------------------------------------
+		static PrepareFloatingPoint(owner: XDrawingClient, state: XDrawingProxyState): XDrawingObject {
+				let result: XDrawingObject = new XDrawingObject();
+				result.index = 0;
+				result.owner = owner;
+				result.type = XDrawingObjectType.FloatingPoint;
+				result.container = new XRectangle(-1, state.container.top, 1, state.container.height);
+				result.lines = new Array(1);
+
+				result.lines[0] = new XLine(
+						new XPoint(-1, state.container.minOy),
+						new XPoint(-1, state.container.maxOy));
+
 				return result;
 		}
 

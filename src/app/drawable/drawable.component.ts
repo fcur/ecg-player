@@ -35,8 +35,12 @@ export class DrawableComponent implements OnInit {
 		private _ansClient: XDrawingClient;
 		private _pqrstClient: XDrawingClient;
 		private _signalClient: XDrawingClient;
-    private _beatsClient: XDrawingClient;
-    private _floatingPointClient: XDrawingClient;
+		private _beatsClient: XDrawingClient;
+		private _floatingPointClient: XDrawingClient;
+		private _floatingPeakClient: XDrawingClient;
+		private _gridClient: XDrawingClient;
+
+
 		private _fileReader: FileReader;
 		private _hideFileDrop: boolean;
 		/**Canvas tool. */
@@ -44,6 +48,11 @@ export class DrawableComponent implements OnInit {
 		private _loadDataSubs: Subscription;
 		private _waveformDragStartPosition: XPoint;
 		private _pinBeatsToSignal: boolean;
+
+		private _threshold: number;
+		private _timeout: number;
+		private _lastEmitTime: number;
+		private _prepareSizeTimeout: any;
 
 		//-------------------------------------------------------------------------------------
 		@ViewChild("waveformCanvas")
@@ -147,6 +156,9 @@ export class DrawableComponent implements OnInit {
 				this._pinBeatsToSignal = true;
 				this._loadDataSubs = null;
 				this._waveformDragStartPosition = null;
+				this._threshold = 300;
+				this._timeout = 400;
+				this._lastEmitTime = 0;
 				this._dp = new XDrawingProxy();
 				this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
 				this._fileReader = new FileReader();
@@ -200,7 +212,10 @@ export class DrawableComponent implements OnInit {
 
 		//-------------------------------------------------------------------------------------
 		private onDragMove(event: any) {
-				if (!this._waveformDragStartPosition) return;
+				if (!this._waveformDragStartPosition) {
+						this.pointerMove(event);
+						return;
+				}
 				this.scroll(event);
 		}
 
@@ -264,6 +279,10 @@ export class DrawableComponent implements OnInit {
 				this._floatingPointClient = new XDrawingClient();
 				this._floatingPointClient.mode = XDrawingMode.Canvas;
 				this._floatingPointClient.draw = this.drawFloadingPoint.bind(this);
+				this._floatingPeakClient = new XDrawingClient();
+				this._floatingPeakClient.mode = XDrawingMode.Canvas;
+				this._gridClient = new XDrawingClient();
+				this._gridClient.mode = XDrawingMode.Canvas;
 				//this._drawingClients.push(ansClient, pqrstClient);
 		}
 
@@ -376,9 +395,13 @@ export class DrawableComponent implements OnInit {
 		private drawFloadingPoint(obj: XDrawingObject) {
 				// TODO draw point on nearest channel + line in cursor position
 				// handle point click
-
+				console.info("drawFloadingPoint");
 		}
 
+		//-------------------------------------------------------------------------------------
+		private drawFloatingPeak(obj: XDrawingObject) {
+				console.info("drawFloatingPeak");
+		}
 
 		//-------------------------------------------------------------------------------------
 		private scroll(event: any) {
@@ -387,6 +410,16 @@ export class DrawableComponent implements OnInit {
 				this._waveformDragStartPosition = endpoint;
 				this._dp.scroll(actionPoint.left);
 				this._dp.refreshDrawings();
+		}
+
+		//-------------------------------------------------------------------------------------
+		private pointerMove(event: any) {
+				let timeNow: number = Date.now();
+				if (timeNow - this._lastEmitTime > this._threshold) {
+						this._lastEmitTime = timeNow;
+						this._dp.performMouseMove(event);
+				}
+
 		}
 
 }

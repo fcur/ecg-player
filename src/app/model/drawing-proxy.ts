@@ -81,7 +81,8 @@ export class XDrawingProxy {
 
 		//-------------------------------------------------------------------------------------
 		public buildFloatingPoint(client: XDrawingClient, pinSample: boolean = false) {
-
+				let o: XDrawingObject = XDrawingObject.PrepareFloatingPoint(client, this.state);
+				this.drawingObjects.push(o);
 		}
 
 		//-------------------------------------------------------------------------------------
@@ -128,8 +129,11 @@ export class XDrawingProxy {
 				result.curState = this.state;
 				result.objects = new Array();
 				result.clients = new Array();
+				let outOfRange: boolean = true;
 				for (let z: number = 0; z < this.drawingObjects.length; z++) {
-						if (this.drawingObjects[z].container.maxOx < this.state.minPx || this.drawingObjects[z].container.minOx > this.state.maxPx) continue;
+						outOfRange = this.drawingObjects[z].container.maxOx < this.state.minPx
+								|| this.drawingObjects[z].container.minOx > this.state.maxPx;
+						if (outOfRange && this.drawingObjects[z].container.left != -1) continue;
 						result.objects.push(this.drawingObjects[z]);
 						//if (this.drawingObjects[z].container.left < this.state.skipPx)
 				}
@@ -175,7 +179,10 @@ export class XDrawingProxy {
 
 		//-------------------------------------------------------------------------------------
 		public performMouseMove(event: any) {
-				let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseMove, event);
-				this.onChangeState.emit(changes);
+				//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseMove, event);
+				//this.onChangeState.emit(changes);
+
+				console.info("proxy: mouse move");
+
 		}
 }
