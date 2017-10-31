@@ -34,7 +34,9 @@ export enum XDrawingObjectType {
 		Annotations,
 		PQRST,
 		Measure,
-		FloatingPoint
+		Floating,
+		FloatingX,
+		FloatingY
 }
 
 
@@ -291,6 +293,36 @@ export class XDrawingObject {
 		}
 
 		//-------------------------------------------------------------------------------------
+		public foatTo(left: number, top: number) {
+				if (this.type === XDrawingObjectType.FloatingX
+						|| this.type === XDrawingObjectType.Floating)
+						this.container.left = left;
+
+				if (this.type === XDrawingObjectType.FloatingY
+						|| this.type === XDrawingObjectType.Floating) {
+						this.container.top = top;
+				}
+				let z: number;
+				if (Array.isArray(this.lines)) {
+						for (z = 0; z < this.lines.length; z++) {
+								if (this.type === XDrawingObjectType.FloatingX
+										|| this.type === XDrawingObjectType.Floating) {
+										this.lines[z].ax = left;
+										this.lines[z].bx = left;
+								}
+								if (this.type === XDrawingObjectType.FloatingY
+										|| this.type === XDrawingObjectType.Floating) {
+										this.lines[z].ay = top;
+										this.lines[z].by = top;
+								}
+
+
+						}
+				}
+
+		}
+
+		//-------------------------------------------------------------------------------------
 		static PreparePqrstComplex(i: number, ewp: EcgWavePoint[], ewpinx: number[], state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0): XDrawingObject {
 				let result: XDrawingObject = new XDrawingObject();
 				result.index = i; // drawing object index
@@ -366,7 +398,7 @@ export class XDrawingObject {
 				let result: XDrawingObject = new XDrawingObject();
 				result.index = 0;
 				result.owner = owner;
-				result.type = XDrawingObjectType.FloatingPoint;
+				result.type = XDrawingObjectType.FloatingX;
 				result.container = new XRectangle(-1, state.container.top, 1, state.container.height);
 				result.lines = new Array(1);
 
@@ -648,9 +680,19 @@ export class XPoint extends XDrawingPrimitive {
 		private _t: number = 0;
 
 		/** Point position on X axis in pixels. */
-		public get left(): number { return this._l; }
+		public get left(): number {
+				return this._l;
+		}
+		public set left(v: number) {
+				this._l = v;
+		}
 		/** Point position on Y axis in pixels. */
-		public get top(): number { return this._t; }
+		public get top(): number {
+				return this._t;
+		}
+		public set top(v: number) {
+				this._t = v;
+		}
 		/** Returns copy of object. */
 		public get clone(): XPoint { return new XPoint(this._l, this._t); }
 		/** Returns length. */
@@ -763,6 +805,44 @@ export class XLine extends XDrawingPrimitive {
 				this._b = b;
 		}
 
+		//-------------------------------------------------------------------------------------------------
+		public get ax(): number {
+				return this._a.left;
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public set ax(v: number) {
+				this._a.left = v;
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public get bx(): number {
+				return this._b.left;
+		}
+		//-------------------------------------------------------------------------------------------------
+		public set bx(v: number) {
+				this._b.left = v;
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public get ay(): number {
+				return this._a.top;
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public set ay(v: number) {
+				this._a.top = v;
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public get by(): number {
+				return this._b.top;
+		}
+
+		//-------------------------------------------------------------------------------------------------
+		public set by(v: number) {
+				this._b.top = v;
+		}
 }
 
 //-------------------------------------------------------------------------------------------------

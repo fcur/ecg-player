@@ -149,6 +149,17 @@ export class XDrawingProxy {
 
 
 		//-------------------------------------------------------------------------------------
+		private prepareFloatingObjects(left: number, top: number) {
+				for (let z: number = 0; z < this.drawingObjects.length; z++) {
+						if (this.drawingObjects[z].type != XDrawingObjectType.Floating
+								&& this.drawingObjects[z].type != XDrawingObjectType.FloatingX
+								&& this.drawingObjects[z].type != XDrawingObjectType.FloatingY) continue;
+
+						this.drawingObjects[z].foatTo(this.state.skipPx + left + this.state.container.left, this.state.container.top + top);
+				}
+		}
+
+		//-------------------------------------------------------------------------------------
 		// Action emmiters
 		//-------------------------------------------------------------------------------------
 
@@ -179,15 +190,18 @@ export class XDrawingProxy {
 
 		//-------------------------------------------------------------------------------------
 		public performMouseMove(event: any) {
-				//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseMove, event);
-				//this.onChangeState.emit(changes);
 
 				let proxyX: number = event.clientX - this.state.screen.left;
 				let proxyY: number = event.clientY - this.state.screen.top;
 				if (proxyX < 0 || proxyX > this.state.container.width ||
 						proxyY < 0 || proxyY > this.state.container.height) return;
 				// TODO handle floating pointer
-				console.info("proxy: mouse move", proxyX, proxyY);
+				//console.info("proxy: mouse move", proxyX, proxyY);
+				this.prepareFloatingObjects(proxyX, proxyY);
 
+				let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseMove, event);
+				this.onChangeState.emit(changes);
 		}
+
+
 }

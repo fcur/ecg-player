@@ -401,7 +401,19 @@ export class DrawableComponent implements OnInit {
 		private drawFloadingPoint(obj: XDrawingObject) {
 				// TODO draw point on nearest channel + line in cursor position
 				// handle point click
-				console.info("drawFloadingPoint");
+				//console.info("drawFloadingPoint");
+				let state: XDrawingProxyState = this._dp.state;
+				this._ct.ctx.save();
+				let z: number;
+				if (Array.isArray(obj.lines)) {
+						for (z = 0; z < obj.lines.length; z++) {
+								this._ct.ctx.moveTo(obj.lines[0].ax - state.minPx + 0.5, obj.lines[0].ay + 0.5);
+								this._ct.ctx.lineTo(obj.lines[0].bx - state.minPx + 0.5, obj.lines[0].by + 0.5);
+						}
+				}
+
+				this._ct.ctx.stroke();
+				this._ct.ctx.restore();
 		}
 
 		//-------------------------------------------------------------------------------------
@@ -420,12 +432,12 @@ export class DrawableComponent implements OnInit {
 
 		//-------------------------------------------------------------------------------------
 		private pointerMove(event: any) {
-				let timeNow: number = Date.now();
-				if (timeNow - this._lastEmitTime > this._threshold) {
-						this._lastEmitTime = timeNow;
-						this._dp.performMouseMove(event);
-				}
-
+				//let timeNow: number = Date.now();
+				//if (timeNow - this._lastEmitTime > this._threshold) {
+				//		this._lastEmitTime = timeNow;
+				//		this._dp.performMouseMove(event);
+				//}
+				this._dp.performMouseMove(event);
 		}
 
 }
