@@ -1,7 +1,10 @@
 import { EventEmitter } from "@angular/core";
 import { XDrawingChange, XDrawingProxyState, XDrawingChangeSender } from "./misc";
 import { XDrawingClient, XDrawingMode } from "./drawingclient";
-import { XDrawingObject, XDrawingObjectType } from "./drawingobject";
+import {
+  XDrawingObject, XDrawingObjectType, AnsDrawingObject,
+  BeatsDrawingObject,IDrawingObject
+} from "./drawingobject";
 import {
   EcgWavePoint, EcgWavePointType, EcgAnnotation, EcgSignal,
   EcgAnnotationCode, EcgLeadCode, EcgRecord
@@ -14,7 +17,7 @@ import { BehaviorSubject } from "rxjs";
 export class XDrawingProxy {
   public state: XDrawingProxyState;
   public onChangeState: EventEmitter<XDrawingChange>;
-  public drawingObjects: XDrawingObject[];
+  public drawingObjects: IDrawingObject[];
 
   //-------------------------------------------------------------------------------------
   constructor() {
@@ -166,10 +169,10 @@ export class XDrawingProxy {
   //-------------------------------------------------------------------------------------
   private prepareFloatingObjects(left: number, top: number) {
     for (let z: number = 0; z < this.drawingObjects.length; z++) {
-      if (!this.drawingObjects[z].isFloating) continue;
+      if (!(this.drawingObjects[z] as XDrawingObject).isFloating) continue;
 
       let signalObjects: XDrawingObject[] = this.findSignal(this.state.skipPx + left, this.state);
-      this.drawingObjects[z].floatTo(
+      (this.drawingObjects[z] as XDrawingObject).floatTo(
         this.state.skipPx + left,
         this.state.container.top + top,
         signalObjects);

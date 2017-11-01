@@ -28,39 +28,53 @@ import {
   XDrawingProxyState
 } from "./misc";
 
+
 // -------------------------------------------------------------------------------------------------
-// Drawing object
+// Drawing object interface
+// -------------------------------------------------------------------------------------------------
+export interface IDrawingObject{
+		/** Object owner. */
+		owner: XDrawingClient;
+		/** Object type. */
+		type: XDrawingObjectType;
+		/** Container of drawing object (required). */
+		container: XRectangle;
+}
+
+
+// -------------------------------------------------------------------------------------------------
+// Default drawing object
 // -------------------------------------------------------------------------------------------------
 
 // Add special coordinates (getter)
 // Absolute, relative from canvas start, relative from cell start (via cell index)
 
-export class XDrawingObject {
-  /** Object index. */
-  public index: number;
-  /** Object inner indexes. */
-  public indexes: number[];
-  /** Object owner. */
-  public owner: XDrawingClient;
-  /** Object type. */
-  public type: XDrawingObjectType;
-  /** Container of drawing object (required). */
-  public container: XRectangle;
-  /**Drawing object points (relative coordinates, optional). Beats */
-  public points: XPoint[];
-  /** Drawing object polylines. Signal*/
-  public polylines: XPolyline[];
-	/** Drawing object rectangels (relative coordinates, optional).
-	* Annotations background*/
-  public rectangles: XRectangle[];
-	/** Drawing object lines  (relative coordinates, optional).
-	 * PQRST, measure tool */
-  public lines: XLine[];
+export class XDrawingObject implements IDrawingObject {
+			/** Object index. */
+			public index: number;
+			/** Object inner indexes. */
+			public indexes: number[];
+			/** Object owner. */
+			public owner: XDrawingClient;
+			/** Object type. */
+			public type: XDrawingObjectType;
+			/** Container of drawing object (required). */
+			public container: XRectangle;
+			/**Drawing object points (relative coordinates, optional). Beats */
+			public points: XPoint[];
+			/** Drawing object polylines. Signal*/
+			public polylines: XPolyline[];
+			/** Drawing object rectangels (relative coordinates, optional).
+			* Annotations background*/
+			public rectangles: XRectangle[];
+			/** Drawing object lines  (relative coordinates, optional).
+			 * PQRST, measure tool */
+			public lines: XLine[];
 
-  public labels: XLabel[];
-  public peaks: XPeak[];
-  /** Drawing object assigned cell index. -1: fill cells container */
-  public cellIndex: number;
+			public labels: XLabel[];
+			public peaks: XPeak[];
+			/** Drawing object assigned cell index. -1: fill cells container */
+			public cellIndex: number;
 
   //-------------------------------------------------------------------------------------
   public get isFloating(): boolean {
@@ -291,4 +305,21 @@ export class XDrawingObject {
 
     return result;
   }
+}
+
+
+
+// -------------------------------------------------------------------------------------------------
+// Annotations drawing object
+// -------------------------------------------------------------------------------------------------
+export class AnsDrawingObject extends XDrawingObject{
+
+}
+
+
+// -------------------------------------------------------------------------------------------------
+// Beats drawing object
+// -------------------------------------------------------------------------------------------------
+export class BeatsDrawingObject extends XDrawingObject{
+
 }

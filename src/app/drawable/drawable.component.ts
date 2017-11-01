@@ -14,7 +14,10 @@ import {
   XRectangle
 } from "../model/geometry";
 
-import { XDrawingClient, XDrawingMode } from "../model/drawingclient";
+import {
+  XDrawingClient, XDrawingMode, IDrawingClient,
+  AnsDrawingClient, BeatsDrawingClient
+} from "../model/drawingclient";
 import { XDrawingObject, XDrawingObjectType } from "../model/drawingobject";
 
 import {
@@ -151,8 +154,7 @@ export class DrawableComponent implements OnInit {
   }
 
   //-------------------------------------------------------------------------------------
-  constructor(private _el: ElementRef,
-    private _ds: DataService) {
+  constructor(private _el: ElementRef, private _ds: DataService) {
     //console.info("DrawableComponent constructor");
     this._hideFileDrop = false;
     this._pinBeatsToSignal = true;
@@ -165,6 +167,13 @@ export class DrawableComponent implements OnInit {
     this._fileReader = new FileReader();
     this.prepareClients();
     //this._drawingClients = new Array();
+
+    //let clients: IDrawingClient[] = new Array();
+    //clients.push(
+    //  new XDrawingClient(),
+    //  new AnsDrawingClient(),
+    //  new BeatsDrawingClient());
+    //console.info(clients);
   }
 
   //-------------------------------------------------------------------------------------

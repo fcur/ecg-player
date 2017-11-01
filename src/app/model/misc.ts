@@ -2,8 +2,8 @@ import {
   EcgLeadCode, EcgWavePoint, EcgAnnotation, EcgAnnotationCode,
   EcgRecord, EcgSignal, EcgWavePointType
 } from "./ecgdata";
-import { XDrawingObject, XDrawingObjectType } from "./drawingobject";
-import { XDrawingClient, XDrawingMode } from "./drawingclient";
+import { XDrawingObject, XDrawingObjectType,AnsDrawingObject,BeatsDrawingObject,IDrawingObject } from "./drawingobject";
+import { XDrawingClient, XDrawingMode,AnsDrawingClient,BeatsDrawingClient,IDrawingClient } from "./drawingclient";
 import {
   XDrawingPrimitive, XDrawingPrimitiveState,
   XLabel, XLine, XPeak, XPoint, XPolyline,
@@ -55,8 +55,8 @@ export enum XDrawingChangeSender {
 export class XDrawingChange {
   public sender: XDrawingChangeSender;
   public curState: XDrawingProxyState;
-  public objects: XDrawingObject[];
-  public clients: XDrawingClient[];
+  public objects: IDrawingObject[];
+  public clients: IDrawingClient[];
 
 
   //-------------------------------------------------------------------------------------------------
