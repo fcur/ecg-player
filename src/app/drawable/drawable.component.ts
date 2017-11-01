@@ -5,14 +5,18 @@ import {
 import { XDrawingProxy } from "../model/drawingproxy"
 import { DataService } from "../service/data.service"
 import {
-  XDrawingClient, XDrawingMode, XDrawingChange,
-  XDrawingProxyState, XCanvasTool, XRectangle,
-  XDrawingCell, XDrawingChangeSender, XLabel,
-  XDrawingGridMode, XDrawingObject, XLine,
-  XDrawingPrimitiveState, XPolyline, XPeak,
-  XDrawingObjectType, XDrawingPrimitive,
-  XPoint
+  XDrawingChange, XDrawingProxyState, XCanvasTool, XDrawingCell,
+  XDrawingChangeSender, XDrawingGridMode
 } from "../model/misc";
+import {
+  XDrawingPrimitive, XDrawingPrimitiveState,
+  XLabel, XLine, XPeak, XPoint, XPolyline,
+  XRectangle
+} from "../model/geometry";
+
+import { XDrawingClient, XDrawingMode } from "../model/drawingclient";
+import { XDrawingObject, XDrawingObjectType } from "../model/drawingobject";
+
 import {
   EcgAnnotation, EcgAnnotationCode, EcgLeadCode,
   EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType

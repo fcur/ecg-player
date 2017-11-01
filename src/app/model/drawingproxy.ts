@@ -1,12 +1,10 @@
 import { EventEmitter } from "@angular/core";
+import { XDrawingChange, XDrawingProxyState, XDrawingChangeSender } from "./misc";
+import { XDrawingClient, XDrawingMode } from "./drawingclient";
+import { XDrawingObject, XDrawingObjectType } from "./drawingobject";
 import {
-  XDrawingChange, XDrawingMode, XDrawingProxyState,
-  XDrawingClient, XDrawingObject, XDrawingObjectType,
-  XDrawingChangeSender
-} from "./misc";
-import {
-  EcgWavePoint, EcgWavePointType, EcgAnnotation,
-  EcgSignal, EcgAnnotationCode, EcgLeadCode, EcgRecord
+  EcgWavePoint, EcgWavePointType, EcgAnnotation, EcgSignal,
+  EcgAnnotationCode, EcgLeadCode, EcgRecord
 } from "./ecgdata"
 import { BehaviorSubject } from "rxjs";
 
