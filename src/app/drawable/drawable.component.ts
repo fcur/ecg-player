@@ -2,7 +2,7 @@ import {
   Component, OnInit, ElementRef, HostListener,
   ViewChild
 } from '@angular/core';
-import { XDrawingProxy } from "../model/drawing-proxy"
+import { XDrawingProxy } from "../model/drawingproxy"
 import { DataService } from "../service/data.service"
 import {
   XDrawingClient, XDrawingMode, XDrawingChange,
