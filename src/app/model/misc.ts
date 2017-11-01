@@ -7,21 +7,59 @@ import {
 // -------------------------------------------------------------------------------------------------
 // Drawing mode
 // -------------------------------------------------------------------------------------------------
-export enum XDrawingMode {
-  Canvas = 0,
-  SVG,
-  Mix
+//export enum XDrawingMode {
+//  Canvas = 0,
+//  SVG,
+//  Mix
+//}
+
+export class ProcessedEcgRecord
+{
+  public source: EcgRecord;
+  public zoomLevel;
+
+  public drawingObjects: XDrawingObject[];
+
+  public polyline;
+  --
+  --
+  ---
+
+  microvoltsFromPixel();
+
 }
 
 // -------------------------------------------------------------------------------------------------
 // Drawing client
 // -------------------------------------------------------------------------------------------------
 export class XDrawingClient {
-  public mode: XDrawingMode;
+  public init: Function;
+  public processRecord: Function;
+
   public draw: Function;
-
-
+  public postDraw: Function;
 }
+
+export class XDOAnnotation extends XDrawingObject
+{
+  constructor() {
+    super();
+  }
+}
+
+export class XDCAnnotations {
+
+  public init(Model model)
+  {
+
+  }
+  public draw(obj: XDOAnnotation, cell: Cell, canvas: CanvasDrawing2D, record: ProcessedEcgRecord)
+  {
+
+  }
+}
+export class XDCPQRST { }
+export class XDCSignal { }
 
 
 
@@ -262,30 +300,31 @@ export class XDrawingProxyState {
 // -------------------------------------------------------------------------------------------------
 export class XDrawingObject {
   /** Object index. */
-  public index: number;
+  protected index: number;
   /** Object inner indexes. */
-  public indexes: number[];
+  //public indexes: number[];
   /** Object owner. */
-  public owner: XDrawingClient;
+  protected owner: XDrawingClient;
   /** Object type. */
-  public type: XDrawingObjectType;
+  //public type: XDrawingObjectType;
   /** Container of drawing object (required). */
   public container: XRectangle;
+
   /**Drawing object points (relative coordinates, optional). Beats */
-  public points: XPoint[];
+  //public points: XPoint[];
   /** Drawing object polylines. Signal*/
-  public polylines: XPolyline[];
+  //public polylines: XPolyline[];
 	/** Drawing object rectangels (relative coordinates, optional).
 	* Annotations background*/
-  public rectangles: XRectangle[];
+  //public rectangles: XRectangle[];
 	/** Drawing object lines  (relative coordinates, optional).
 	 * PQRST, measure tool */
-  public lines: XLine[];
+  //public lines: XLine[];
 
-  public labels: XLabel[];
-  public peaks: XPeak[];
+  //public labels: XLabel[];
+  //public peaks: XPeak[];
   /** Drawing object assigned cell index. -1: fill cells container */
-  public cellIndex: number;
+  //public cellIndex: number;
 
   //-------------------------------------------------------------------------------------
   public get isFloating(): boolean {
@@ -530,8 +569,6 @@ export class XDrawingObject {
 export class XDrawingPrimitive {
   zindex: number;
   state: XDrawingPrimitiveState;
-  floatingX: boolean;
-  floatingY: boolean;
 
   //-------------------------------------------------------------------------------------
   public get floating(): boolean {
@@ -569,11 +606,11 @@ export class XRectangle extends XDrawingPrimitive {
 
   /** Rectangle start position on X axis in pixels. */
   public get left(): number { return this._l; }
-  /** Rectangle start position on Y axis in pixels. */
+  /** Rectangle start position on Y axis in microvolts. */
   public get top(): number { return this._t; }
   /** Rectangle width in pixels. */
   public get width(): number { return this._w; }
-  /** Rectangle height in pixels.  */
+  /** Rectangle height in microvolts.  */
   public get height(): number { return this._h; }
   /** Returns copy of object. */
   public get clone(): XRectangle { return new XRectangle(this._l, this._t, this._w, this._h); }

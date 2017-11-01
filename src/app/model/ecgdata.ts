@@ -61,8 +61,6 @@ export class EcgRecord {
 		public beats: number[];
 		public wavePoints: EcgWavePoint[];
 		public annotations: EcgAnnotation[];
-
-
 }
 
 // -------------------------------------------------------------------------------------------------

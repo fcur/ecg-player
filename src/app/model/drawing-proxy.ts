@@ -16,12 +16,18 @@ import { BehaviorSubject } from "rxjs";
 export class XDrawingProxy {
   public state: XDrawingProxyState;
   public onChangeState: EventEmitter<XDrawingChange>;
-  public drawingObjects: XDrawingObject[];
+
+  public get clients(): XDrawingClient[] {
+    return this._clients;
+  }
+
+  public currentZoomRecord: ProcessedEcgRecord;
 
   //-------------------------------------------------------------------------------------
-  constructor() {
+  constructor(private _clients: XDrawingClient[]) {
     //console.info("DrawingProxy constructor");
     this.init();
+
   }
 
   //-------------------------------------------------------------------------------------
