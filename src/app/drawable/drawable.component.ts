@@ -37,7 +37,7 @@ export class DrawableComponent implements OnInit {
   private _signalClient: XDrawingClient;
   private _beatsClient: XDrawingClient;
   private _floatingObjectsClient: XDrawingClient;
-  private _floatingPeakClient: XDrawingClient;
+  private _floatingPeaksClient: XDrawingClient;
   private _gridClient: XDrawingClient;
 
 
@@ -276,8 +276,10 @@ export class DrawableComponent implements OnInit {
     this._floatingObjectsClient = new XDrawingClient();
     this._floatingObjectsClient.mode = XDrawingMode.Canvas;
     this._floatingObjectsClient.draw = this.drawFloadingPoint.bind(this);
-    this._floatingPeakClient = new XDrawingClient();
-    this._floatingPeakClient.mode = XDrawingMode.Canvas;
+    this._floatingPeaksClient = new XDrawingClient();
+    this._floatingPeaksClient.mode = XDrawingMode.Canvas;
+    this._floatingPeaksClient.draw = this.drawFloatingPeak.bind(this);
+
     this._gridClient = new XDrawingClient();
     this._gridClient.mode = XDrawingMode.Canvas;
     //this._drawingClients.push(ansClient, pqrstClient);
@@ -288,6 +290,8 @@ export class DrawableComponent implements OnInit {
     this._dp.buildSignal([this._ds.ecgrecord], this._signalClient);
     this._dp.buildBeats([this._ds.ecgrecord], this._beatsClient, this._pinBeatsToSignal);
     this._dp.buildFloatingObjects(this._floatingObjectsClient);
+    //this._dp.buildFloatingPeaks([this._ds.ecgrecord], this._floatingPeaksClient, 2);
+
     //this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
     //this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
   }
@@ -431,6 +435,9 @@ export class DrawableComponent implements OnInit {
   //-------------------------------------------------------------------------------------
   private drawFloatingPeak(obj: XDrawingObject) {
     console.info("drawFloatingPeak");
+
+    this._ct.ctx.save();
+    this._ct.ctx.restore();
   }
 
   //-------------------------------------------------------------------------------------
@@ -446,8 +453,8 @@ export class DrawableComponent implements OnInit {
   private pointerMove(event: any) {
     //let timeNow: number = Date.now();
     //if (timeNow - this._lastEmitTime > this._threshold) {
-    //		this._lastEmitTime = timeNow;
-    //		this._dp.performMouseMove(event);
+    // this._lastEmitTime = timeNow;
+    // this._dp.performMouseMove(event);
     //}
     this._dp.performMouseMove(event);
   }

@@ -80,6 +80,22 @@ export class XDrawingProxy {
   }
 
   //-------------------------------------------------------------------------------------
+  public buildFloatingPeaks(list: EcgRecord[], client: XDrawingClient, rowIndex: number) {
+    let o: XDrawingObject;
+    let skipPx: number = 0;
+
+    // use beats positions as peaks positions
+    for (let z: number = 0; z < list.length; z++) {
+      if (!Array.isArray(list[z].beats)) continue; // beats
+
+    }
+
+
+    this.drawingObjects.push(o);
+    skipPx = o.container.maxOx;
+  }
+
+  //-------------------------------------------------------------------------------------
   public buildFloatingObjects(client: XDrawingClient) {
     let obj: XDrawingObject = XDrawingObject.PrepareFloatingDrawings(client, this.state);
     this.drawingObjects.push(obj);
@@ -100,7 +116,6 @@ export class XDrawingProxy {
     }
     return result;
   }
-
 
   //-------------------------------------------------------------------------------------
   public buildAnnotations(list: EcgRecord[], client: XDrawingClient) {
@@ -144,13 +159,11 @@ export class XDrawingProxy {
     return result;
   }
 
-
   //-------------------------------------------------------------------------------------
   public gc() {
     // handle proxy limits
     // remove unused objects
-  } s
-
+  }
 
   //-------------------------------------------------------------------------------------
   private prepareFloatingObjects(left: number, top: number) {

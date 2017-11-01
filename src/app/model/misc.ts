@@ -329,7 +329,7 @@ export class XDrawingObject {
           this.peaks[z].container.left = left;
         }
         if (this.peaks[z].floatingY) {
-          this.peaks[z].container.top = signal[0].polylines[z].points[left].top;
+          this.peaks[z].container.top = signal[0].polylines[z].points[left].top; // top in microvolts
         }
       }
     }
@@ -375,6 +375,13 @@ export class XDrawingObject {
     result.index = i;
     result.owner = owner;
     //console.warn("NOT IMPLEMENTED");
+    return result;
+  }
+  
+  //-------------------------------------------------------------------------------------
+  static PreparePeak(i: number): XDrawingObject {
+    let result: XDrawingObject = new XDrawingObject();
+
     return result;
   }
 
@@ -437,18 +444,14 @@ export class XDrawingObject {
     result.peaks = new Array(state.gridCells.length);
     for (let z: number = 0; z < state.gridCells.length; z++) {
       result.peaks[z] = new XPeak();
+      result.peaks[z].container = new XRectangle(-1, -1, 1, 1);
       result.peaks[z].cellIndex = z;
       result.peaks[z].floatingX = true;
       result.peaks[z].floatingY = true;
-      result.peaks[z].container = new XRectangle(-1, -1, 1, 1);
       result.peaks[z].label = new XLabel();
       result.peaks[z].label.label = state.gridCells[z].leadLabel;
       result.peaks[z].label.position = new XPoint(-1, -1);
-
-
     }
-
-
     return result;
   }
 
@@ -965,7 +968,7 @@ export class XPeak extends XDrawingPrimitive {
   public container: XRectangle;
   public label: XLabel;
   public line: XLine;
-  public cellIndex: number;
+  public cellIndex: number; // required
 }
 
 
