@@ -246,6 +246,13 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private onReceiveData(v: EcgRecord[]) {
 		if (!v || !Array.isArray(v) || v.length === 0) return;
+		// save original sample rate
+		this._dp.drawingData.originalSampleRate = this._ds.ecgrecords[0].sampleRateForCls;
+
+		this._dp.drawingData.recordHeaders = this._ds.ecgrecords;
+		// on real project we receive data in other place
+		this._dp.drawingData.projection = this._ds.ecgrecords;
+
 		this._dp.reset();
 		//console.info("receive", v, "prepare drawings");
 		this.prepareDrawingObjects();

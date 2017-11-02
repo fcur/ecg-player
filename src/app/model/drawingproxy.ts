@@ -3,8 +3,9 @@ import { XDrawingChange, XDrawingProxyState, XDrawingChangeSender } from "./misc
 import { XDrawingClient, XDrawingMode } from "./drawingclient";
 import {
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	BeatsDrawingObject,IDrawingObject
+	BeatsDrawingObject, IDrawingObject
 } from "./drawingobject";
+import { DrawingData } from "./drawingdata";
 import {
 	EcgWavePoint, EcgWavePointType, EcgAnnotation, EcgSignal,
 	EcgAnnotationCode, EcgLeadCode, EcgRecord
@@ -18,12 +19,23 @@ export class XDrawingProxy {
 	public state: XDrawingProxyState;
 	public onChangeState: EventEmitter<XDrawingChange>;
 	public drawingObjects: IDrawingObject[];
+	public drawingData: DrawingData;
+
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		//console.info("DrawingProxy constructor");
 		this.init();
 	}
+
+	//-------------------------------------------------------------------------------------
+	public prepareData(v: EcgRecord) {
+
+	}
+	public prepareDataHeaders(v: EcgRecord[]) {
+
+	}
+
 
 	//-------------------------------------------------------------------------------------
 	public reset() {
@@ -136,6 +148,7 @@ export class XDrawingProxy {
 
 	//-------------------------------------------------------------------------------------
 	private init() {
+		this.drawingData = new DrawingData();
 		this.onChangeState = new EventEmitter<XDrawingChange>();
 		this.drawingObjects = [];
 		this.state = new XDrawingProxyState();

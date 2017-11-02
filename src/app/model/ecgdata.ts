@@ -54,7 +54,7 @@ export enum EcgWavePointType {
 // -------------------------------------------------------------------------------------------------
 export class EcgRecord {
 	public id: string;
-	public time: number;
+	public startTime: number;
 	public signal: EcgSignal;
 	public sampleRateForCls: number;
 	public totalBeatsCount: number;
@@ -62,6 +62,11 @@ export class EcgRecord {
 	public wavePoints: EcgWavePoint[];
 	public annotations: EcgAnnotation[];
 
+	public get endTime(): number {
+		if (!this.signal || !Array.isArray(this.signal.channels) || this.signal.channels.length === 0)
+			return this.startTime;
+		return this.startTime + this.signal.length;
+	}
 
 }
 
@@ -78,8 +83,9 @@ export class EcgSignal {
 
 	//-------------------------------------------------------------------------------------
 	public get length(): number {
+		// sample rate for seconds, return milliseconds
 		if (Number.isInteger(this.sampleCount) && Number.isInteger(this.sampleRate))
-			return this.sampleCount / this.sampleRate;
+			return Math.floor(this.sampleCount / (this.sampleRate * 1000));
 		return 0;
 	}
 }
@@ -154,7 +160,7 @@ export class EcgParser {
 			output.channels.push(input[key]);
 		}
 		if (output.channels.length > 0) {
-			output.sampleCount = output.channels.length;
+			output.sampleCount = output.channels[0].length;
 		}
 		return output;
 	}
@@ -203,9 +209,9 @@ export class EcgParser {
 		ecgrecord.signal.asSamples = false;
 		let signalLengthMs: number = 0;
 		if (input.hasOwnProperty(EcgParser.RECORDING_TIME_KEY)) {
-			ecgrecord.time = new Date(input[EcgParser.RECORDING_TIME_KEY] as string).getTime();
+			ecgrecord.startTime = new Date(input[EcgParser.RECORDING_TIME_KEY] as string).getTime();
 		} else {
-			ecgrecord.time = Date.now();
+			ecgrecord.startTime = Date.now();
 		}
 		if (input.hasOwnProperty(EcgParser.BEATS_KEY)) {
 			ecgrecord.beats = input[EcgParser.BEATS_KEY] as number[];
@@ -221,6 +227,7 @@ export class EcgParser {
 		if (input.hasOwnProperty(EcgParser.LEADS_DATA_KEY)) {
 			let signal: EcgSignal = this.parseLeadsData(input[EcgParser.LEADS_DATA_KEY]);
 			ecgrecord.signal.channels = signal.channels;
+			ecgrecord.signal.sampleCount = signal.sampleCount;
 			ecgrecord.signal.leads = signal.leads;
 		}
 		if (input.hasOwnProperty(EcgParser.ANNOTATIONS_KEY)) {

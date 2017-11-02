@@ -39,7 +39,7 @@ export class DataService {
 			EcgLeadCode.MDC_ECG_LEAD_AVR,
 			EcgLeadCode.MDC_ECG_LEAD_AVL,
 			EcgLeadCode.MDC_ECG_LEAD_AVF
-		]
+		];
 		else return [];
 	}
 
@@ -122,7 +122,7 @@ export class DataService {
 			records[z].id = `record_${z + 1}`;
 			records[z].signal = ecgrecord.signal;
 			records[z].sampleRateForCls = ecgrecord.sampleRateForCls
-			records[z].time = ecgrecord.time + z * (skipMs + ecgrecord.signal.length);
+			records[z].startTime = ecgrecord.startTime + z * (skipMs + ecgrecord.signal.length);
 			records[z].beats = ecgrecord.beats;
 			records[z].annotations = ecgrecord.annotations;
 			records[z].wavePoints = ecgrecord.wavePoints;
@@ -136,5 +136,5 @@ export class DataService {
 			return this.onLoadDataBs.value;
 		return [];
 	}
-  
+
 }
