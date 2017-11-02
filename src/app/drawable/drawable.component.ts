@@ -180,7 +180,7 @@ export class DrawableComponent implements OnInit {
 	public ngOnInit() {
 		//console.info("DrawableComponent: init");
 		this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
-		this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord));
+		this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord[]));
 		this._canvasContainer.nativeElement.addEventListener("dragover", this.onDragOver.bind(this), false);
 		this._canvasContainer.nativeElement.addEventListener("drop", this.onDragDrop.bind(this), false);
 	}
@@ -244,8 +244,8 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private onReceiveData(v: EcgRecord) {
-		if (!v || v === null) return;
+	private onReceiveData(v: EcgRecord[]) {
+		if (!v || !Array.isArray(v) || v.length === 0) return;
 		this._dp.reset();
 		//console.info("receive", v, "prepare drawings");
 		this.prepareDrawingObjects();
@@ -300,8 +300,8 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private prepareDrawingObjects() {
-		this._dp.buildSignal([this._ds.ecgrecord], this._signalClient);
-		this._dp.buildBeats([this._ds.ecgrecord], this._beatsClient, this._pinBeatsToSignal);
+		this._dp.buildSignal(this._ds.ecgrecords, this._signalClient);
+		this._dp.buildBeats(this._ds.ecgrecords, this._beatsClient, this._pinBeatsToSignal);
 		this._dp.buildFloatingObjects(this._floatingObjectsClient);
 		//this._dp.buildFloatingPeaks([this._ds.ecgrecord], this._floatingPeaksClient, 2);
 

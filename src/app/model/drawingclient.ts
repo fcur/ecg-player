@@ -1,5 +1,8 @@
 
-import { XDrawingObjectType } from "./drawingobject";
+import {
+	XDrawingObjectType, AnsDrawingObject,
+	BeatsDrawingObject, IDrawingObject, XDrawingObject
+} from "./drawingobject";
 
 // -------------------------------------------------------------------------------------------------
 // Drawing mode
@@ -75,8 +78,11 @@ export class AnsDrawingClient extends XDrawingClient {
 
 
 	//-------------------------------------------------------------------------------------
-	public createAnsDrawingObject() {
+		public createAnsDrawingObject(): AnsDrawingObject {
+			console.info("createAnsDrawingObject", "not implemented");
+			let result: AnsDrawingObject = new AnsDrawingObject();
 
+			return result;
 	}
 
 
@@ -110,7 +116,46 @@ export class BeatsDrawingClient extends XDrawingClient {
 
 
 	//-------------------------------------------------------------------------------------
-	public createBeatsDrawingObject() {
+		public createBeatsDrawingObject(): BeatsDrawingObject {
+			console.info("createBeatsDrawingObject", "not implemented");
+			let result: BeatsDrawingObject = new BeatsDrawingObject();
 
+			return result;
 	}
 }
+
+
+// -------------------------------------------------------------------------------------------------
+// Signal drawing glient
+// -------------------------------------------------------------------------------------------------
+export class SignalDrawingClient extends XDrawingClient {
+
+	//-------------------------------------------------------------------------------------
+	constructor(){
+		super();
+		this.mode = XDrawingMode.Canvas;
+		this.type = XDrawingObjectType.Signal;
+		this.draw = this.drawSignal.bind(this);
+		this.afterDraw = this.afterDrawSignal.bind(this);
+		this.createDrawingObject = this.createSignalDrawingObject.bind(this);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public drawSignal(){
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public afterDrawSignal(){
+		
+	}
+
+	//-------------------------------------------------------------------------------------
+	public createSignalDrawingObject(): XDrawingObject {
+		console.info("createSignalDrawingObject", "not implemented");
+		let result: XDrawingObject = new XDrawingObject();
+
+		return result;
+	}
+}
+

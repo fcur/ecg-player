@@ -1,7 +1,8 @@
 import { Output, Injectable, EventEmitter } from "@angular/core";
 import {
 	EcgAnnotation, EcgAnnotationCode, EcgLeadCode,
-	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType
+	EcgParser, EcgRecord, EcgSignal, EcgWavePoint,
+	EcgWavePointType
 } from "../model/ecgdata";
 
 import { BehaviorSubject } from "rxjs";
@@ -17,20 +18,7 @@ export class DataService {
 	public isEasiLeads: boolean = true;
 	public isStandard12Leads: boolean = false;
 
-	static ANNOTATIONS_KEY: string = "annotations";
-	static ANNOTATIONS_START_KEY: string = "start";
-	static ANNOTATIONS_END_KEY: string = "end";
-	static ANNOTATIONS_BEATS_COUNT_KEY: string = "affected_beats_count";
-	static ANNOTATIONS_CLUSTER_INDEX_KEY: string = "cluster_index";
-	static ANNOTATIONS_CODES_MAP_KEY: string = "codes_with_values";
-	static BEATS_KEY: string = "beats";
-	static LEADS_DATA_KEY: string = "leads_data";
-	static RECORDING_TIME_KEY: string = "recording_time";
-	static SAMPLE_MUL_KEY: string = "sample_multiplier";
-	static SAMPLE_RATE_KEY: string = "sample_rate";
-	static WAVEPOINTS_KEY: string = "wavepoints";
-
-	public onLoadDataBs: BehaviorSubject<EcgRecord>;
+	public onLoadDataBs: BehaviorSubject<EcgRecord[]>;
 
 	//-------------------------------------------------------------------------------------
 	public get leads(): EcgLeadCode[] {
@@ -59,7 +47,7 @@ export class DataService {
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		this._ecgleadsDescriptionMap = new Map<EcgLeadCode, string>();
-		this.onLoadDataBs = new BehaviorSubject<EcgRecord>(null);
+		this.onLoadDataBs = new BehaviorSubject<EcgRecord[]>([]);
 		//console.info("DataService constructor");
 	}
 
@@ -118,100 +106,35 @@ export class DataService {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public parseJsonFile(input: any) {
+	/**
+	 * Parse file & prepare storage
+	 * @param input json as text
+	 * @param skipMs skip milliseconds between records
+	 * @param limitItems ecg record copies count
+	 */
+	public parseJsonFile(input: any, skipMs: number = 10000, limitItems: number = 3) {
 		//console.info(input);
-
-		let ecgrecord: EcgRecord = new EcgRecord();
-		ecgrecord.id = "record_id";
-		ecgrecord.signal = new EcgSignal();
-		ecgrecord.signal.asSamples = false;
-		if (input.hasOwnProperty(DataService.RECORDING_TIME_KEY)) {
-			ecgrecord.time = new Date(input[DataService.RECORDING_TIME_KEY] as string).getTime();
+		let parser: EcgParser = new EcgParser(this._ecgleadsDescriptionMap);
+		let ecgrecord: EcgRecord = parser.parseEcgRecord(input);
+		let records: EcgRecord[] = new Array(limitItems);
+		for (let z: number = 0; z < limitItems; z++) {
+			records[z] = new EcgRecord();
+			records[z].id = `record_${z + 1}`;
+			records[z].signal = ecgrecord.signal;
+			records[z].sampleRateForCls = ecgrecord.sampleRateForCls
+			records[z].time = ecgrecord.time + z * (skipMs + ecgrecord.signal.length);
+			records[z].beats = ecgrecord.beats;
+			records[z].annotations = ecgrecord.annotations;
+			records[z].wavePoints = ecgrecord.wavePoints;
 		}
-		if (input.hasOwnProperty(DataService.BEATS_KEY)) {
-			ecgrecord.beats = input[DataService.BEATS_KEY] as number[];
-		}
-		if (input.hasOwnProperty(DataService.SAMPLE_RATE_KEY)) {
-			ecgrecord.sampleRateForCls = input[DataService.SAMPLE_RATE_KEY] as number;
-			ecgrecord.signal.sampleRate = ecgrecord.sampleRateForCls;
-		}
-		if (input.hasOwnProperty(DataService.LEADS_DATA_KEY)) {
-			let signal: EcgSignal = this.parseLeadsData(input[DataService.LEADS_DATA_KEY]);
-			ecgrecord.signal.channels = signal.channels;
-			ecgrecord.signal.leads = signal.leads;
-		}
-		if (input.hasOwnProperty(DataService.ANNOTATIONS_KEY)) {
-			ecgrecord.annotations = this.parseAnnotations(input[DataService.ANNOTATIONS_KEY]);
-		}
-		if (input.hasOwnProperty(DataService.WAVEPOINTS_KEY)) {
-			ecgrecord.wavePoints = this.parseWavepoints(input[DataService.ANNOTATIONS_KEY]);
-		}
-
-		this.onLoadDataBs.next(ecgrecord);
+		this.onLoadDataBs.next(records);
 	}
 
 	//-------------------------------------------------------------------------------------
-	public get ecgrecord(): EcgRecord {
-		return this.onLoadDataBs.value;
+	public get ecgrecords(): EcgRecord[] {
+		if (this.onLoadDataBs && Array.isArray(this.onLoadDataBs.value))
+			return this.onLoadDataBs.value;
+		return [];
 	}
-
-
-	//-------------------------------------------------------------------------------------
-	public parseLeadsData(input: any): EcgSignal {
-		let output: EcgSignal = new EcgSignal();
-		output.leads = new Array();
-		output.channels = new Array();
-		let leadLabel: string;
-		for (let key in input) {
-			if (!input.hasOwnProperty(key)) continue;
-			leadLabel = key.slice(key.lastIndexOf("_") + 1);
-			output.leads.push(this.getEcgleadCode(leadLabel));
-			output.channels.push(input[key]);
-		}
-		if (output.channels.length > 0) {
-			output.sampleCount = output.channels.length;
-		}
-		return output;
-	}
-
-	//-------------------------------------------------------------------------------------
-	public parseAnnotations(input: any): EcgAnnotation[] {
-		if (!Array.isArray(input)) return [];
-		let output: EcgAnnotation[] = new Array(input.length);
-		for (let z: number = 0; z < input.length; z++) {
-			output[z] = new EcgAnnotation();
-			if (input[z].hasOwnProperty(DataService.ANNOTATIONS_START_KEY))
-				output[z].start = Number.parseInt(input[z][DataService.ANNOTATIONS_START_KEY]);
-			if (input[z].hasOwnProperty(DataService.ANNOTATIONS_END_KEY))
-				output[z].end = Number.parseInt(input[z][DataService.ANNOTATIONS_END_KEY]);
-			if (input[z].hasOwnProperty(DataService.ANNOTATIONS_BEATS_COUNT_KEY))
-				output[z].beatsCount = Number.parseInt(input[z][DataService.ANNOTATIONS_BEATS_COUNT_KEY]);
-			if (input[z].hasOwnProperty(DataService.ANNOTATIONS_CLUSTER_INDEX_KEY))
-				output[z].clusterIndex = Number.parseInt(input[z][DataService.ANNOTATIONS_CLUSTER_INDEX_KEY]);
-			if (input[z].hasOwnProperty(DataService.ANNOTATIONS_CODES_MAP_KEY)) {
-				output[z].codesMap = new Map<string, number>();
-				for (let codeKey in input[z][DataService.ANNOTATIONS_CODES_MAP_KEY]) {
-					output[z].codesMap.set(codeKey, input[z][DataService.ANNOTATIONS_CODES_MAP_KEY][codeKey] as number);
-				}
-			}
-		}
-		return output;
-	}
-
-	//-------------------------------------------------------------------------------------
-	public parseWavepoints(input: any): EcgWavePoint[] {
-		if (!Array.isArray(input)) return [];
-		let output: EcgWavePoint[] = new Array(input.length);
-		for (let z: number = 0; z < input.length; z++) {
-			output[z] = new EcgWavePoint();
-		}
-		return output;
-	}
-
-
-
-
-
-
-
+  
 }
