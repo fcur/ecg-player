@@ -25,6 +25,8 @@ export interface IDrawingClient {
 	init: Function;
 	/** After view init drawing method (optional). */
 	afterDraw?: Function;
+	/** Create drawing object factory method. */
+	createDrawingObject: Function;
 }
 
 
@@ -36,14 +38,14 @@ export class XDrawingClient implements IDrawingClient {
 	mode: XDrawingMode;
 	/** Object type. */
 	type: XDrawingObjectType;
-	 /** Client drawing method (required). */
+	/** Client drawing method (required). */
 	draw: Function;
 	/** Init drawing client (required). */
-	 init: Function;
-	 /** After view init drawing method (optional). */
+	init: Function;
+	/** After view init drawing method (optional). */
 	afterDraw: Function;
-
-
+	/** Create drawing object factory method. */
+	createDrawingObject: Function;
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -51,24 +53,31 @@ export class XDrawingClient implements IDrawingClient {
 // -------------------------------------------------------------------------------------------------
 export class AnsDrawingClient extends XDrawingClient {
 
-		//-------------------------------------------------------------------------------------
-		constructor() {
-			super();
-			this.mode = XDrawingMode.Canvas;
-			this.type = XDrawingObjectType.Annotations;
-			this.draw = this.drawAnnotations.bind(this);
-			this.afterDraw = this.afterdrawAnnotations.bind(this);
-		}
+	//-------------------------------------------------------------------------------------
+	constructor() {
+		super();
+		this.mode = XDrawingMode.Canvas;
+		this.type = XDrawingObjectType.Annotations;
+		this.draw = this.drawAnnotations.bind(this);
+		this.afterDraw = this.afterdrawAnnotations.bind(this);
+		this.createDrawingObject = this.createAnsDrawingObject.bind(this);
+	}
 
-		//-------------------------------------------------------------------------------------
-		public drawAnnotations(p1: number, p2: number, p3: string) {
-			console.info("drawAnnotations", "not implemented");
-		}
+	//-------------------------------------------------------------------------------------
+	public drawAnnotations(p1: number, p2: number, p3: string) {
+		console.info("drawAnnotations", "not implemented");
+	}
 
-		//-------------------------------------------------------------------------------------
-		public afterdrawAnnotations(){
-			console.info("afterdrawAnnotations", "not implemented");
-		}
+	//-------------------------------------------------------------------------------------
+	public afterdrawAnnotations() {
+		console.info("afterdrawAnnotations", "not implemented");
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	public createAnsDrawingObject() {
+
+	}
 
 
 }
@@ -86,15 +95,22 @@ export class BeatsDrawingClient extends XDrawingClient {
 		this.type = XDrawingObjectType.Beats;
 		this.draw = this.drawBeats.bind(this);
 		this.afterDraw = this.afterDrawBeats.bind(this);
+		this.createDrawingObject = this.createBeatsDrawingObject.bind(this);
 	}
 
-		//-------------------------------------------------------------------------------------
-		public drawBeats(p1: number[], p2: number, p3: string[]) {
-			console.info("drawBeats", "not implemented");
-		}
+	//-------------------------------------------------------------------------------------
+	public drawBeats(p1: number[], p2: number, p3: string[]) {
+		console.info("drawBeats", "not implemented");
+	}
 
-		//-------------------------------------------------------------------------------------
-		public afterDrawBeats(){
-			console.info("afterDrawBeats", "not implemented");
-		}
+	//-------------------------------------------------------------------------------------
+	public afterDrawBeats() {
+		console.info("afterDrawBeats", "not implemented");
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	public createBeatsDrawingObject() {
+
+	}
 }
