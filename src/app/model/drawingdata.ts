@@ -19,7 +19,7 @@ export class DrawingData {
 
 
 	static RECORD_HEADERS: string = "headers";
-	static SIGNAL_POLYLINE: string = "signal-polyline";
+	static SIGNAL_POLYLINES: string = "signal-polyline";
 	static BEATS_POINTS: string = "beats-points";
 
 	private _osr: number;
@@ -52,20 +52,59 @@ export class DrawingData {
 		let proj: RecordProjection;
 		let skipPx: number = 0;
 		let srKey: string = p[0].sampleRateForCls.toString();
-		this.data[srKey] = {};
-		this.data[srKey][DrawingData.RECORD_HEADERS] = {};
+		if (!this.data[srKey])
+			this.data[srKey] = {};
+		if (!this.data[srKey][DrawingData.RECORD_HEADERS])
+			this.data[srKey][DrawingData.RECORD_HEADERS] = {};
 		for (let z: number = 0; z < p.length; z++) {
 			proj = new RecordProjection();
 			proj.skipPixels = skipPx;
 			proj.record = p[z];
 			skipPx += proj.limitPixels;
+			// data[sample_rate][headers][record_id]
 			this.data[srKey][DrawingData.RECORD_HEADERS][proj.id] = proj;
 		}
 	}
 
 	//-------------------------------------------------------------------------------------
 	public set projection(p: EcgRecord[]) {
+		if (!Array.isArray(p) || p.length === 0) return;
+		for (let z: number = 0; z < p.length; z++) {
+			this.trySaveSignalPolylines(p[z].id, p[z].signal);
+		}
+	}
 
+	//-------------------------------------------------------------------------------------
+	private trySaveSignalPolylines(id: string, v: EcgSignal) {
+		// data[sample_rate] created in previous stage
+		// data[sample_rate][signal-polyline][record_id][lead]
+		let srKey: string = v.sampleRate.toString();
+		if (!this.data[srKey])
+			this.data[srKey] = {};
+		if (!this.data[srKey][DrawingData.SIGNAL_POLYLINES])
+			this.data[srKey][DrawingData.SIGNAL_POLYLINES] = {};
+		if (!this.data[srKey][DrawingData.SIGNAL_POLYLINES][id])
+			this.data[srKey][DrawingData.SIGNAL_POLYLINES][id] = { };
+
+		if (!v || !Array.isArray(v.channels) || !Array.isArray(v.leads) || v.leads.length === 0) return;
+		let lead: EcgLeadCode;
+		let polyline: XPolyline;
+		let points: XPoint[];
+		for (let z: number = 0; z < v.leads.length; z++) {
+			lead = v.leads[z];
+			polyline = new XPolyline([]);
+			
+			if (!Array.isArray(v.channels[z])) continue;
+			// prepare points
+			points = new Array(v.channels[z].length);
+			for (let y: number = 0; y < v.channels[z].length; y++) {
+				// save microvolts as relative OY position
+				points[y] = new XPoint(y, v.channels[z][y]);
+			}
+			polyline.rebuild(points);
+			//PATH: data["175"]["signal-polyline"]["record_1"]["13"]
+			this.data[srKey][DrawingData.SIGNAL_POLYLINES][id][v.leads[z]] = polyline;
+		}
 	}
 
 }
