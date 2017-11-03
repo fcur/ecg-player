@@ -323,3 +323,11 @@ export class AnsDrawingObject extends XDrawingObject{
 export class BeatsDrawingObject extends XDrawingObject{
 
 }
+
+
+// -------------------------------------------------------------------------------------------------
+// Signal drawing object
+// -------------------------------------------------------------------------------------------------
+export class SignalDrawingObject extends XDrawingObject {
+
+}

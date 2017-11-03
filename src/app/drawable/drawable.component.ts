@@ -5,8 +5,8 @@ import {
 import { XDrawingProxy } from "../model/drawingproxy"
 import { DataService } from "../service/data.service"
 import {
-	XDrawingChange, XDrawingProxyState, XCanvasTool, XDrawingCell,
-	XDrawingChangeSender, XDrawingGridMode
+	XDrawingChange, XDrawingProxyState, XCanvasTool,
+	XDrawingCell, XDrawingChangeSender, XDrawingGridMode
 } from "../model/misc";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState,
@@ -16,10 +16,13 @@ import {
 
 import {
 	XDrawingClient, XDrawingMode, IDrawingClient,
-	AnsDrawingClient, BeatsDrawingClient
+	AnsDrawingClient, BeatsDrawingClient,
+	SignalDrawingClient
 } from "../model/drawingclient";
-import { XDrawingObject, XDrawingObjectType } from "../model/drawingobject";
-
+import {
+	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
+	BeatsDrawingObject, IDrawingObject
+} from "../model/drawingobject";
 import {
 	EcgAnnotation, EcgAnnotationCode, EcgLeadCode,
 	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType
@@ -46,6 +49,9 @@ export class DrawableComponent implements OnInit {
 	private _floatingObjectsClient: XDrawingClient;
 	private _floatingPeaksClient: XDrawingClient;
 	private _gridClient: XDrawingClient;
+	// feature 2 clients
+	private _signalF2Client: SignalDrawingClient;
+	private _beatsF2Client: BeatsDrawingClient;
 
 
 	private _fileReader: FileReader;
@@ -164,6 +170,7 @@ export class DrawableComponent implements OnInit {
 		this._lastEmitTime = 0;
 		this._dp = new XDrawingProxy();
 		this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
+		this._dp.onPrepareDrawings.subscribe((v: IDrawingObject[]) => this.onReceiveDrawingObjects(v));
 		this._fileReader = new FileReader();
 		this.prepareClients();
 		//this._drawingClients = new Array();
@@ -282,6 +289,15 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
+	private onReceiveDrawingObjects(p: IDrawingObject[]) {
+		for (let z: number = 0; z < p.length; z++) {
+			p[z].owner.draw(p[z]);
+		}
+	}
+
+
+
+	//-------------------------------------------------------------------------------------
 	private prepareClients() {
 		this._ansClient = new XDrawingClient();
 		this._ansClient.mode = XDrawingMode.Mix;
@@ -303,6 +319,14 @@ export class DrawableComponent implements OnInit {
 		this._gridClient = new XDrawingClient();
 		this._gridClient.mode = XDrawingMode.Canvas;
 		//this._drawingClients.push(ansClient, pqrstClient);
+
+		// prepare feature 2 clients
+		this._signalF2Client = new SignalDrawingClient();
+		this._signalF2Client.draw = this.drawSignalF2.bind(this);
+		this._beatsF2Client = new BeatsDrawingClient();
+		this._beatsF2Client.draw = this.drawBeatsF2.bind(this);
+		this._dp.addClient(this._signalF2Client);
+		this._dp.addClient(this._beatsF2Client);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -478,5 +502,19 @@ export class DrawableComponent implements OnInit {
 		//}
 		this._dp.performMouseMove(event);
 	}
+
+
+
+	//-------------------------------------------------------------------------------------
+	private drawSignalF2(obj: XDrawingObject) {
+		console.info("drawSignalF2");
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	private drawBeatsF2(obj: XDrawingObject) {
+		console.info("drawBeatsF2");
+	}
+
 
 }

@@ -80,6 +80,7 @@ export class DrawingData {
 	//-------------------------------------------------------------------------------------
 	public set projection(p: EcgRecord[]) {
 		if (!Array.isArray(p) || p.length === 0) return;
+
 		let srKey: string;
 		let rdd: RecordDrawingData;
 		for (let z: number = 0; z < p.length; z++) {
@@ -87,12 +88,11 @@ export class DrawingData {
 			if (!this.data[srKey]) this.data[srKey] = {};
 			if (!this.dataV2[srKey]) this.dataV2[srKey] = {};
 			if (!this.dataV2[srKey][p[z].id]) this.dataV2[srKey][p[z].id] = new RecordDrawingData();
-
 			rdd = this.dataV2[srKey][p[z].id];
 			this.trySaveSignalPolylines(p[z].id, p[z].signal, srKey);
 			this.trySaveBeatsPoints(p[z].id, p[z].beats, srKey);
-			rdd.trySaveSignalPolylines(p[z].signal);
-			rdd.trySaveBeatsPoints(p[z].beats);
+			rdd.trySaveSignalPoints(p[z].signal);
+			rdd.trySaveBeatsPoints(p[z].beats, this.leadsForBeats);
 		}
 	}
 
@@ -164,12 +164,11 @@ export class RecordDrawingData {
 	public beats: { [lead: number]: XPoint[] };
 
 	//-------------------------------------------------------------------------------------
-	public trySaveSignalPolylines(v: EcgSignal) {
+	public trySaveSignalPoints(v: EcgSignal) {
 		if (!v || !Array.isArray(v.channels) || !Array.isArray(v.leads) || v.leads.length === 0 || this.signal) return;
 
 		let points: XPoint[];
 		this.signal = {};
-
 		for (let z: number = 0; z < v.leads.length; z++) {
 			if (!Array.isArray(v.channels[z])) continue;
 			// prepare points
@@ -183,15 +182,21 @@ export class RecordDrawingData {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public trySaveBeatsPoints(beats: number[]) {
-		// require signal
-		//if (!this.data[srKey][DrawingData.SIGNAL_POLYLINES][id]) return;
+	public trySaveBeatsPoints(beats: number[], leads: EcgLeadCode[] = []) {
+		if (!Array.isArray(beats) || !this.signal || this.beats) return;  // require signal
 
-		//if (!this.data[srKey][DrawingData.BEATS_POINTS])
-		//  this.data[srKey][DrawingData.BEATS_POINTS] = {};
-
-		//if (!this.data[srKey][DrawingData.BEATS_POINTS][id])
-		//  this.data[srKey][DrawingData.BEATS_POINTS][id] = {};
+		let leadCode: EcgLeadCode, points: XPoint[];
+		this.beats = {};
+		for (let lead in this.signal) {
+			if (!this.signal.hasOwnProperty(lead)) continue;
+			leadCode = Number.parseInt(lead) as EcgLeadCode;
+			if (leads.length != 0 && leads.indexOf(leadCode) < 0) continue;
+			points = new Array(beats.length);
+			for (let z: number = 0; z < beats.length; z++) {
+				points[z] = new XPoint(beats[z], this.signal[lead][beats[z]].top);
+			}
+			this.beats[lead] = points;
+		}
 	}
 
 }

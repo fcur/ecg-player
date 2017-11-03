@@ -1,8 +1,16 @@
 
 import {
 	XDrawingObjectType, AnsDrawingObject,
-	BeatsDrawingObject, IDrawingObject, XDrawingObject
+	BeatsDrawingObject, IDrawingObject,
+	XDrawingObject, SignalDrawingObject
 } from "./drawingobject";
+
+import {
+	DrawingData, RecordDrawingData,
+	RecordProjection
+} from "./drawingdata";
+import { XDrawingProxyState } from "./misc";
+
 
 // -------------------------------------------------------------------------------------------------
 // Drawing mode
@@ -30,6 +38,8 @@ export interface IDrawingClient {
 	afterDraw?: Function;
 	/** Create drawing object factory method. */
 	createDrawingObject: Function;
+	/** Prepare drawing objects. */
+	prepareDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
 }
 
 
@@ -49,6 +59,12 @@ export class XDrawingClient implements IDrawingClient {
 	afterDraw: Function;
 	/** Create drawing object factory method. */
 	createDrawingObject: Function;
+
+	//-------------------------------------------------------------------------------------
+	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[] {
+		return [];
+	}
+
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -76,7 +92,6 @@ export class AnsDrawingClient extends XDrawingClient {
 		console.info("afterdrawAnnotations", "not implemented");
 	}
 
-
 	//-------------------------------------------------------------------------------------
 	public createAnsDrawingObject(): AnsDrawingObject {
 		console.info("createAnsDrawingObject", "not implemented");
@@ -85,6 +100,14 @@ export class AnsDrawingClient extends XDrawingClient {
 		return result;
 	}
 
+	//-------------------------------------------------------------------------------------
+	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): AnsDrawingObject[] {
+		console.info("prepareDrawings", "not implemented");
+		let ansDrawObj: AnsDrawingObject[] = new Array();
+		ansDrawObj.push(new AnsDrawingObject());
+		ansDrawObj[0].owner = this;
+		return ansDrawObj;
+	}
 
 }
 
@@ -122,6 +145,16 @@ export class BeatsDrawingClient extends XDrawingClient {
 
 		return result;
 	}
+
+	//-------------------------------------------------------------------------------------
+	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): BeatsDrawingObject[] {
+		console.info("prepareDrawings", "not implemented");
+		let beatsDrawObj: BeatsDrawingObject[] = new Array();
+		beatsDrawObj.push(new BeatsDrawingObject());
+		beatsDrawObj[0].owner = this;
+		return beatsDrawObj;
+	}
+
 }
 
 
@@ -157,5 +190,17 @@ export class SignalDrawingClient extends XDrawingClient {
 
 		return result;
 	}
+
+
+	//-------------------------------------------------------------------------------------
+	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): SignalDrawingObject[] {
+		console.info("prepareDrawings", "not implemented");
+		let signalDrawObj: SignalDrawingObject[] = new Array();
+		signalDrawObj.push(new SignalDrawingObject());
+		signalDrawObj[0].owner = this;
+		return signalDrawObj;
+	}
+
+
 }
 

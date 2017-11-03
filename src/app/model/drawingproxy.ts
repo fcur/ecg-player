@@ -1,6 +1,9 @@
 import { EventEmitter } from "@angular/core";
 import { XDrawingChange, XDrawingProxyState, XDrawingChangeSender } from "./misc";
-import { XDrawingClient, XDrawingMode } from "./drawingclient";
+import {
+	XDrawingClient, XDrawingMode, AnsDrawingClient,
+	BeatsDrawingClient, IDrawingClient, SignalDrawingClient
+} from "./drawingclient";
 import {
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
 	BeatsDrawingObject, IDrawingObject
@@ -17,9 +20,15 @@ import { BehaviorSubject } from "rxjs";
 // -------------------------------------------------------------------------------------------------
 export class XDrawingProxy {
 	public state: XDrawingProxyState;
-	public onChangeState: EventEmitter<XDrawingChange>;
-	public drawingObjects: IDrawingObject[];
 	public drawingData: DrawingData;
+	public onChangeState: EventEmitter<XDrawingChange>;
+	public onPrepareDrawings: EventEmitter<IDrawingObject[]>;
+
+	public drawingObjects: IDrawingObject[];
+
+
+	private _clientsF2: IDrawingClient[];
+
 
 
 	//-------------------------------------------------------------------------------------
@@ -29,13 +38,9 @@ export class XDrawingProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareData(v: EcgRecord) {
-
+	public addClient(v: IDrawingClient) {
+		this._clientsF2.push(v);
 	}
-	public prepareDataHeaders(v: EcgRecord[]) {
-
-	}
-
 
 	//-------------------------------------------------------------------------------------
 	public reset() {
@@ -148,10 +153,12 @@ export class XDrawingProxy {
 
 	//-------------------------------------------------------------------------------------
 	private init() {
-		this.drawingData = new DrawingData();
-		this.onChangeState = new EventEmitter<XDrawingChange>();
 		this.drawingObjects = [];
+		this._clientsF2 = new Array();
+		this.drawingData = new DrawingData();
 		this.state = new XDrawingProxyState();
+		this.onChangeState = new EventEmitter<XDrawingChange>();
+		this.onPrepareDrawings = new EventEmitter<IDrawingObject[]>();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -171,6 +178,15 @@ export class XDrawingProxy {
 			//if (this.drawingObjects[z].container.left < this.state.skipPx)
 		}
 		return result;
+	}
+
+	//-------------------------------------------------------------------------------------
+	public prepareDrawingObjects(): IDrawingObject[] {
+		let data: IDrawingObject[] = new Array();
+		for (let z: number = 0; z < this._clientsF2.length; z++) {
+			data = data.concat(this._clientsF2[z].prepareDrawings(this.drawingData, this.state));
+		}
+		return data;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -199,7 +215,9 @@ export class XDrawingProxy {
 	//-------------------------------------------------------------------------------------
 	public refreshDrawings() {
 		let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.UpdateDrawings);
+		let objects: IDrawingObject[] = this.prepareDrawingObjects();
 		this.onChangeState.emit(changes);
+		this.onPrepareDrawings.emit(objects);
 	}
 
 	//-------------------------------------------------------------------------------------
