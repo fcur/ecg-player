@@ -1,12 +1,14 @@
 import { EventEmitter } from "@angular/core";
+import { XDrawingChange, XDrawingProxyState, XDrawingChangeSender } from "./misc";
+import { XDrawingClient, XDrawingMode } from "./drawingclient";
 import {
-	XDrawingChange, XDrawingMode, XDrawingProxyState,
-	XDrawingClient, XDrawingObject, XDrawingObjectType,
-	XDrawingChangeSender
-} from "./misc";
+	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
+	BeatsDrawingObject, IDrawingObject
+} from "./drawingobject";
+import { DrawingData } from "./drawingdata";
 import {
-	EcgWavePoint, EcgWavePointType, EcgAnnotation,
-	EcgSignal, EcgAnnotationCode, EcgLeadCode, EcgRecord
+	EcgWavePoint, EcgWavePointType, EcgAnnotation, EcgSignal,
+	EcgAnnotationCode, EcgLeadCode, EcgRecord
 } from "./ecgdata"
 import { BehaviorSubject } from "rxjs";
 
@@ -16,13 +18,24 @@ import { BehaviorSubject } from "rxjs";
 export class XDrawingProxy {
 	public state: XDrawingProxyState;
 	public onChangeState: EventEmitter<XDrawingChange>;
-	public drawingObjects: XDrawingObject[];
+	public drawingObjects: IDrawingObject[];
+	public drawingData: DrawingData;
+
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		//console.info("DrawingProxy constructor");
 		this.init();
 	}
+
+	//-------------------------------------------------------------------------------------
+	public prepareData(v: EcgRecord) {
+
+	}
+	public prepareDataHeaders(v: EcgRecord[]) {
+
+	}
+
 
 	//-------------------------------------------------------------------------------------
 	public reset() {
@@ -135,6 +148,7 @@ export class XDrawingProxy {
 
 	//-------------------------------------------------------------------------------------
 	private init() {
+		this.drawingData = new DrawingData();
 		this.onChangeState = new EventEmitter<XDrawingChange>();
 		this.drawingObjects = [];
 		this.state = new XDrawingProxyState();
@@ -168,10 +182,10 @@ export class XDrawingProxy {
 	//-------------------------------------------------------------------------------------
 	private prepareFloatingObjects(left: number, top: number) {
 		for (let z: number = 0; z < this.drawingObjects.length; z++) {
-			if (!this.drawingObjects[z].isFloating) continue;
+			if (!(this.drawingObjects[z] as XDrawingObject).isFloating) continue;
 
 			let signalObjects: XDrawingObject[] = this.findSignal(this.state.skipPx + left, this.state);
-			this.drawingObjects[z].floatTo(
+			(this.drawingObjects[z] as XDrawingObject).floatTo(
 				this.state.skipPx + left,
 				this.state.container.top + top,
 				signalObjects);

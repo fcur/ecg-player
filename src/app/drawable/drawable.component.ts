@@ -2,17 +2,24 @@ import {
 	Component, OnInit, ElementRef, HostListener,
 	ViewChild
 } from '@angular/core';
-import { XDrawingProxy } from "../model/drawing-proxy"
+import { XDrawingProxy } from "../model/drawingproxy"
 import { DataService } from "../service/data.service"
 import {
-	XDrawingClient, XDrawingMode, XDrawingChange,
-	XDrawingProxyState, XCanvasTool, XRectangle,
-	XDrawingCell, XDrawingChangeSender, XLabel,
-	XDrawingGridMode, XDrawingObject, XLine,
-	XDrawingPrimitiveState, XPolyline, XPeak,
-	XDrawingObjectType, XDrawingPrimitive,
-	XPoint
+	XDrawingChange, XDrawingProxyState, XCanvasTool, XDrawingCell,
+	XDrawingChangeSender, XDrawingGridMode
 } from "../model/misc";
+import {
+	XDrawingPrimitive, XDrawingPrimitiveState,
+	XLabel, XLine, XPeak, XPoint, XPolyline,
+	XRectangle
+} from "../model/geometry";
+
+import {
+	XDrawingClient, XDrawingMode, IDrawingClient,
+	AnsDrawingClient, BeatsDrawingClient
+} from "../model/drawingclient";
+import { XDrawingObject, XDrawingObjectType } from "../model/drawingobject";
+
 import {
 	EcgAnnotation, EcgAnnotationCode, EcgLeadCode,
 	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType
@@ -147,8 +154,7 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	constructor(private _el: ElementRef,
-		private _ds: DataService) {
+	constructor(private _el: ElementRef, private _ds: DataService) {
 		//console.info("DrawableComponent constructor");
 		this._hideFileDrop = false;
 		this._pinBeatsToSignal = true;
@@ -161,13 +167,20 @@ export class DrawableComponent implements OnInit {
 		this._fileReader = new FileReader();
 		this.prepareClients();
 		//this._drawingClients = new Array();
+
+		//let clients: IDrawingClient[] = new Array();
+		//clients.push(
+		//  new XDrawingClient(),
+		//  new AnsDrawingClient(),
+		//  new BeatsDrawingClient());
+		//console.info(clients);
 	}
 
 	//-------------------------------------------------------------------------------------
 	public ngOnInit() {
 		//console.info("DrawableComponent: init");
 		this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
-		this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord));
+		this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord[]));
 		this._canvasContainer.nativeElement.addEventListener("dragover", this.onDragOver.bind(this), false);
 		this._canvasContainer.nativeElement.addEventListener("drop", this.onDragDrop.bind(this), false);
 	}
@@ -231,8 +244,15 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private onReceiveData(v: EcgRecord) {
-		if (!v || v === null) return;
+	private onReceiveData(v: EcgRecord[]) {
+		if (!v || !Array.isArray(v) || v.length === 0) return;
+		// save original sample rate
+		this._dp.drawingData.originalSampleRate = this._ds.ecgrecords[0].sampleRateForCls;
+
+		this._dp.drawingData.recordHeaders = this._ds.ecgrecords;
+		// on real project we receive data in other place
+		this._dp.drawingData.projection = this._ds.ecgrecords;
+
 		this._dp.reset();
 		//console.info("receive", v, "prepare drawings");
 		this.prepareDrawingObjects();
@@ -287,8 +307,8 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private prepareDrawingObjects() {
-		this._dp.buildSignal([this._ds.ecgrecord], this._signalClient);
-		this._dp.buildBeats([this._ds.ecgrecord], this._beatsClient, this._pinBeatsToSignal);
+		this._dp.buildSignal(this._ds.ecgrecords, this._signalClient);
+		this._dp.buildBeats(this._ds.ecgrecords, this._beatsClient, this._pinBeatsToSignal);
 		this._dp.buildFloatingObjects(this._floatingObjectsClient);
 		//this._dp.buildFloatingPeaks([this._ds.ecgrecord], this._floatingPeaksClient, 2);
 
