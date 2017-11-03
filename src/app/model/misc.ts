@@ -38,6 +38,18 @@ export enum XDrawingGridMode {
 // -------------------------------------------------------------------------------------------------
 // Drawing change sender
 // -------------------------------------------------------------------------------------------------
+export enum XDrawingCoordinates {
+	ABSOLUTE,
+	SCREEN,
+	COMPONENT,
+	CANVAS,
+	GRID_CONTAINER,
+	GRID_CELL
+}
+
+// -------------------------------------------------------------------------------------------------
+// Drawing change sender
+// -------------------------------------------------------------------------------------------------
 export enum XDrawingChangeSender {
 	UpdateDrawings,
 	MouseClick,

@@ -78,11 +78,11 @@ export class AnsDrawingClient extends XDrawingClient {
 
 
 	//-------------------------------------------------------------------------------------
-		public createAnsDrawingObject(): AnsDrawingObject {
-			console.info("createAnsDrawingObject", "not implemented");
-			let result: AnsDrawingObject = new AnsDrawingObject();
+	public createAnsDrawingObject(): AnsDrawingObject {
+		console.info("createAnsDrawingObject", "not implemented");
+		let result: AnsDrawingObject = new AnsDrawingObject();
 
-			return result;
+		return result;
 	}
 
 
@@ -116,11 +116,11 @@ export class BeatsDrawingClient extends XDrawingClient {
 
 
 	//-------------------------------------------------------------------------------------
-		public createBeatsDrawingObject(): BeatsDrawingObject {
-			console.info("createBeatsDrawingObject", "not implemented");
-			let result: BeatsDrawingObject = new BeatsDrawingObject();
+	public createBeatsDrawingObject(): BeatsDrawingObject {
+		console.info("createBeatsDrawingObject", "not implemented");
+		let result: BeatsDrawingObject = new BeatsDrawingObject();
 
-			return result;
+		return result;
 	}
 }
 
@@ -131,7 +131,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 export class SignalDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
-	constructor(){
+	constructor() {
 		super();
 		this.mode = XDrawingMode.Canvas;
 		this.type = XDrawingObjectType.Signal;
@@ -141,13 +141,13 @@ export class SignalDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public drawSignal(){
-
+	public drawSignal() {
+		console.info("drawSignal", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
-	public afterDrawSignal(){
-		
+	public afterDrawSignal() {
+		console.info("afterDrawSignal", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------

@@ -82,12 +82,19 @@ export class EcgSignal {
 	public asSamples: boolean;
 
 	//-------------------------------------------------------------------------------------
+	public get sampleRateMs(): number {
+		return this.sampleRate / 1000;
+	}
+
+	//-------------------------------------------------------------------------------------
 	public get length(): number {
 		// sample rate for seconds, return milliseconds
 		if (Number.isInteger(this.sampleCount) && Number.isInteger(this.sampleRate))
-			return Math.floor(this.sampleCount / (this.sampleRate * 1000));
+			return Math.floor(this.sampleCount / this.sampleRateMs);
 		return 0;
 	}
+
+ 
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -229,6 +236,7 @@ export class EcgParser {
 			ecgrecord.signal.channels = signal.channels;
 			ecgrecord.signal.sampleCount = signal.sampleCount;
 			ecgrecord.signal.leads = signal.leads;
+			let length = ecgrecord.signal.length;
 		}
 		if (input.hasOwnProperty(EcgParser.ANNOTATIONS_KEY)) {
 			ecgrecord.annotations = this.parseAnnotations(input[EcgParser.ANNOTATIONS_KEY]);
