@@ -22,11 +22,9 @@ export class XDrawingProxy {
 	public state: XDrawingProxyState;
 	public drawingData: DrawingData;
 	public onChangeState: EventEmitter<XDrawingChange>;
-	public onPrepareDrawings: EventEmitter<IDrawingObject[]>;
+	public onPrepareDrawings: EventEmitter<IDrawingObject[][]>;
 
 	public drawingObjects: IDrawingObject[];
-
-
 	private _clientsF2: IDrawingClient[];
 
 
@@ -40,6 +38,12 @@ export class XDrawingProxy {
 	//-------------------------------------------------------------------------------------
 	public addClient(v: IDrawingClient) {
 		this._clientsF2.push(v);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public get drawingClients():IDrawingClient[]{
+		if(!this._clientsF2) return [];
+		return this._clientsF2;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -165,7 +169,7 @@ export class XDrawingProxy {
 		this.drawingData = new DrawingData();
 		this.state = new XDrawingProxyState();
 		this.onChangeState = new EventEmitter<XDrawingChange>();
-		this.onPrepareDrawings = new EventEmitter<IDrawingObject[]>();
+		this.onPrepareDrawings = new EventEmitter<IDrawingObject[][]>();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -188,10 +192,11 @@ export class XDrawingProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareDrawingObjectsF2(): IDrawingObject[] {
-		let data: IDrawingObject[] = new Array();
+	public prepareDrawingObjectsF2(): IDrawingObject[][] {
+		let data: IDrawingObject[][] = new Array();
 		for (let z: number = 0; z < this._clientsF2.length; z++) {
-			data = data.concat(this._clientsF2[z].prepareDrawings(this.drawingData, this.state));
+			data[z] = this._clientsF2[z].prepareDrawings(this.drawingData, this.state);
+			//data = data.concat(this._clientsF2[z].prepareDrawings(this.drawingData, this.state));
 		}
 		return data;
 	}
@@ -222,7 +227,7 @@ export class XDrawingProxy {
 	//-------------------------------------------------------------------------------------
 	public refreshDrawings() {
 		let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.UpdateDrawings);
-		let objects: IDrawingObject[] = this.prepareDrawingObjectsF2();
+		let objects: IDrawingObject[][] = this.prepareDrawingObjectsF2();
 		this.onChangeState.emit(changes);
 		this.onPrepareDrawings.emit(objects);
 	}
@@ -257,8 +262,10 @@ export class XDrawingProxy {
 		// TODO handle floating pointer
 		//console.info("proxy: mouse move", proxyX, proxyY);
 		this.prepareFloatingObjects(proxyX, proxyY);
+		let objects: IDrawingObject[][] = this.prepareDrawingObjectsF2();
 		let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseMove, event);
 		this.onChangeState.emit(changes);
+		this.onPrepareDrawings.emit(objects);
 	}
 
 

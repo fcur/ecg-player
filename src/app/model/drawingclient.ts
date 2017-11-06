@@ -44,6 +44,9 @@ export interface IDrawingClient {
 	createDrawingObject: Function;
 	/** Prepare drawing objects. */
 	prepareDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
+
+	drawObjects: Function;
+
 }
 
 
@@ -63,7 +66,8 @@ export class XDrawingClient implements IDrawingClient {
 	afterDraw: Function;
 	/** Create drawing object factory method. */
 	createDrawingObject: Function;
-
+	/** Client groups drawing method (required). */
+	drawObjects: Function;
 	//-------------------------------------------------------------------------------------
 	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[] {
 		return [];
@@ -224,7 +228,7 @@ export class SignalDrawingClient extends XDrawingClient {
 				start = state.minPx - headers[y].startPx; // from this position
 				end = Math.min(headers[y].endPx, state.maxPx); // until this position
 				limit = end - start;
-				signalPoints = signal[state.gridCells[y].lead];
+				signalPoints = signal[state.gridCells[z].lead];
 				points = new Array(limit);
 				for (x = 0; x < limit; x++) {
 					points[x] = signalPoints[x + start].clone;
