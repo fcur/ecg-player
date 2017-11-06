@@ -253,6 +253,8 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private onReceiveData(v: EcgRecord[]) {
 		if (!v || !Array.isArray(v) || v.length === 0) return;
+		// save sample rate in state
+		this._dp.state.sampleRate = this._ds.ecgrecords[0].sampleRateForCls;
 		// save original sample rate
 		this._dp.drawingData.originalSampleRate = this._ds.ecgrecords[0].sampleRateForCls;
 
@@ -325,8 +327,9 @@ export class DrawableComponent implements OnInit {
 		this._signalF2Client.draw = this.drawSignalF2.bind(this);
 		this._beatsF2Client = new BeatsDrawingClient();
 		this._beatsF2Client.draw = this.drawBeatsF2.bind(this);
-		this._dp.addClient(this._signalF2Client);
-		this._dp.addClient(this._beatsF2Client);
+		//this._dp.addClient(this._signalF2Client);
+		//this._dp.addClient(this._beatsF2Client);
+		this._dp.pushClients(this._signalF2Client, this._beatsF2Client);
 	}
 
 	//-------------------------------------------------------------------------------------

@@ -1,9 +1,9 @@
 import { Component, HostListener } from '@angular/core';
 
 @Component({
-		selector: 'app-root',
-		templateUrl: './app.component.html',
-		styleUrls: ['./app.component.css']
+	selector: 'app-root',
+	templateUrl: './app.component.html',
+	styleUrls: ['./app.component.css']
 })
 
 // -------------------------------------------------------------------------------------------------
@@ -11,19 +11,19 @@ import { Component, HostListener } from '@angular/core';
 // -------------------------------------------------------------------------------------------------
 export class AppComponent {
 
-		public title: string = 'app';
+	public title: string = 'app';
 
-		//-------------------------------------------------------------------------------------
-		constructor() {
-		}
+	//-------------------------------------------------------------------------------------
+	constructor() {
+	}
 
-		//-------------------------------------------------------------------------------------
-		ngOnInit() {
-				//console.info("AppComponent: init");
-		}
+	//-------------------------------------------------------------------------------------
+	ngOnInit() {
+		//console.info("AppComponent: init");
+	}
 
-		//-------------------------------------------------------------------------------------
-		ngOnDestroy() {
-				//console.info("AppComponent: destroy");
-		}
+	//-------------------------------------------------------------------------------------
+	ngOnDestroy() {
+		//console.info("AppComponent: destroy");
+	}
 }

@@ -53,6 +53,19 @@ export class DrawingData {
 	}
 
 	//-------------------------------------------------------------------------------------
+	public getHeaders(minPx: number, maxPx: number, sampleRate: number): RecordProjection[] {
+		if (!this.headers.hasOwnProperty(sampleRate)) return [];
+
+		let result: RecordProjection[] = new Array();
+		let projections: { [recordId: string]: RecordProjection } = this.headers[sampleRate];
+		for (let recordId in projections) {
+			if (projections[recordId].endPx < minPx || projections[recordId].startPx > maxPx) continue;
+			result.push(projections[recordId]);
+		}
+		return result;
+	}
+
+	//-------------------------------------------------------------------------------------
 	public set recordHeaders(p: EcgRecord[]) {
 		if (!Array.isArray(p) || p.length === 0) return;
 

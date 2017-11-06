@@ -43,6 +43,13 @@ export class XDrawingProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
+	public pushClients(...items: IDrawingClient[]) {
+		for (let z: number = 0; z < items.length; z++) {
+			this._clientsF2.push(items[z]);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------
 	public reset() {
 		//console.info("drawing proxy not implemented");
 	}
@@ -181,7 +188,7 @@ export class XDrawingProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareDrawingObjects(): IDrawingObject[] {
+	public prepareDrawingObjectsF2(): IDrawingObject[] {
 		let data: IDrawingObject[] = new Array();
 		for (let z: number = 0; z < this._clientsF2.length; z++) {
 			data = data.concat(this._clientsF2[z].prepareDrawings(this.drawingData, this.state));
@@ -215,7 +222,7 @@ export class XDrawingProxy {
 	//-------------------------------------------------------------------------------------
 	public refreshDrawings() {
 		let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.UpdateDrawings);
-		let objects: IDrawingObject[] = this.prepareDrawingObjects();
+		let objects: IDrawingObject[] = this.prepareDrawingObjectsF2();
 		this.onChangeState.emit(changes);
 		this.onPrepareDrawings.emit(objects);
 	}

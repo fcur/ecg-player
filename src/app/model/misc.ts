@@ -2,8 +2,8 @@ import {
 	EcgLeadCode, EcgWavePoint, EcgAnnotation, EcgAnnotationCode,
 	EcgRecord, EcgSignal, EcgWavePointType
 } from "./ecgdata";
-import { XDrawingObject, XDrawingObjectType,AnsDrawingObject,BeatsDrawingObject,IDrawingObject } from "./drawingobject";
-import { XDrawingClient, XDrawingMode,AnsDrawingClient,BeatsDrawingClient,IDrawingClient } from "./drawingclient";
+import { XDrawingObject, XDrawingObjectType, AnsDrawingObject, BeatsDrawingObject, IDrawingObject } from "./drawingobject";
+import { XDrawingClient, XDrawingMode, AnsDrawingClient, BeatsDrawingClient, IDrawingClient } from "./drawingclient";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState,
 	XLabel, XLine, XPeak, XPoint, XPolyline,
@@ -162,7 +162,7 @@ export class XDrawingProxyState {
 
 	//-------------------------------------------------------------------------------------------------
 	public set scroll(delta: number) {
-		this.skipPx = Math.max(Math.floor(this.skipPx + delta), 0);				
+		this.skipPx = Math.max(Math.floor(this.skipPx + delta), 0);
 	}
 
 	//-------------------------------------------------------------------------------------------------
