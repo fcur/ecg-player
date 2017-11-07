@@ -331,3 +331,13 @@ export class BeatsDrawingObject extends XDrawingObject {
 export class SignalDrawingObject extends XDrawingObject {
 
 }
+
+
+// -------------------------------------------------------------------------------------------------
+// Clickable point drawing object
+// -------------------------------------------------------------------------------------------------
+export class ClPointDrawingObject extends XDrawingObject {
+
+}
+
+
