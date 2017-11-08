@@ -566,8 +566,8 @@ export class DrawableComponent implements OnInit {
 			}
 		}
 		this._ct.ctx.lineWidth = 1;
-		this._ct.ctx.strokeStyle = "#db23fc";
-		this._ct.ctx.globalAlpha = 1;
+		this._ct.ctx.strokeStyle = this._signalF2Client.color;
+		this._ct.ctx.globalAlpha = this._signalF2Client.opacity;
 		this._ct.ctx.stroke();
 		this._ct.ctx.closePath();
 		this._ct.ctx.restore();
