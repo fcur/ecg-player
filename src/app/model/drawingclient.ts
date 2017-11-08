@@ -1,9 +1,10 @@
 
 import {
+	ClPointDrawingObject, CellDrawingObject,
 	XDrawingObjectType, AnsDrawingObject,
 	BeatsDrawingObject, IDrawingObject,
-	XDrawingObject, SignalDrawingObject,
-	ClPointDrawingObject
+	XDrawingObject, SignalDrawingObject
+
 } from "./drawingobject";
 
 import {
@@ -125,10 +126,15 @@ export class AnsDrawingClient extends XDrawingClient {
 // Beats drawing client
 // -------------------------------------------------------------------------------------------------
 export class BeatsDrawingClient extends XDrawingClient {
-
+	radius: number;
+	color: string;
+	opacity: number;
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
+		this.radius = 2;
+		this.color = "orange";
+		this.opacity = 1;
 		this.mode = XDrawingMode.Canvas;
 		this.type = XDrawingObjectType.Beats;
 		this.draw = this.drawBeats.bind(this);
@@ -157,13 +163,43 @@ export class BeatsDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): BeatsDrawingObject[] {
-		console.info("prepareDrawings", "not implemented");
-		let beatsDrawObj: BeatsDrawingObject[] = new Array();
-		beatsDrawObj.push(new BeatsDrawingObject());
-		beatsDrawObj[0].owner = this;
-		return beatsDrawObj;
-	}
+		// TODO: handle space between records
+		if (!data.headers.hasOwnProperty(state.sampleRate) || !data.dataV2.hasOwnProperty(state.sampleRate) || !data.dataV2[state.sampleRate]) return [];
 
+		let z: number, y: number, x: number;
+		let start: number, limit: number, end: number, cellRecordStart: number;
+		let results: BeatsDrawingObject[] = new Array();
+		let headers: RecordProjection[] = data.getHeaders(state.skipPx, state.limitPx, state.sampleRate);
+		let beats: { [lead: number]: XPoint[] }, beatsPoints: XPoint[], curPoint: XPoint;
+		for (z = 0; z < state.gridCells.length; z++) {
+			// DrawingObject for each XDrawingCell
+			results[z] = new BeatsDrawingObject();
+			results[z].owner = this;
+			results[z].cellIndex = z;
+			results[z].index = z;
+			results[z].container = state.gridCells[z].container.clone;
+			results[z].container.resetStart();
+			results[z].points = new Array();
+			for (y = 0, cellRecordStart = 0; y < headers.length; y++) {
+				beats = data.dataV2[state.sampleRate][headers[y].id].beats;
+				start = state.minPx - headers[y].startPx; // from this position (pixels)
+				end = Math.min(headers[y].endPx, state.maxPx); // until this position (pixels)
+				limit = end - start;
+				beatsPoints = beats[state.gridCells[z].lead];
+				for (x = 0; x < beatsPoints.length; x++) {
+					if (beatsPoints[x].left < start) continue;
+					if (beatsPoints[x].left > end) break;
+					// calc projection on state range in pixels
+					curPoint = beatsPoints[x].clone;
+					curPoint.left = curPoint.left - start;
+					results[z].points.push(curPoint);
+					//results[z].points
+				}
+				cellRecordStart += limit;
+			}
+		}
+		return results;
+	}
 }
 
 
@@ -172,9 +208,14 @@ export class BeatsDrawingClient extends XDrawingClient {
 // -------------------------------------------------------------------------------------------------
 export class SignalDrawingClient extends XDrawingClient {
 
+	color: string;
+	opacity: number;
+
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
+		this.color = "#db23fc";
+		this.opacity = 1;
 		this.mode = XDrawingMode.Canvas;
 		this.type = XDrawingObjectType.Signal;
 		this.draw = this.drawSignal.bind(this);
@@ -279,7 +320,7 @@ export class ClickablePointDrawingClient extends XDrawingClient {
 	}
 
 
-	
+
 	//-------------------------------------------------------------------------------------
 	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): ClPointDrawingObject[] {
 		// TODO: handle space between records
@@ -323,4 +364,52 @@ export class ClickablePointDrawingClient extends XDrawingClient {
 		*/
 		return results;
 	}
+}
+
+
+// -------------------------------------------------------------------------------------------------
+// Cell grid drawing client
+// -------------------------------------------------------------------------------------------------
+export class CellDrawingClient extends XDrawingClient {
+
+	color: string;
+	opacity: number;
+
+	//-------------------------------------------------------------------------------------
+	constructor() {
+		super();
+		this.mode = XDrawingMode.Canvas;
+		this.type = XDrawingObjectType.Signal;
+		this.draw = this.drawPonint.bind(this);
+		this.afterDraw = this.afterDrawPoint.bind(this);
+		this.createDrawingObject = this.createPointDrawingObject.bind(this);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public drawPonint() {
+		console.info("drawPonint", "not implemented");
+	}
+
+	//-------------------------------------------------------------------------------------
+	public afterDrawPoint() {
+		console.info("afterDrawPoint", "not implemented");
+	}
+
+	//-------------------------------------------------------------------------------------
+	public createPointDrawingObject(): XDrawingObject {
+		console.info("createPointDrawingObject", "not implemented");
+		let result: XDrawingObject = new XDrawingObject();
+		return result;
+	}
+
+
+
+	//-------------------------------------------------------------------------------------
+	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): CellDrawingObject[] {
+		let results: CellDrawingObject[] = new Array();
+
+		return results;
+	}
+
+
 }

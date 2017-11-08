@@ -88,6 +88,7 @@ export class XDrawingObject implements IDrawingObject {
 	}
 
 	//-------------------------------------------------------------------------------------
+	// TODO remove
 	public floatTo(left: number, top: number, signal: XDrawingObject[]) {
 		if (this.container.floatingX) {
 			this.container.left = left;
@@ -137,6 +138,7 @@ export class XDrawingObject implements IDrawingObject {
 	}
 
 	//-------------------------------------------------------------------------------------
+	// TODO remove
 	static PreparePqrstComplex(i: number, ewp: EcgWavePoint[], ewpinx: number[], state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0): XDrawingObject {
 		let result: XDrawingObject = new XDrawingObject();
 		result.index = i; // drawing object index
@@ -159,6 +161,7 @@ export class XDrawingObject implements IDrawingObject {
 	}
 
 	//-------------------------------------------------------------------------------------
+	// TODO remove
 	static PrepareAnnotation(i: number, an: EcgAnnotation, state: XDrawingProxyState, owner: XDrawingClient): XDrawingObject {
 		let result: XDrawingObject = new XDrawingObject();
 		result.index = i;
@@ -175,6 +178,7 @@ export class XDrawingObject implements IDrawingObject {
 	}
 
 	//-------------------------------------------------------------------------------------
+	// TODO remove
 	static PrepareBeats(i: number, signal: XDrawingObject[], beats: number[], state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0, limitPixels: number = 0, pin: boolean = true): XDrawingObject {
 		let result: XDrawingObject = new XDrawingObject();
 		result.index = i;
@@ -215,6 +219,7 @@ export class XDrawingObject implements IDrawingObject {
 	}
 
 	//-------------------------------------------------------------------------------------
+	// TODO remove
 	static PrepareFloatingDrawings(owner: XDrawingClient, state: XDrawingProxyState): XDrawingObject {
 		let result: XDrawingObject = new XDrawingObject();
 		result.index = 0;
@@ -245,6 +250,7 @@ export class XDrawingObject implements IDrawingObject {
 	}
 
 	//-------------------------------------------------------------------------------------
+	// TODO remove
 	static PrepareFloatingPeak(owner: XDrawingClient, state: XDrawingProxyState, index: number): XDrawingObject {
 		let result: XDrawingObject = new XDrawingObject();
 
@@ -259,14 +265,15 @@ export class XDrawingObject implements IDrawingObject {
 
 
 	//-------------------------------------------------------------------------------------
+	// TODO remove
 	/**
-	 * Create XDrawingObject for each EcgSignal.
-	 * XPoints[count][], count = EcgSignal.leads.count.
-	 * @param i index
-	 * @param s signal
-	 * @param state proxy state
-	 * @param owner object owner
-	 */
+		 * Create XDrawingObject for each EcgSignal.
+		 * XPoints[count][], count = EcgSignal.leads.count.
+		 * @param i index
+		 * @param s signal
+		 * @param state proxy state
+		 * @param owner object owner
+		 */
 	static PrepareSignal(i: number, s: EcgSignal, state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0): XDrawingObject {
 		let result: XDrawingObject = new XDrawingObject();
 		result.index = i;
@@ -341,3 +348,9 @@ export class ClPointDrawingObject extends XDrawingObject {
 }
 
 
+// -------------------------------------------------------------------------------------------------
+// Clickable point drawing object
+// -------------------------------------------------------------------------------------------------
+export class CellDrawingObject extends XDrawingObject {
+
+}

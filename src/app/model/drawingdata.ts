@@ -173,8 +173,8 @@ export class RecordDrawingData {
 
 	//public header: RecordProjection;
 	public leads: EcgLeadCode[];
-	public signal: { [lead: number]: XPoint[] };
 	public beats: { [lead: number]: XPoint[] };
+	public signal: { [lead: number]: XPoint[] };
 
 	//-------------------------------------------------------------------------------------
 	public trySaveSignalPoints(v: EcgSignal) {

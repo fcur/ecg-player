@@ -5,27 +5,27 @@ import {
 import { XDrawingProxy } from "../model/drawingproxy"
 import { DataService } from "../service/data.service"
 import {
-	XDrawingChange, XDrawingProxyState, XCanvasTool,
-	XDrawingCell, XDrawingChangeSender, XDrawingGridMode
+	XDrawingCell, XDrawingChangeSender, XDrawingGridMode,
+	XDrawingChange, XDrawingProxyState, XCanvasTool
 } from "../model/misc";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState,
 	XLabel, XLine, XPeak, XPoint, XPolyline,
 	XRectangle
 } from "../model/geometry";
-
 import {
 	XDrawingClient, XDrawingMode, IDrawingClient,
 	AnsDrawingClient, BeatsDrawingClient,
 	SignalDrawingClient
 } from "../model/drawingclient";
 import {
+	BeatsDrawingObject, IDrawingObject, ClPointDrawingObject,
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	BeatsDrawingObject, IDrawingObject
+	CellDrawingObject, SignalDrawingObject
 } from "../model/drawingobject";
 import {
+	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType,
 	EcgAnnotation, EcgAnnotationCode, EcgLeadCode,
-	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType
 } from "../model/ecgdata";
 import { Subscription, BehaviorSubject } from "rxjs";
 
@@ -244,6 +244,7 @@ export class DrawableComponent implements OnInit {
 
 	//----------------------------------------------------------------------------------------------
 	private getEventPosition(event: any): XPoint {
+		// TODO: handle device pixel ratio
 		let left: number = 0, top: number = 0;
 		if (event.clientX) {
 			left = event.clientX;
@@ -330,17 +331,13 @@ export class DrawableComponent implements OnInit {
 
 		this._gridClient = new XDrawingClient();
 		this._gridClient.mode = XDrawingMode.Canvas;
-		//this._drawingClients.push(ansClient, pqrstClient);
 
 		// prepare feature 2 clients
 		this._signalF2Client = new SignalDrawingClient();
-		//this._signalF2Client.draw = this.drawSignalF2.bind(this);
 		this._signalF2Client.drawObjects = this.drawSignalObjectsF2.bind(this);
 		this._beatsF2Client = new BeatsDrawingClient();
-		this._beatsF2Client.draw = this.drawBeatsF2.bind(this);
-		//this._dp.addClient(this._signalF2Client);
-		//this._dp.addClient(this._beatsF2Client);
-		this._dp.pushClients(this._signalF2Client/*, this._beatsF2Client*/);
+		this._beatsF2Client.drawObjects = this.drawBeatsObjectsF2.bind(this);
+		this._dp.pushClients(this._signalF2Client, this._beatsF2Client);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -349,7 +346,6 @@ export class DrawableComponent implements OnInit {
 		this._dp.buildBeats(this._ds.ecgrecords, this._beatsClient, this._pinBeatsToSignal);
 		this._dp.buildFloatingObjects(this._floatingObjectsClient);
 		//this._dp.buildFloatingPeaks([this._ds.ecgrecord], this._floatingPeaksClient, 2);
-
 		//this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
 		//this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
 	}
@@ -523,12 +519,12 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private drawSignalObjectsF2(objs: XDrawingObject[]) {
+	private drawSignalObjectsF2(objs: SignalDrawingObject[]) {
 		let state: XDrawingProxyState = this._dp.state;
 		// cell index = drawing object index
-		let z: number = 0, y: number = 0, left: number = 0, top: number = 0;
+		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
 		this._ct.ctx.save();
-
+		//TODO: move to separated client
 		this._ct.ctx.beginPath();
 		for (z = 0; z < state.gridCells.length; z++) {
 			// borders
@@ -549,9 +545,9 @@ export class DrawableComponent implements OnInit {
 
 		this._ct.ctx.beginPath();
 		let points: XPoint[];
-		let dy: number;
 		let shift: number = 0;
 		for (z = 0; z < state.gridCells.length; z++) {
+			// TODO: handle multy polylines
 			points = objs[z].polylines[0].points;
 			y = 0;
 			left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
@@ -566,8 +562,8 @@ export class DrawableComponent implements OnInit {
 			}
 		}
 		this._ct.ctx.lineWidth = 1;
-		this._ct.ctx.strokeStyle = "#db23fc";
-		this._ct.ctx.globalAlpha = 1;
+		this._ct.ctx.strokeStyle = this._signalF2Client.color;
+		this._ct.ctx.globalAlpha = this._signalF2Client.opacity;
 		this._ct.ctx.stroke();
 		this._ct.ctx.closePath();
 		this._ct.ctx.restore();
@@ -575,8 +571,33 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private drawBeatsF2(obj: XDrawingObject) {
-		console.info("drawBeatsF2");
+		///console.info("drawBeatsF2");
 	}
 
+	//-------------------------------------------------------------------------------------
+	private drawBeatsObjectsF2(objs: BeatsDrawingObject[]) {
+		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
+		let state: XDrawingProxyState = this._dp.state;
+		// cell index = drawing object index
+		this._ct.ctx.save();
+		this._ct.ctx.beginPath();
+		let points: XPoint[];
+		let shift: number = 0;
+		for (z = 0; z < state.gridCells.length; z++) {
+			points = objs[z].points;
+			for (y = 0; y < points.length; y++) {
+				left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
+				dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel); // microvolts to pixels
+				top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
+				this._ct.ctx.moveTo(left + 0.5, top + 0.5);
+				this._ct.ctx.arc(left + 0.5, top + 0.5, this._beatsF2Client.radius, 0, 2 * Math.PI, false);
+			}
+		}
+		this._ct.ctx.fillStyle = this._beatsF2Client.color;
+		this._ct.ctx.globalAlpha = this._beatsF2Client.opacity;
+		this._ct.ctx.fill();
+		this._ct.ctx.closePath();
+		this._ct.ctx.restore();
+	}
 
 }
