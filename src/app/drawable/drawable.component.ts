@@ -5,8 +5,8 @@ import {
 import { XDrawingProxy } from "../model/drawingproxy"
 import { DataService } from "../service/data.service"
 import {
-	XDrawingChange, XDrawingProxyState, XCanvasTool, XDrawingCell,
-	XDrawingChangeSender, XDrawingGridMode
+	XDrawingChange, XDrawingProxyState, XCanvasTool,
+	XDrawingCell, XDrawingChangeSender, XDrawingGridMode
 } from "../model/misc";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState,
@@ -16,10 +16,13 @@ import {
 
 import {
 	XDrawingClient, XDrawingMode, IDrawingClient,
-	AnsDrawingClient, BeatsDrawingClient
+	AnsDrawingClient, BeatsDrawingClient,
+	SignalDrawingClient
 } from "../model/drawingclient";
-import { XDrawingObject, XDrawingObjectType } from "../model/drawingobject";
-
+import {
+	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
+	BeatsDrawingObject, IDrawingObject
+} from "../model/drawingobject";
 import {
 	EcgAnnotation, EcgAnnotationCode, EcgLeadCode,
 	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType
@@ -46,6 +49,9 @@ export class DrawableComponent implements OnInit {
 	private _floatingObjectsClient: XDrawingClient;
 	private _floatingPeaksClient: XDrawingClient;
 	private _gridClient: XDrawingClient;
+	// feature 2 clients
+	private _signalF2Client: SignalDrawingClient;
+	private _beatsF2Client: BeatsDrawingClient;
 
 
 	private _fileReader: FileReader;
@@ -164,6 +170,7 @@ export class DrawableComponent implements OnInit {
 		this._lastEmitTime = 0;
 		this._dp = new XDrawingProxy();
 		this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
+		this._dp.onPrepareDrawings.subscribe((v: IDrawingObject[][]) => this.onReceiveDrawingObjects(v));
 		this._fileReader = new FileReader();
 		this.prepareClients();
 		//this._drawingClients = new Array();
@@ -237,15 +244,22 @@ export class DrawableComponent implements OnInit {
 
 	//----------------------------------------------------------------------------------------------
 	private getEventPosition(event: any): XPoint {
-		if (event.clientX) return new XPoint(event.clientX, event.clientY);
-		else if (event.touches && event.touches[0])
-			return new XPoint(event.touches[0].clientX, event.touches[0].clientY);
-		else return new XPoint(0, 0);
+		let left: number = 0, top: number = 0;
+		if (event.clientX) {
+			left = event.clientX;
+			top = event.clientY;
+		} else if (event.touches && event.touches[0]) {
+			left = event.touches[0].clientX;
+			top = event.touches[0].clientY;
+		}
+		return new XPoint(left, top);
 	}
 
 	//-------------------------------------------------------------------------------------
 	private onReceiveData(v: EcgRecord[]) {
 		if (!v || !Array.isArray(v) || v.length === 0) return;
+		// save sample rate in state
+		this._dp.state.sampleRate = this._ds.ecgrecords[0].sampleRateForCls;
 		// save original sample rate
 		this._dp.drawingData.originalSampleRate = this._ds.ecgrecords[0].sampleRateForCls;
 
@@ -269,15 +283,29 @@ export class DrawableComponent implements OnInit {
 		//console.info("onProxyStateChanges:", change);
 		// refresh drawings
 		this._ct.clear();
-
 		//this._ct.ctx.save();
 		//let state: XDrawingProxyState = this._dp.state;
 		//this._ct.ctx.rect(state.container.left, state.container.top, state.container.width, state.container.height);
 		//this._ct.ctx.stroke();
 		//this._ct.ctx.restore();
-
 		for (let z: number = 0; z < change.objects.length; z++) {
+			if (!change.objects[z].owner.draw) continue;
 			change.objects[z].owner.draw(change.objects[z]);//
+		}
+	}
+
+	//-------------------------------------------------------------------------------------
+	private onReceiveDrawingObjects(p: IDrawingObject[][]) {
+		// z: client index
+		for (let z: number = 0; z < this._dp.drawingClients.length; z++) {
+			if (p[z].length === 0) continue;
+			if (p[z].length > 1 && this._dp.drawingClients[z].drawObjects) {
+				this._dp.drawingClients[z].drawObjects(p[z]);
+			}
+			else if (this._dp.drawingClients[z].draw) {
+				// TODO remove single object drawing method
+				this._dp.drawingClients[z].draw(p[z][0]);
+			}
 		}
 	}
 
@@ -289,7 +317,7 @@ export class DrawableComponent implements OnInit {
 		this._pqrstClient.mode = XDrawingMode.SVG;
 		this._signalClient = new XDrawingClient();
 		this._signalClient.mode = XDrawingMode.Canvas;
-		this._signalClient.draw = this.drawSignal.bind(this);
+		//this._signalClient.draw = this.drawSignal.bind(this);
 		this._beatsClient = new XDrawingClient();
 		this._beatsClient.mode = XDrawingMode.Canvas;
 		this._beatsClient.draw = this.drawBeats.bind(this);
@@ -303,6 +331,16 @@ export class DrawableComponent implements OnInit {
 		this._gridClient = new XDrawingClient();
 		this._gridClient.mode = XDrawingMode.Canvas;
 		//this._drawingClients.push(ansClient, pqrstClient);
+
+		// prepare feature 2 clients
+		this._signalF2Client = new SignalDrawingClient();
+		//this._signalF2Client.draw = this.drawSignalF2.bind(this);
+		this._signalF2Client.drawObjects = this.drawSignalObjectsF2.bind(this);
+		this._beatsF2Client = new BeatsDrawingClient();
+		this._beatsF2Client.draw = this.drawBeatsF2.bind(this);
+		//this._dp.addClient(this._signalF2Client);
+		//this._dp.addClient(this._beatsF2Client);
+		this._dp.pushClients(this._signalF2Client/*, this._beatsF2Client*/);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -478,5 +516,67 @@ export class DrawableComponent implements OnInit {
 		//}
 		this._dp.performMouseMove(event);
 	}
+
+	//-------------------------------------------------------------------------------------
+	private drawSignalF2(obj: XDrawingObject) {
+		//console.info("drawSignalF2");
+	}
+
+	//-------------------------------------------------------------------------------------
+	private drawSignalObjectsF2(objs: XDrawingObject[]) {
+		let state: XDrawingProxyState = this._dp.state;
+		// cell index = drawing object index
+		let z: number = 0, y: number = 0, left: number = 0, top: number = 0;
+		this._ct.ctx.save();
+
+		this._ct.ctx.beginPath();
+		for (z = 0; z < state.gridCells.length; z++) {
+			// borders
+			this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
+			this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.minOy);
+			this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.maxOy);
+			this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.maxOy);
+			this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
+			// ox axis
+			this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.midOy);
+			this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.midOy);
+		}
+		this._ct.ctx.strokeStyle = "red";
+		this._ct.ctx.globalAlpha = 0.15;
+		this._ct.ctx.closePath();
+		this._ct.ctx.stroke();
+		this._ct.ctx.closePath();
+
+		this._ct.ctx.beginPath();
+		let points: XPoint[];
+		let dy: number;
+		let shift: number = 0;
+		for (z = 0; z < state.gridCells.length; z++) {
+			points = objs[z].polylines[0].points;
+			y = 0;
+			left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
+			dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel); // microvolts to pixels
+			top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
+			this._ct.ctx.moveTo(left, top);
+			for (y++; y < points.length; y++) {
+				left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
+				dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
+				top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
+				this._ct.ctx.lineTo(left, top);
+			}
+		}
+		this._ct.ctx.lineWidth = 1;
+		this._ct.ctx.strokeStyle = "#db23fc";
+		this._ct.ctx.globalAlpha = 1;
+		this._ct.ctx.stroke();
+		this._ct.ctx.closePath();
+		this._ct.ctx.restore();
+	}
+
+	//-------------------------------------------------------------------------------------
+	private drawBeatsF2(obj: XDrawingObject) {
+		console.info("drawBeatsF2");
+	}
+
 
 }

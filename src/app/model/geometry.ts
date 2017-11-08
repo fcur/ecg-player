@@ -108,6 +108,12 @@ export class XRectangle extends XDrawingPrimitive {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public resetStart(){
+		this._l=0;
+		this._t = 0;
+	}
+
+	//-------------------------------------------------------------------------------------------------
 	/**
 	 * Check point in rectangle content.
 	 * @param x point position on OX axis.
