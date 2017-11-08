@@ -126,14 +126,15 @@ export class AnsDrawingClient extends XDrawingClient {
 // Beats drawing client
 // -------------------------------------------------------------------------------------------------
 export class BeatsDrawingClient extends XDrawingClient {
-	radius: number = 2;
+	radius: number;
 	color: string;
-
+	opacity: number;
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
 		this.radius = 2;
 		this.color = "orange";
+		this.opacity = 1;
 		this.mode = XDrawingMode.Canvas;
 		this.type = XDrawingObjectType.Beats;
 		this.draw = this.drawBeats.bind(this);
