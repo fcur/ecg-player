@@ -163,15 +163,13 @@ export class BeatsDrawingClient extends XDrawingClient {
 	//-------------------------------------------------------------------------------------
 	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): BeatsDrawingObject[] {
 		// TODO: handle space between records
+		if (!data.headers.hasOwnProperty(state.sampleRate) || !data.dataV2.hasOwnProperty(state.sampleRate) || !data.dataV2[state.sampleRate]) return [];
+
 		let z: number, y: number, x: number;
 		let start: number, limit: number, end: number, cellRecordStart: number;
-
 		let results: BeatsDrawingObject[] = new Array();
-		//results.push(new BeatsDrawingObject());
-		//results[0].owner = this;
 		let headers: RecordProjection[] = data.getHeaders(state.skipPx, state.limitPx, state.sampleRate);
-		let beats: { [lead: number]: XPoint[] }, beatsPoints: XPoint[], points: XPoint[];
-
+		let beats: { [lead: number]: XPoint[] }, beatsPoints: XPoint[], curPoint: XPoint;
 		for (z = 0; z < state.gridCells.length; z++) {
 			// DrawingObject for each XDrawingCell
 			results[z] = new BeatsDrawingObject();
@@ -180,35 +178,27 @@ export class BeatsDrawingClient extends XDrawingClient {
 			results[z].index = z;
 			results[z].container = state.gridCells[z].container.clone;
 			results[z].container.resetStart();
-
 			results[z].points = new Array();
-
 			for (y = 0, cellRecordStart = 0; y < headers.length; y++) {
 				beats = data.dataV2[state.sampleRate][headers[y].id].beats;
-
 				start = state.minPx - headers[y].startPx; // from this position (pixels)
 				end = Math.min(headers[y].endPx, state.maxPx); // until this position (pixels)
 				limit = end - start;
 				beatsPoints = beats[state.gridCells[z].lead];
-				
 				for (x = 0; x < beatsPoints.length; x++) {
-
-					if(beatsPoints[x].left<start) continue;
-					if(beatsPoints[x].left> end) break;
+					if (beatsPoints[x].left < start) continue;
+					if (beatsPoints[x].left > end) break;
 					// calc projection on state range in pixels
-
-
-
+					curPoint = beatsPoints[x].clone;
+					curPoint.left = curPoint.left - start;
+					results[z].points.push(curPoint);
 					//results[z].points
 				}
-
 				cellRecordStart += limit;
 			}
 		}
-
 		return results;
 	}
-
 }
 
 

@@ -244,6 +244,7 @@ export class DrawableComponent implements OnInit {
 
 	//----------------------------------------------------------------------------------------------
 	private getEventPosition(event: any): XPoint {
+		// TODO: handle device pixel ratio
 		let left: number = 0, top: number = 0;
 		if (event.clientX) {
 			left = event.clientX;
@@ -340,7 +341,7 @@ export class DrawableComponent implements OnInit {
 		this._beatsF2Client.draw = this.drawBeatsF2.bind(this);
 		//this._dp.addClient(this._signalF2Client);
 		//this._dp.addClient(this._beatsF2Client);
-		this._dp.pushClients(this._signalF2Client/*, this._beatsF2Client*/);
+		this._dp.pushClients(this._signalF2Client, this._beatsF2Client);
 	}
 
 	//-------------------------------------------------------------------------------------
