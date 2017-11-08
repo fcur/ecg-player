@@ -244,10 +244,15 @@ export class DrawableComponent implements OnInit {
 
 	//----------------------------------------------------------------------------------------------
 	private getEventPosition(event: any): XPoint {
-		if (event.clientX) return new XPoint(event.clientX, event.clientY);
-		else if (event.touches && event.touches[0])
-			return new XPoint(event.touches[0].clientX, event.touches[0].clientY);
-		else return new XPoint(0, 0);
+		let left: number = 0, top: number = 0;
+		if (event.clientX) {
+			left = event.clientX;
+			top = event.clientY;
+		} else if (event.touches && event.touches[0]) {
+			left = event.touches[0].clientX;
+			top = event.touches[0].clientY;
+		}
+		return new XPoint(left, top);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -284,7 +289,7 @@ export class DrawableComponent implements OnInit {
 		//this._ct.ctx.stroke();
 		//this._ct.ctx.restore();
 		for (let z: number = 0; z < change.objects.length; z++) {
-			if(!change.objects[z].owner.draw) continue;
+			if (!change.objects[z].owner.draw) continue;
 			change.objects[z].owner.draw(change.objects[z]);//
 		}
 	}
@@ -297,7 +302,7 @@ export class DrawableComponent implements OnInit {
 			if (p[z].length > 1 && this._dp.drawingClients[z].drawObjects) {
 				this._dp.drawingClients[z].drawObjects(p[z]);
 			}
-			else if (this._dp.drawingClients[z].draw){
+			else if (this._dp.drawingClients[z].draw) {
 				// TODO remove single object drawing method
 				this._dp.drawingClients[z].draw(p[z][0]);
 			}
@@ -541,7 +546,7 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.closePath();
 		this._ct.ctx.stroke();
 		this._ct.ctx.closePath();
-		
+
 		this._ct.ctx.beginPath();
 		let points: XPoint[];
 		let dy: number;
@@ -551,12 +556,12 @@ export class DrawableComponent implements OnInit {
 			y = 0;
 			left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
 			dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel); // microvolts to pixels
-			top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy +shift;
+			top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
 			this._ct.ctx.moveTo(left, top);
 			for (y++; y < points.length; y++) {
 				left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
 				dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
-				top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy+shift;
+				top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
 				this._ct.ctx.lineTo(left, top);
 			}
 		}
