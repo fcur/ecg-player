@@ -75,80 +75,108 @@ export class DrawableComponent implements OnInit {
 	@HostListener("window:mouseenter", ["$event"])
 	private onWindowMouseenter(event: MouseEvent) {
 		//console.info("window:mouseenter", event);
+		event.preventDefault();
+		event.stopPropagation();
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mouseover", ["$event"])
 	private onWindowMouseover(event: MouseEvent) {
 		//console.info("window:mouseover", event);
+		event.preventDefault();
+		event.stopPropagation();
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mousemove", ["$event"])
 	private onWindowMousemove(event: MouseEvent) {
 		//console.info("window:mousemove", event);
 		//console.info(event);
+		event.preventDefault();
+		event.stopPropagation();
 		this.onDragMove(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mousedown", ["$event"])
 	private onWindowMousedown(event: MouseEvent) {
 		//console.info("window:mousedown", event);
+		event.preventDefault();
+		event.stopPropagation();
 		this.onDragStart(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mouseleave", ["$event"])
 	private onWindowMouseleave(event: MouseEvent) {
 		//console.info("window:mouseleave", event);
+		event.preventDefault();
+		event.stopPropagation();
 		this.onDragEnd(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mouseout", ["$event"])
 	private onWindowMouse(event: MouseEvent) {
 		//console.info("window:mouseout", event);
+		event.preventDefault();
+		event.stopPropagation();
 		this.onDragEnd(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mouseup", ["$event"])
 	private onWindowMouseup(event: MouseEvent) {
 		//console.info("window:mouseup", event);
+		event.preventDefault();
+		event.stopPropagation();
 		this.onDragEnd(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:auxclick", ["$event"])
 	private onWindowAuxclick(event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
 		//console.info("window:auxclick", event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:click", ["$event"])
 	private onWindowClick(event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
 		//console.info("window:click", event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:dblclick", ["$event"])
 	private onWindowDblclick(event: MouseEvent) {
+		event.preventDefault();
+		event.stopPropagation();
 		//console.info("window:dblclick", event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:touchcancel", ["$event"])
 	private onWindowTouchcancel(event: TouchEvent) {
 		//console.info("window:touchcancel", event);
+		event.preventDefault();
+		event.stopPropagation();
 		this.onDragEnd(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:touchend", ["$event"])
 	private onWindowTouchend(event: TouchEvent) {
 		//console.info("window:touchend", event);
+		event.preventDefault();
+		event.stopPropagation();
 		this.onDragEnd(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:touchmove", ["$event"])
 	private onWindowTouchmove(event: TouchEvent) {
 		//console.info("window:touchmove", event);
+		event.preventDefault();
+		event.stopPropagation();
 		this.onDragMove(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:touchstart", ["$event"])
 	private onWindowTouchstart(event: TouchEvent) {
 		//console.info("window:touchstart", event);
+		event.preventDefault();
+		event.stopPropagation();
 		this.onDragStart(event);
 	}
 	//-------------------------------------------------------------------------------------
