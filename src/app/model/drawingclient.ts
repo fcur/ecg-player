@@ -3,7 +3,8 @@ import {
 	ClPointDrawingObject, CellDrawingObject,
 	XDrawingObjectType, AnsDrawingObject,
 	BeatsDrawingObject, IDrawingObject,
-	XDrawingObject, SignalDrawingObject
+	XDrawingObject, SignalDrawingObject,
+	FPointDrawingObject
 
 } from "./drawingobject";
 
@@ -336,30 +337,30 @@ export class ClickablePointDrawingClient extends XDrawingClient {
 		let headers: RecordProjection[] = data.getHeaders(state.skipPx, state.limitPx, state.sampleRate);
 
 		for (z = 0; z < state.gridCells.length; z++) {
-			// DrawingObject for each XDrawingCell
-			results[z] = new SignalDrawingObject();
-			results[z].owner = this;
-			results[z].cellIndex = z;
-			results[z].index = z;
-			results[z].polylines = new Array();
-			results[z].container = state.gridCells[z].container.clone;
-			results[z].container.resetStart();
+				// DrawingObject for each XDrawingCell
+				results[z] = new SignalDrawingObject();
+				results[z].owner = this;
+				results[z].cellIndex = z;
+				results[z].index = z;
+				results[z].polylines = new Array();
+				results[z].container = state.gridCells[z].container.clone;
+				results[z].container.resetStart();
 
-			for (y = 0, cellRecordStart = 0; y < headers.length; y++) {
+				for (y = 0, cellRecordStart = 0; y < headers.length; y++) {
 
-				signal = data.dataV2[state.sampleRate][headers[y].id].signal;
-				start = state.minPx - headers[y].startPx; // from this position
-				end = Math.min(headers[y].endPx, state.maxPx); // until this position
-				limit = end - start;
-				signalPoints = signal[state.gridCells[z].lead];
-				points = new Array(limit);
-				for (x = 0; x < limit; x++) {
-					points[x] = signalPoints[x + start].clone;
-					points[x].left = x;
+						signal = data.dataV2[state.sampleRate][headers[y].id].signal;
+						start = state.minPx - headers[y].startPx; // from this position
+						end = Math.min(headers[y].endPx, state.maxPx); // until this position
+						limit = end - start;
+						signalPoints = signal[state.gridCells[z].lead];
+						points = new Array(limit);
+						for (x = 0; x < limit; x++) {
+								points[x] = signalPoints[x + start].clone;
+								points[x].left = x;
+						}
+						results[z].polylines.push(new XPolyline(points));
+						cellRecordStart += limit;
 				}
-				results[z].polylines.push(new XPolyline(points));
-				cellRecordStart += limit;
-			}
 		}
 		*/
 		return results;
@@ -380,25 +381,25 @@ export class CellDrawingClient extends XDrawingClient {
 		super();
 		this.mode = XDrawingMode.Canvas;
 		this.type = XDrawingObjectType.Signal;
-		this.draw = this.drawPonint.bind(this);
-		this.afterDraw = this.afterDrawPoint.bind(this);
-		this.createDrawingObject = this.createPointDrawingObject.bind(this);
+		this.draw = this.drawCell.bind(this);
+		this.afterDraw = this.afterDrawCell.bind(this);
+		this.createDrawingObject = this.createCellDrawingObject.bind(this);
 	}
 
 	//-------------------------------------------------------------------------------------
-	public drawPonint() {
-		console.info("drawPonint", "not implemented");
+	public drawCell() {
+		console.info("drawCell", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
-	public afterDrawPoint() {
-		console.info("afterDrawPoint", "not implemented");
+	public afterDrawCell() {
+		console.info("afterDrawCell", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
-	public createPointDrawingObject(): XDrawingObject {
-		console.info("createPointDrawingObject", "not implemented");
-		let result: XDrawingObject = new XDrawingObject();
+	public createCellDrawingObject(): CellDrawingObject {
+		console.info("createCellDrawingObject", "not implemented");
+		let result: CellDrawingObject = new CellDrawingObject();
 		return result;
 	}
 
@@ -411,5 +412,67 @@ export class CellDrawingClient extends XDrawingClient {
 		return results;
 	}
 
+}
 
+ 
+// -------------------------------------------------------------------------------------------------
+// Floating point drawing client
+// -------------------------------------------------------------------------------------------------
+export class FPointDrawingClient extends XDrawingClient {
+	// floating point for each cell and vertical line
+	lineColor: string;
+	opacity: number;
+	pointColor: string;
+	pointRadius: number;
+	clientHalfWidth: number;
+
+
+
+	//-------------------------------------------------------------------------------------
+	constructor() {
+		super();
+		this.clientHalfWidth = 4;
+		this.pointColor = "red";
+		this.lineColor = "#ccc";
+		this.opacity = 1;
+		this.clientHalfWidth = 3;
+		this.pointRadius = 3;
+		this.mode = XDrawingMode.Canvas;
+		this.type = XDrawingObjectType.Object;
+		this.draw = this.drawFPoint.bind(this);
+		this.afterDraw = this.afterDrawFPoint.bind(this);
+		this.createDrawingObject = this.createFPointDrawingObject.bind(this);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public drawFPoint() {
+		console.info("drawFPoint", "not implemented");
+	}
+
+	//-------------------------------------------------------------------------------------
+	public afterDrawFPoint() {
+		console.info("afterDrawFPoint", "not implemented");
+	}
+
+	//-------------------------------------------------------------------------------------
+	public createFPointDrawingObject(): FPointDrawingObject {
+		console.info("createFPointDrawingObject", "not implemented");
+		let result: XDrawingObject = new FPointDrawingObject();
+		return result;
+	}
+
+
+
+	//-------------------------------------------------------------------------------------
+	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): FPointDrawingObject[] {
+		let obj = new FPointDrawingObject();
+		obj.container = new XRectangle(state.pointerX - this.clientHalfWidth, 0, this.clientHalfWidth * 2, state.container.height);
+		let vertLine: XLine = new XLine(
+			new XPoint(state.pointerX, 0),
+			new XPoint(state.pointerX, state.container.height)
+		);
+		obj.lines = [vertLine];
+		//results.push(obj);
+		return [obj];
+	}
 }

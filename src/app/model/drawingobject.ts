@@ -354,3 +354,11 @@ export class ClPointDrawingObject extends XDrawingObject {
 export class CellDrawingObject extends XDrawingObject {
 
 }
+
+
+// -------------------------------------------------------------------------------------------------
+// Floating point drawing object
+// -------------------------------------------------------------------------------------------------
+export class FPointDrawingObject extends XDrawingObject {
+
+}

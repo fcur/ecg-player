@@ -159,6 +159,10 @@ export class XDrawingProxyState {
 	public gridCells: XDrawingCell[];
 	/**  Surface grid cells mode.*/
 	public gridMode: XDrawingGridMode;
+	/** Cursor pointer X. */
+	public pointerX: number;
+	public pointerY: number;
+
 
 	//-------------------------------------------------------------------------------------------------
 	public set scroll(delta: number) {

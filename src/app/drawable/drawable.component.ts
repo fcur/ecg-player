@@ -16,12 +16,14 @@ import {
 import {
 	XDrawingClient, XDrawingMode, IDrawingClient,
 	AnsDrawingClient, BeatsDrawingClient,
-	SignalDrawingClient
+	SignalDrawingClient, CellDrawingClient,
+	ClickablePointDrawingClient,
+	FPointDrawingClient
 } from "../model/drawingclient";
 import {
 	BeatsDrawingObject, IDrawingObject, ClPointDrawingObject,
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	CellDrawingObject, SignalDrawingObject
+	CellDrawingObject, SignalDrawingObject, FPointDrawingObject
 } from "../model/drawingobject";
 import {
 	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType,
@@ -52,7 +54,7 @@ export class DrawableComponent implements OnInit {
 	// feature 2 clients
 	private _signalF2Client: SignalDrawingClient;
 	private _beatsF2Client: BeatsDrawingClient;
-
+	private _fpointF2Client: FPointDrawingClient;
 
 	private _fileReader: FileReader;
 	private _hideFileDrop: boolean;
@@ -327,8 +329,8 @@ export class DrawableComponent implements OnInit {
 	private onReceiveDrawingObjects(p: IDrawingObject[][]) {
 		// z: client index
 		for (let z: number = 0; z < this._dp.drawingClients.length; z++) {
-			if (p[z].length === 0) continue;
-			if (p[z].length > 1 && this._dp.drawingClients[z].drawObjects) {
+			if (this._dp.drawingClients[z].drawObjects && Array.isArray(p[z])) {
+				if (p[z].length === 0) continue;
 				this._dp.drawingClients[z].drawObjects(p[z]);
 			}
 			else if (this._dp.drawingClients[z].draw) {
@@ -365,7 +367,9 @@ export class DrawableComponent implements OnInit {
 		this._signalF2Client.drawObjects = this.drawSignalObjectsF2.bind(this);
 		this._beatsF2Client = new BeatsDrawingClient();
 		this._beatsF2Client.drawObjects = this.drawBeatsObjectsF2.bind(this);
-		this._dp.pushClients(this._signalF2Client, this._beatsF2Client);
+		this._fpointF2Client = new FPointDrawingClient();
+		this._fpointF2Client.drawObjects = this.drawFPointObjectsF2.bind(this);
+		this._dp.pushClients(this._signalF2Client, this._beatsF2Client, this._fpointF2Client);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -486,17 +490,17 @@ export class DrawableComponent implements OnInit {
 		//console.info("drawFloadingPoint");
 		let state: XDrawingProxyState = this._dp.state;
 		this._ct.ctx.save();
-		this._ct.ctx.beginPath();
 		let radius: number = 3;
 		let z: number, left: number = 0, top: number = 0;
-		if (Array.isArray(obj.lines)) {
-			for (z = 0; z < obj.lines.length; z++) {
-				this._ct.ctx.moveTo(obj.lines[0].ax + state.container.left - state.minPx + 0.5, obj.lines[0].ay + 0.5);
-				this._ct.ctx.lineTo(obj.lines[0].bx + state.container.left - state.minPx + 0.5, obj.lines[0].by + 0.5);
-			}
-		}
-		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
+		//this._ct.ctx.beginPath();
+		//if (Array.isArray(obj.lines)) {
+		//  for (z = 0; z < obj.lines.length; z++) {
+		//    this._ct.ctx.moveTo(obj.lines[0].ax + state.container.left - state.minPx + 0.5, obj.lines[0].ay + 0.5);
+		//    this._ct.ctx.lineTo(obj.lines[0].bx + state.container.left - state.minPx + 0.5, obj.lines[0].by + 0.5);
+		//  }
+		//}
+		//this._ct.ctx.stroke();
+		//this._ct.ctx.closePath();
 		this._ct.ctx.beginPath();
 		this._ct.ctx.fillStyle = "red";
 		if (Array.isArray(obj.peaks)) {
@@ -627,5 +631,29 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.closePath();
 		this._ct.ctx.restore();
 	}
+
+	//-------------------------------------------------------------------------------------
+	private drawFPointObjectsF2(objs: FPointDrawingObject[]) {
+		this._ct.ctx.save();
+		let state: XDrawingProxyState = this._dp.state;
+		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
+		let obj: FPointDrawingObject = objs[0];
+		this._ct.ctx.globalAlpha = this._fpointF2Client.opacity;
+		this._ct.ctx.beginPath();
+		left = state.container.left + obj.lines[0].ax;
+		top = state.container.top + obj.lines[0].ay;
+		this._ct.ctx.moveTo(left + 0.5, top + 0.5);
+		top = state.container.top + obj.lines[0].by;
+		this._ct.ctx.lineTo(left + 0.5, top + 0.5);
+
+		this._ct.ctx.fillStyle = this._beatsF2Client.color;
+		this._ct.ctx.stroke();
+
+
+
+		this._ct.ctx.closePath();
+		this._ct.ctx.restore();
+	}
+
 
 }
