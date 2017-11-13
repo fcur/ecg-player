@@ -83,6 +83,8 @@ export class XDrawingClient implements IDrawingClient {
 // -------------------------------------------------------------------------------------------------
 export class AnsDrawingClient extends XDrawingClient {
 
+	// TODO: prepare static annotation containers, do not create drawing object for each browser input event
+
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
@@ -337,30 +339,30 @@ export class ClickablePointDrawingClient extends XDrawingClient {
 		let headers: RecordProjection[] = data.getHeaders(state.skipPx, state.limitPx, state.sampleRate);
 
 		for (z = 0; z < state.gridCells.length; z++) {
-				// DrawingObject for each XDrawingCell
-				results[z] = new SignalDrawingObject();
-				results[z].owner = this;
-				results[z].cellIndex = z;
-				results[z].index = z;
-				results[z].polylines = new Array();
-				results[z].container = state.gridCells[z].container.clone;
-				results[z].container.resetStart();
+						// DrawingObject for each XDrawingCell
+						results[z] = new SignalDrawingObject();
+						results[z].owner = this;
+						results[z].cellIndex = z;
+						results[z].index = z;
+						results[z].polylines = new Array();
+						results[z].container = state.gridCells[z].container.clone;
+						results[z].container.resetStart();
 
-				for (y = 0, cellRecordStart = 0; y < headers.length; y++) {
+						for (y = 0, cellRecordStart = 0; y < headers.length; y++) {
 
-						signal = data.dataV2[state.sampleRate][headers[y].id].signal;
-						start = state.minPx - headers[y].startPx; // from this position
-						end = Math.min(headers[y].endPx, state.maxPx); // until this position
-						limit = end - start;
-						signalPoints = signal[state.gridCells[z].lead];
-						points = new Array(limit);
-						for (x = 0; x < limit; x++) {
-								points[x] = signalPoints[x + start].clone;
-								points[x].left = x;
+										signal = data.dataV2[state.sampleRate][headers[y].id].signal;
+										start = state.minPx - headers[y].startPx; // from this position
+										end = Math.min(headers[y].endPx, state.maxPx); // until this position
+										limit = end - start;
+										signalPoints = signal[state.gridCells[z].lead];
+										points = new Array(limit);
+										for (x = 0; x < limit; x++) {
+														points[x] = signalPoints[x + start].clone;
+														points[x].left = x;
+										}
+										results[z].polylines.push(new XPolyline(points));
+										cellRecordStart += limit;
 						}
-						results[z].polylines.push(new XPolyline(points));
-						cellRecordStart += limit;
-				}
 		}
 		*/
 		return results;
@@ -414,7 +416,7 @@ export class CellDrawingClient extends XDrawingClient {
 
 }
 
- 
+
 // -------------------------------------------------------------------------------------------------
 // Floating point drawing client
 // -------------------------------------------------------------------------------------------------
