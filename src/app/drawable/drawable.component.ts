@@ -528,6 +528,7 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private scroll(event: any) {
+		this._dp.preparePointer(event);
 		let endpoint: XPoint = this.getEventPosition(event);
 		let actionPoint: XPoint = this._waveformDragStartPosition.subtract(endpoint);
 		this._waveformDragStartPosition = endpoint;
