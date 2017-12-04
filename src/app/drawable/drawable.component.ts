@@ -44,13 +44,13 @@ import { Subscription, BehaviorSubject } from "rxjs";
 export class DrawableComponent implements OnInit {
 
 	private _dp: XDrawingProxy;
-	private _ansClient: XDrawingClient;
-	private _pqrstClient: XDrawingClient;
-	private _signalClient: XDrawingClient;
-	private _beatsClient: XDrawingClient;
-	private _floatingObjectsClient: XDrawingClient;
-	private _floatingPeaksClient: XDrawingClient;
-	private _gridClient: XDrawingClient;
+	//private _ansClient: XDrawingClient;
+	//private _pqrstClient: XDrawingClient;
+	//private _signalClient: XDrawingClient;
+	//private _beatsClient: XDrawingClient;
+	//private _floatingObjectsClient: XDrawingClient;
+	//private _floatingPeaksClient: XDrawingClient;
+	//private _gridClient: XDrawingClient;
 	// feature 2 clients
 	private _signalF2Client: SignalDrawingClient;
 	private _beatsF2Client: BeatsDrawingClient;
@@ -405,59 +405,59 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private drawSignal(obj: XDrawingObject) {
-		//console.info("draw singal object", obj);
-		let state: XDrawingProxyState = this._dp.state;
-		this._ct.ctx.save();
-		let skipPoints: number = 0;
-		let points: XPoint[];
-		let z: number = 0, y: number = 0, left: number = 0, top: number = 0;
-		let dy: number;
+	//private drawSignal(obj: XDrawingObject) {
+	//	//console.info("draw singal object", obj);
+	//	let state: XDrawingProxyState = this._dp.state;
+	//	this._ct.ctx.save();
+	//	let skipPoints: number = 0;
+	//	let points: XPoint[];
+	//	let z: number = 0, y: number = 0, left: number = 0, top: number = 0;
+	//	let dy: number;
 
-		this._ct.ctx.beginPath();
-		for (z = 0; z < state.gridCells.length; z++) {
-			// borders
-			this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
-			this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.minOy);
-			this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.maxOy);
-			this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.maxOy);
-			this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
-			// ox axis
-			this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.midOy);
-			this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.midOy);
-		}
-		this._ct.ctx.strokeStyle = "red";
-		this._ct.ctx.globalAlpha = 0.15;
-		this._ct.ctx.closePath();
-		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
+	//	this._ct.ctx.beginPath();
+	//	for (z = 0; z < state.gridCells.length; z++) {
+	//		// borders
+	//		this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
+	//		this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.minOy);
+	//		this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.maxOy);
+	//		this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.maxOy);
+	//		this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
+	//		// ox axis
+	//		this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.midOy);
+	//		this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.midOy);
+	//	}
+	//	this._ct.ctx.strokeStyle = "red";
+	//	this._ct.ctx.globalAlpha = 0.15;
+	//	this._ct.ctx.closePath();
+	//	this._ct.ctx.stroke();
+	//	this._ct.ctx.closePath();
 
-		this._ct.ctx.beginPath();
-		for (z = 0; z < obj.polylines.length; z++) { // z - cell index, polyline index
-			points = obj.polylines[z].points;
-			y = state.minPx; // y - point index
+	//	this._ct.ctx.beginPath();
+	//	for (z = 0; z < obj.polylines.length; z++) { // z - cell index, polyline index
+	//		points = obj.polylines[z].points;
+	//		y = state.minPx; // y - point index
 
-			left = points[y].left + 0.5 - state.minPx;
-			dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
-			top = dy + 0.5 + state.gridCells[z].container.midOy;
-			this._ct.ctx.moveTo(left, top);
-			for (y++; y < state.maxPx; y++) {
-				left = points[y].left + 0.5 - state.minPx;
-				dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
-				top = dy + 0.5 + state.gridCells[z].container.midOy;
-				this._ct.ctx.lineTo(left, top);
-			}
-		}
-		this._ct.ctx.lineWidth = 1;
-		this._ct.ctx.strokeStyle = "#008662";
-		this._ct.ctx.globalAlpha = 1;
-		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
-		this._ct.ctx.restore();
-	}
+	//		left = points[y].left + 0.5 - state.minPx;
+	//		dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
+	//		top = dy + 0.5 + state.gridCells[z].container.midOy;
+	//		this._ct.ctx.moveTo(left, top);
+	//		for (y++; y < state.maxPx; y++) {
+	//			left = points[y].left + 0.5 - state.minPx;
+	//			dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
+	//			top = dy + 0.5 + state.gridCells[z].container.midOy;
+	//			this._ct.ctx.lineTo(left, top);
+	//		}
+	//	}
+	//	this._ct.ctx.lineWidth = 1;
+	//	this._ct.ctx.strokeStyle = "#008662";
+	//	this._ct.ctx.globalAlpha = 1;
+	//	this._ct.ctx.stroke();
+	//	this._ct.ctx.closePath();
+	//	this._ct.ctx.restore();
+	//}
 
 	//-------------------------------------------------------------------------------------
-	private drawBeats(obj: XDrawingObject) {
+	//private drawBeats(obj: XDrawingObject) {
 		//console.info("draw beats", obj);
 
 		//let state: XDrawingProxyState = this._dp.state;
@@ -482,10 +482,10 @@ export class DrawableComponent implements OnInit {
 		//this._ct.ctx.fill();
 		//this._ct.ctx.closePath();
 		//this._ct.ctx.restore();
-	}
+	//}
 
 	//-------------------------------------------------------------------------------------
-	private drawFloadingPoint(obj: XDrawingObject) {
+	//private drawFloadingPoint(obj: XDrawingObject) {
 		// TODO draw point on nearest channel + line in cursor position
 		// handle point click
 		//console.info("drawFloadingPoint");
@@ -518,15 +518,15 @@ export class DrawableComponent implements OnInit {
 		//this._ct.ctx.fill();
 		//this._ct.ctx.closePath();
 		//this._ct.ctx.restore();
-	}
+	//}
 
 	//-------------------------------------------------------------------------------------
-	private drawFloatingPeak(obj: XDrawingObject) {
-		console.info("drawFloatingPeak");
+	//private drawFloatingPeak(obj: XDrawingObject) {
+	//	console.info("drawFloatingPeak");
 
-		this._ct.ctx.save();
-		this._ct.ctx.restore();
-	}
+	//	this._ct.ctx.save();
+	//	this._ct.ctx.restore();
+	//}
 
 	//-------------------------------------------------------------------------------------
 	private scroll(event: any) {
