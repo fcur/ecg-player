@@ -41,8 +41,8 @@ export class XDrawingProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public get drawingClients():IDrawingClient[]{
-		if(!this._clientsF2) return [];
+	public get drawingClients(): IDrawingClient[] {
+		if (!this._clientsF2) return [];
 		return this._clientsF2;
 	}
 
@@ -254,19 +254,25 @@ export class XDrawingProxy {
 	//-------------------------------------------------------------------------------------
 	public performMouseMove(event: any) {
 		if (!this.state.container) return;
-
-		let proxyX: number = event.clientX - this.state.screen.left;
-		let proxyY: number = event.clientY - this.state.screen.top;
-		if (proxyX < 0 || proxyX > this.state.container.width ||
-			proxyY < 0 || proxyY > this.state.container.height) return;
 		// TODO handle floating pointer
 		//console.info("proxy: mouse move", proxyX, proxyY);
-		this.prepareFloatingObjects(proxyX, proxyY);
+		this.preparePointer(event);
+		this.prepareFloatingObjects(this.state.pointerX, this.state.pointerY);
 		let objects: IDrawingObject[][] = this.prepareDrawingObjectsF2();
 		let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseMove, event);
 		this.onChangeState.emit(changes);
 		this.onPrepareDrawings.emit(objects);
 	}
 
+
+	//-------------------------------------------------------------------------------------
+	public preparePointer(event: any) {
+		let proxyX: number = event.clientX - this.state.screen.left;
+		let proxyY: number = event.clientY - this.state.screen.top;
+		if (proxyX < 0 || proxyX > this.state.container.width ||
+			proxyY < 0 || proxyY > this.state.container.height) return;
+		this.state.pointerX = proxyX;
+		this.state.pointerY = proxyY;
+	}
 
 }

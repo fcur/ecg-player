@@ -159,6 +159,10 @@ export class XDrawingProxyState {
 	public gridCells: XDrawingCell[];
 	/**  Surface grid cells mode.*/
 	public gridMode: XDrawingGridMode;
+	/** Cursor pointer X. */
+	public pointerX: number;
+	public pointerY: number;
+
 
 	//-------------------------------------------------------------------------------------------------
 	public set scroll(delta: number) {
@@ -230,6 +234,7 @@ export class XDrawingProxyState {
 				// prepare mul coefficients
 				this.gridCells[z].sampleValueToPixel = Math.floor((signalHeight / this.signalSamplesClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
 				this.gridCells[z].microvoltsToPixel = Math.floor((signalHeight / this.signalMicrovoltsClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
+				console.info(this.gridCells[z].sampleValueToPixel, this.gridCells[z].microvoltsToPixel, signalHeight);
 				cellTop = this.gridCells[z].container.maxOy + space;
 				//console.info("z:", this.gridCells[z].index, "row:", this.gridCells[z].cellRowIndex, "column:", this.gridCells[z].cellColumnIndex);
 			}

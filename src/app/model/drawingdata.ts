@@ -66,6 +66,19 @@ export class DrawingData {
 	}
 
 	//-------------------------------------------------------------------------------------
+	public getHeader(px: number, sampleRate: number): RecordProjection {
+		// px: absolute pixels positions
+		if (!this.headers.hasOwnProperty(sampleRate)) return null;
+		let projections: { [recordId: string]: RecordProjection } = this.headers[sampleRate];
+
+		for (let recordId in projections) {
+			if (projections[recordId].endPx < px || projections[recordId].startPx > px) continue;
+			return projections[recordId];
+		}
+		return null;
+	}
+
+	//-------------------------------------------------------------------------------------
 	public set recordHeaders(p: EcgRecord[]) {
 		if (!Array.isArray(p) || p.length === 0) return;
 
