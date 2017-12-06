@@ -369,3 +369,12 @@ export class CellDrawingObject extends XDrawingObject {
 export class FPointDrawingObject extends XDrawingObject {
 
 }
+
+// -------------------------------------------------------------------------------------------------
+// Floating point drawing object
+// -------------------------------------------------------------------------------------------------
+export class GridCellDrawingObject extends XDrawingObject {
+
+}
+
+

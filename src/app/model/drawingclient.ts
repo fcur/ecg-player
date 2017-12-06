@@ -1,11 +1,10 @@
 
 import {
+	FPointDrawingObject, GridCellDrawingObject,
 	ClPointDrawingObject, CellDrawingObject,
 	XDrawingObjectType, AnsDrawingObject,
 	BeatsDrawingObject, IDrawingObject,
-	XDrawingObject, SignalDrawingObject,
-	FPointDrawingObject
-
+	XDrawingObject, SignalDrawingObject
 } from "./drawingobject";
 
 import {
@@ -205,6 +204,84 @@ export class BeatsDrawingClient extends XDrawingClient {
 	}
 }
 
+// -------------------------------------------------------------------------------------------------
+// Signal drawing glient
+// -------------------------------------------------------------------------------------------------
+export class GridCellDrawingClient extends XDrawingClient {
+
+	color: string;
+	opacity: number;
+	lineJoin: string;
+
+
+	//-------------------------------------------------------------------------------------
+	constructor() {
+		super();
+		this.color = "#00c12e";
+		this.opacity = 0.5;
+		this.lineJoin = "miter";// round|miter|bevel
+		this.mode = XDrawingMode.Canvas;
+		this.type = XDrawingObjectType.Signal;
+		this.draw = this.drawGrid.bind(this);
+		this.afterDraw = this.afterDrawGrid.bind(this);
+		this.createDrawingObject = this.createGridDrawingObject.bind(this);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public drawGrid() {
+		console.info("drawGrid", "not implemented");
+	}
+
+	//-------------------------------------------------------------------------------------
+	public afterDrawGrid() {
+		console.info("afterDrawGrid", "not implemented");
+	}
+
+	//-------------------------------------------------------------------------------------
+	public createGridDrawingObject(): XDrawingObject {
+		console.info("createGridDrawingObject", "not implemented");
+		let result: XDrawingObject = new XDrawingObject();
+
+		return result;
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): GridCellDrawingObject[] {
+		let z: number, y: number, x: number;
+		let results: GridCellDrawingObject[] = new Array(state.gridCells.length);
+
+		let borderPoints: XPoint[];
+		let axisPoints: XPoint[];
+		for (z = 0; z < state.gridCells.length; z++) {
+			results[z] = new GridCellDrawingObject();
+			results[z].owner = this;
+			results[z].cellIndex = z;
+			results[z].index = z;
+			// TODO: return container borders as lines
+			// border
+			borderPoints = [
+				new XPoint(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy),
+				new XPoint(state.gridCells[z].container.maxOx, state.gridCells[z].container.minOy),
+				new XPoint(state.gridCells[z].container.maxOx, state.gridCells[z].container.maxOy),
+				new XPoint(state.gridCells[z].container.minOx, state.gridCells[z].container.maxOy),
+				new XPoint(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy)
+			];
+			// OX axis
+			axisPoints = [
+				new XPoint(state.gridCells[z].container.minOx, state.gridCells[z].container.midOy),
+				new XPoint(state.gridCells[z].container.maxOx, state.gridCells[z].container.midOy)
+			];
+			results[z].polylines = [new XPolyline(borderPoints), new XPolyline(axisPoints)];
+			results[z].container = state.gridCells[z].container.clone;
+			results[z].container.resetStart();
+		}
+		return results;
+	}
+
+
+}
+
 
 // -------------------------------------------------------------------------------------------------
 // Signal drawing glient
@@ -213,12 +290,14 @@ export class SignalDrawingClient extends XDrawingClient {
 
 	color: string;
 	opacity: number;
+	lineJoin: string;
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
-		this.color = "#db23fc";
+		this.color = "#0e9aff";
 		this.opacity = 1;
+		this.lineJoin = "miter";// round|miter|bevel
 		this.mode = XDrawingMode.Canvas;
 		this.type = XDrawingObjectType.Signal;
 		this.draw = this.drawSignal.bind(this);
@@ -339,30 +418,30 @@ export class ClickablePointDrawingClient extends XDrawingClient {
 		let headers: RecordProjection[] = data.getHeaders(state.skipPx, state.limitPx, state.sampleRate);
 
 		for (z = 0; z < state.gridCells.length; z++) {
-										// DrawingObject for each XDrawingCell
-										results[z] = new SignalDrawingObject();
-										results[z].owner = this;
-										results[z].cellIndex = z;
-										results[z].index = z;
-										results[z].polylines = new Array();
-										results[z].container = state.gridCells[z].container.clone;
-										results[z].container.resetStart();
+																																		// DrawingObject for each XDrawingCell
+																																		results[z] = new SignalDrawingObject();
+																																		results[z].owner = this;
+																																		results[z].cellIndex = z;
+																																		results[z].index = z;
+																																		results[z].polylines = new Array();
+																																		results[z].container = state.gridCells[z].container.clone;
+																																		results[z].container.resetStart();
 
-										for (y = 0, cellRecordStart = 0; y < headers.length; y++) {
+																																		for (y = 0, cellRecordStart = 0; y < headers.length; y++) {
 
-																		signal = data.dataV2[state.sampleRate][headers[y].id].signal;
-																		start = state.minPx - headers[y].startPx; // from this position
-																		end = Math.min(headers[y].endPx, state.maxPx); // until this position
-																		limit = end - start;
-																		signalPoints = signal[state.gridCells[z].lead];
-																		points = new Array(limit);
-																		for (x = 0; x < limit; x++) {
-																										points[x] = signalPoints[x + start].clone;
-																										points[x].left = x;
-																		}
-																		results[z].polylines.push(new XPolyline(points));
-																		cellRecordStart += limit;
-										}
+																																																																		signal = data.dataV2[state.sampleRate][headers[y].id].signal;
+																																																																		start = state.minPx - headers[y].startPx; // from this position
+																																																																		end = Math.min(headers[y].endPx, state.maxPx); // until this position
+																																																																		limit = end - start;
+																																																																		signalPoints = signal[state.gridCells[z].lead];
+																																																																		points = new Array(limit);
+																																																																		for (x = 0; x < limit; x++) {
+																																																																																																		points[x] = signalPoints[x + start].clone;
+																																																																																																		points[x].left = x;
+																																																																		}
+																																																																		results[z].polylines.push(new XPolyline(points));
+																																																																		cellRecordStart += limit;
+																																		}
 		}
 		*/
 		return results;

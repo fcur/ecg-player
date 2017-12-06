@@ -9,21 +9,21 @@ import {
 	XDrawingChange, XDrawingProxyState, XCanvasTool
 } from "../model/misc";
 import {
-	XDrawingPrimitive, XDrawingPrimitiveState,
-	XLabel, XLine, XPeak, XPoint, XPolyline,
-	XRectangle
+	XDrawingPrimitive, XDrawingPrimitiveState, XLabel,
+	XLine, XPeak, XPoint, XPolyline, XRectangle
 } from "../model/geometry";
 import {
+	ClickablePointDrawingClient, FPointDrawingClient,
 	XDrawingClient, XDrawingMode, IDrawingClient,
-	AnsDrawingClient, BeatsDrawingClient,
 	SignalDrawingClient, CellDrawingClient,
-	ClickablePointDrawingClient,
-	FPointDrawingClient
+	AnsDrawingClient, BeatsDrawingClient,
+	GridCellDrawingClient
 } from "../model/drawingclient";
 import {
+	CellDrawingObject, SignalDrawingObject, FPointDrawingObject,
 	BeatsDrawingObject, IDrawingObject, ClPointDrawingObject,
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	CellDrawingObject, SignalDrawingObject, FPointDrawingObject
+	GridCellDrawingObject
 } from "../model/drawingobject";
 import {
 	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType,
@@ -53,6 +53,7 @@ export class DrawableComponent implements OnInit {
 	//private _gridClient: XDrawingClient;
 	// feature 2 clients
 	private _signalF2Client: SignalDrawingClient;
+	private _gridF2Client: GridCellDrawingClient;
 	private _beatsF2Client: BeatsDrawingClient;
 	private _fpointF2Client: FPointDrawingClient;
 
@@ -203,14 +204,6 @@ export class DrawableComponent implements OnInit {
 		this._dp.onPrepareDrawings.subscribe((v: IDrawingObject[][]) => this.onReceiveDrawingObjects(v));
 		this._fileReader = new FileReader();
 		this.prepareClients();
-		//this._drawingClients = new Array();
-
-		//let clients: IDrawingClient[] = new Array();
-		//clients.push(
-		//  new XDrawingClient(),
-		//  new AnsDrawingClient(),
-		//  new BeatsDrawingClient());
-		//console.info(clients);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -267,6 +260,31 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
+	private performanceCounter() {
+		let t0: number, t1: number, l0: number, l1: number;
+		t0 = performance.now();
+		let imageData: ImageData = this._ct.ctx.getImageData(0, 0, this._ct.ctx.canvas.width, this._ct.ctx.canvas.height);
+		t1 = performance.now();
+		l0 = t1 - t0;
+		let pixelsData: Uint8ClampedArray = imageData.data;
+		let used: number[] = new Array();
+		let skip: number = 0;
+		let count: number = 0;
+		t0 = performance.now();
+		for (let i = 0; i < pixelsData.length; i++) {
+			if (pixelsData[i] === 0) {
+				skip++;
+				continue;
+			}
+			count++;
+		}
+		t1 = performance.now();
+		l1 = t1 - t0;
+		console.log(`save img(${imageData.width}x${imageData.height}) took ${Math.round(l0)}[ms] ${"\n"}handle ${imageData.width * imageData.height} px took ${Math.round(l1)}[ms]`);
+		console.log(`data (${pixelsData.length}): count=${count}, skip=${skip}`);
+	}
+
+	//-------------------------------------------------------------------------------------
 	private onDragEnd(event: any) {
 		if (!this._waveformDragStartPosition) return;
 		this._waveformDragStartPosition = null;
@@ -293,14 +311,10 @@ export class DrawableComponent implements OnInit {
 		this._dp.state.sampleRate = this._ds.ecgrecords[0].sampleRateForCls;
 		// save original sample rate
 		this._dp.drawingData.originalSampleRate = this._ds.ecgrecords[0].sampleRateForCls;
-
 		this._dp.drawingData.recordHeaders = this._ds.ecgrecords;
 		// on real project we receive data in other place
 		this._dp.drawingData.projection = this._ds.ecgrecords;
-
 		this._dp.reset();
-		//console.info("receive", v, "prepare drawings");
-		this.prepareDrawingObjects();
 		this._dp.refreshDrawings();
 	}
 
@@ -321,7 +335,7 @@ export class DrawableComponent implements OnInit {
 		//this._ct.ctx.restore();
 		for (let z: number = 0; z < change.objects.length; z++) {
 			if (!change.objects[z].owner.draw) continue;
-			change.objects[z].owner.draw(change.objects[z]);//
+			change.objects[z].owner.draw(change.objects[z]);
 		}
 	}
 
@@ -358,28 +372,19 @@ export class DrawableComponent implements OnInit {
 		//this._floatingPeaksClient = new XDrawingClient();
 		//this._floatingPeaksClient.mode = XDrawingMode.Canvas;
 		//this._floatingPeaksClient.draw = this.drawFloatingPeak.bind(this);
-
 		//this._gridClient = new XDrawingClient();
 		//this._gridClient.mode = XDrawingMode.Canvas;
 
 		// prepare feature 2 clients
 		this._signalF2Client = new SignalDrawingClient();
 		this._signalF2Client.drawObjects = this.drawSignalObjectsF2.bind(this);
+		this._gridF2Client = new GridCellDrawingClient();
+		this._gridF2Client.drawObjects = this.drawGridObjectsF2.bind(this);
 		this._beatsF2Client = new BeatsDrawingClient();
 		this._beatsF2Client.drawObjects = this.drawBeatsObjectsF2.bind(this);
 		this._fpointF2Client = new FPointDrawingClient();
 		this._fpointF2Client.drawObjects = this.drawFPointObjectsF2.bind(this);
-		this._dp.pushClients(this._signalF2Client, this._beatsF2Client, this._fpointF2Client);
-	}
-
-	//-------------------------------------------------------------------------------------
-	private prepareDrawingObjects() {
-		//this._dp.buildSignal(this._ds.ecgrecords, this._signalClient);
-		//this._dp.buildBeats(this._ds.ecgrecords, this._beatsClient, this._pinBeatsToSignal);
-		//this._dp.buildFloatingObjects(this._floatingObjectsClient);
-		//this._dp.buildFloatingPeaks([this._ds.ecgrecord], this._floatingPeaksClient, 2);
-		//this._dp.buildWavepoints(this._ds.ecgrecord.wavePoints, this._pqrstClient);
-		//this._dp.buildAnnotations(this._ds.ecgrecord.annotations, this._ansClient);
+		this._dp.pushClients(this._gridF2Client, this._signalF2Client, this._beatsF2Client, this._fpointF2Client);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -405,130 +410,6 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	//private drawSignal(obj: XDrawingObject) {
-	//	//console.info("draw singal object", obj);
-	//	let state: XDrawingProxyState = this._dp.state;
-	//	this._ct.ctx.save();
-	//	let skipPoints: number = 0;
-	//	let points: XPoint[];
-	//	let z: number = 0, y: number = 0, left: number = 0, top: number = 0;
-	//	let dy: number;
-
-	//	this._ct.ctx.beginPath();
-	//	for (z = 0; z < state.gridCells.length; z++) {
-	//		// borders
-	//		this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
-	//		this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.minOy);
-	//		this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.maxOy);
-	//		this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.maxOy);
-	//		this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
-	//		// ox axis
-	//		this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.midOy);
-	//		this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.midOy);
-	//	}
-	//	this._ct.ctx.strokeStyle = "red";
-	//	this._ct.ctx.globalAlpha = 0.15;
-	//	this._ct.ctx.closePath();
-	//	this._ct.ctx.stroke();
-	//	this._ct.ctx.closePath();
-
-	//	this._ct.ctx.beginPath();
-	//	for (z = 0; z < obj.polylines.length; z++) { // z - cell index, polyline index
-	//		points = obj.polylines[z].points;
-	//		y = state.minPx; // y - point index
-
-	//		left = points[y].left + 0.5 - state.minPx;
-	//		dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
-	//		top = dy + 0.5 + state.gridCells[z].container.midOy;
-	//		this._ct.ctx.moveTo(left, top);
-	//		for (y++; y < state.maxPx; y++) {
-	//			left = points[y].left + 0.5 - state.minPx;
-	//			dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
-	//			top = dy + 0.5 + state.gridCells[z].container.midOy;
-	//			this._ct.ctx.lineTo(left, top);
-	//		}
-	//	}
-	//	this._ct.ctx.lineWidth = 1;
-	//	this._ct.ctx.strokeStyle = "#008662";
-	//	this._ct.ctx.globalAlpha = 1;
-	//	this._ct.ctx.stroke();
-	//	this._ct.ctx.closePath();
-	//	this._ct.ctx.restore();
-	//}
-
-	//-------------------------------------------------------------------------------------
-	//private drawBeats(obj: XDrawingObject) {
-		//console.info("draw beats", obj);
-
-		//let state: XDrawingProxyState = this._dp.state;
-		//this._ct.ctx.save();
-		//let radius: number = 2;
-		//this._ct.ctx.beginPath();
-		//let z: number = 0, y: number = 0, left: number = 0, top: number = 0;
-
-		//let cell: XDrawingCell = state.gridCells[0];
-		//for (z = 0; z < obj.points.length; z++) {
-		//  if (obj.points[z].left < state.minPx + state.container.left + 1) continue;
-		//  if (obj.points[z].left > state.maxPx + state.container.left - 1) break;
-
-		//  left = obj.points[z].left - state.minPx;
-		//  top = this._pinBeatsToSignal ?
-		//    Math.round(obj.points[z].top * state.gridCells[0].microvoltsToPixel) + state.gridCells[0].container.midOy :
-		//    obj.container.top + obj.points[z].top;
-		//  this._ct.ctx.moveTo(left + 0.5, top + 0.5);
-		//  this._ct.ctx.arc(left + 0.5, top + 0.5, radius, 0, 2 * Math.PI, false);
-		//}
-		//this._ct.ctx.fillStyle = "orange";
-		//this._ct.ctx.fill();
-		//this._ct.ctx.closePath();
-		//this._ct.ctx.restore();
-	//}
-
-	//-------------------------------------------------------------------------------------
-	//private drawFloadingPoint(obj: XDrawingObject) {
-		// TODO draw point on nearest channel + line in cursor position
-		// handle point click
-		//console.info("drawFloadingPoint");
-
-		//let state: XDrawingProxyState = this._dp.state;
-		//this._ct.ctx.save();
-		//let radius: number = 3;
-		//let z: number, left: number = 0, top: number = 0;
-		//this._ct.ctx.beginPath();
-		//if (Array.isArray(obj.lines)) {
-		//  for (z = 0; z < obj.lines.length; z++) {
-		//    this._ct.ctx.moveTo(obj.lines[0].ax + state.container.left - state.minPx + 0.5, obj.lines[0].ay + 0.5);
-		//    this._ct.ctx.lineTo(obj.lines[0].bx + state.container.left - state.minPx + 0.5, obj.lines[0].by + 0.5);
-		//  }
-		//}
-		//this._ct.ctx.stroke();
-		//this._ct.ctx.closePath();
-		//this._ct.ctx.beginPath();
-		//this._ct.ctx.fillStyle = "red";
-		//if (Array.isArray(obj.peaks)) {
-		//  let ci: number;
-		//  for (z = 0; z < obj.peaks.length; z++) {
-		//    ci = obj.peaks[z].cellIndex;
-		//    left = obj.peaks[z].container.left + state.container.left - state.minPx;
-		//    top = Math.round(obj.peaks[z].container.top * state.gridCells[ci].microvoltsToPixel) + state.gridCells[ci].container.midOy;
-		//    this._ct.ctx.moveTo(left + 0.5, top + 0.5);
-		//    this._ct.ctx.arc(left + 0.5, top + 0.5, radius, 0, 2 * Math.PI, false);
-		//  }
-		//}
-		//this._ct.ctx.fill();
-		//this._ct.ctx.closePath();
-		//this._ct.ctx.restore();
-	//}
-
-	//-------------------------------------------------------------------------------------
-	//private drawFloatingPeak(obj: XDrawingObject) {
-	//	console.info("drawFloatingPeak");
-
-	//	this._ct.ctx.save();
-	//	this._ct.ctx.restore();
-	//}
-
-	//-------------------------------------------------------------------------------------
 	private scroll(event: any) {
 		this._dp.preparePointer(event);
 		let endpoint: XPoint = this.getEventPosition(event);
@@ -548,9 +429,31 @@ export class DrawableComponent implements OnInit {
 		this._dp.performMouseMove(event);
 	}
 
+
 	//-------------------------------------------------------------------------------------
-	private drawSignalF2(obj: XDrawingObject) {
-		//console.info("drawSignalF2");
+	private drawGridObjectsF2(objs: GridCellDrawingObject[]) {
+		//console.log("drawGridObjectsF2");
+		let state: XDrawingProxyState = this._dp.state;
+		let z: number = 0, y: number = 0, x: number = 0, point: XPoint;
+		this._ct.ctx.save();
+		this._ct.ctx.beginPath();
+		for (z = 0; z < objs.length; z++) {
+			for (y = 0; y < objs[z].polylines.length; y++) {
+				x = 0;
+				point = objs[z].polylines[y].points[x++];
+				this._ct.ctx.moveTo(point.left + 0.5, point.top + 0.5);
+				for (; x < objs[z].polylines[y].points.length; x++) {
+					point = objs[z].polylines[y].points[x];
+					this._ct.ctx.lineTo(point.left + 0.5, point.top + 0.5);
+				}
+			}
+		}
+		this._ct.ctx.strokeStyle = this._gridF2Client.color;
+		this._ct.ctx.globalAlpha = this._gridF2Client.opacity;
+		this._ct.ctx.lineJoin = this._gridF2Client.lineJoin;
+		this._ct.ctx.stroke();
+		this._ct.ctx.closePath();
+		this._ct.ctx.restore();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -558,26 +461,6 @@ export class DrawableComponent implements OnInit {
 		let state: XDrawingProxyState = this._dp.state;
 		// cell index = drawing object index
 		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
-		this._ct.ctx.save();
-		//TODO: move to separated client
-		this._ct.ctx.beginPath();
-		for (z = 0; z < state.gridCells.length; z++) {
-			// borders
-			this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
-			this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.minOy);
-			this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.maxOy);
-			this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.maxOy);
-			this._ct.ctx.lineTo(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy);
-			// ox axis
-			this._ct.ctx.moveTo(state.gridCells[z].container.minOx, state.gridCells[z].container.midOy);
-			this._ct.ctx.lineTo(state.gridCells[z].container.maxOx, state.gridCells[z].container.midOy);
-		}
-		this._ct.ctx.strokeStyle = "red";
-		this._ct.ctx.globalAlpha = 0.15;
-		this._ct.ctx.closePath();
-		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
-
 		this._ct.ctx.beginPath();
 		let points: XPoint[];
 		let shift: number = 0;
@@ -599,14 +482,10 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.lineWidth = 1;
 		this._ct.ctx.strokeStyle = this._signalF2Client.color;
 		this._ct.ctx.globalAlpha = this._signalF2Client.opacity;
+		this._ct.ctx.lineJoin = this._signalF2Client.lineJoin;
 		this._ct.ctx.stroke();
 		this._ct.ctx.closePath();
 		this._ct.ctx.restore();
-	}
-
-	//-------------------------------------------------------------------------------------
-	private drawBeatsF2(obj: XDrawingObject) {
-		///console.info("drawBeatsF2");
 	}
 
 	//-------------------------------------------------------------------------------------

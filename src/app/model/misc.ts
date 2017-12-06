@@ -2,14 +2,20 @@ import {
 	EcgLeadCode, EcgWavePoint, EcgAnnotation, EcgAnnotationCode,
 	EcgRecord, EcgSignal, EcgWavePointType
 } from "./ecgdata";
-import { XDrawingObject, XDrawingObjectType, AnsDrawingObject, BeatsDrawingObject, IDrawingObject } from "./drawingobject";
-import { XDrawingClient, XDrawingMode, AnsDrawingClient, BeatsDrawingClient, IDrawingClient } from "./drawingclient";
+import {
+	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
+	BeatsDrawingObject, IDrawingObject
+} from "./drawingobject";
+import {
+	XDrawingClient, XDrawingMode, AnsDrawingClient,
+	BeatsDrawingClient, IDrawingClient
+} from "./drawingclient";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState,
 	XLabel, XLine, XPeak, XPoint, XPolyline,
 	XRectangle
 } from "./geometry";
-
+import { ElementRef } from "@angular/core";
 
 
 // -------------------------------------------------------------------------------------------------
@@ -79,7 +85,6 @@ export class XDrawingChange {
 }
 
 
-
 // -------------------------------------------------------------------------------------------------
 // Drawing proxy grid cell
 // -------------------------------------------------------------------------------------------------
@@ -116,8 +121,6 @@ export class XDrawingCell {
 // Drawing proxy state
 // -------------------------------------------------------------------------------------------------
 export class XDrawingProxyState {
-	//devicePixelRatio = window.devicePixelRatio
-
 
 	/** Creation time. */
 	public timestamp: number;
@@ -250,7 +253,6 @@ export class XDrawingProxyState {
 
 
 
-import { ElementRef } from "@angular/core";
 //-------------------------------------------------------------------------------------------------
 // Canvas tool
 //-------------------------------------------------------------------------------------------------
