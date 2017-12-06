@@ -1,4 +1,4 @@
-
+// src/app/model/drawingobject.ts
 
 // -------------------------------------------------------------------------------------------------
 // Drawing object type
@@ -39,6 +39,8 @@ export interface IDrawingObject {
 	type: XDrawingObjectType;
 	/** Container of drawing object (required). */
 	container: XRectangle;
+
+	render(ctx: CanvasRenderingContext2D)
 }
 
 
@@ -85,6 +87,11 @@ export class XDrawingObject implements IDrawingObject {
 	constructor() {
 		this.container = new XRectangle(0, 0, 0, 0);
 		this.cellIndex = -1; // fill full container 
+	}
+
+	//-------------------------------------------------------------------------------------
+	public render(ctx: CanvasRenderingContext2D) {
+
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -267,13 +274,13 @@ export class XDrawingObject implements IDrawingObject {
 	//-------------------------------------------------------------------------------------
 	// TODO remove
 	/**
-		 * Create XDrawingObject for each EcgSignal.
-		 * XPoints[count][], count = EcgSignal.leads.count.
-		 * @param i index
-		 * @param s signal
-		 * @param state proxy state
-		 * @param owner object owner
-		 */
+	* Create XDrawingObject for each EcgSignal.
+	* XPoints[count][], count = EcgSignal.leads.count.
+	* @param i index
+	* @param s signal
+	* @param state proxy state
+	* @param owner object owner
+	*/
 	static PrepareSignal(i: number, s: EcgSignal, state: XDrawingProxyState, owner: XDrawingClient, skipPixels: number = 0): XDrawingObject {
 		let result: XDrawingObject = new XDrawingObject();
 		result.index = i;
@@ -362,3 +369,12 @@ export class CellDrawingObject extends XDrawingObject {
 export class FPointDrawingObject extends XDrawingObject {
 
 }
+
+// -------------------------------------------------------------------------------------------------
+// Floating point drawing object
+// -------------------------------------------------------------------------------------------------
+export class GridCellDrawingObject extends XDrawingObject {
+
+}
+
+
