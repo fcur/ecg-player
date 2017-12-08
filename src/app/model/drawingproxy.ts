@@ -27,6 +27,12 @@ export class XDrawingProxy {
 	private _clientsF2: IDrawingClient[];
 	public objectsF2: IDrawingObject[][];
 
+	// feature3
+	public allObjects: IDrawingObject[];
+	public visibleObjects: IDrawingObject[];
+	public leftObjects: IDrawingObject[];
+	public rightObjects: IDrawingObject[];
+
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
