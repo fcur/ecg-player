@@ -200,7 +200,7 @@ export class DrawableComponent implements OnInit {
 		this._threshold = 100;
 		this._lastEmitTime = 0;
 		this._dp = new XDrawingProxy();
-		this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
+		//this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
 		this._dp.onPrepareDrawings.subscribe((v: IDrawingObject[][]) => this.onReceiveDrawingObjects(v));
 		this._fileReader = new FileReader();
 		this.prepareClients();
@@ -324,23 +324,24 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private onProxyStateChanges(change: XDrawingChange) {
-		//console.info("onProxyStateChanges:", change);
-		// refresh drawings
-		this._ct.clear();
-		//this._ct.ctx.save();
-		//let state: XDrawingProxyState = this._dp.state;
-		//this._ct.ctx.rect(state.container.left, state.container.top, state.container.width, state.container.height);
-		//this._ct.ctx.stroke();
-		//this._ct.ctx.restore();
-		for (let z: number = 0; z < change.objects.length; z++) {
-			if (!change.objects[z].owner.draw) continue;
-			change.objects[z].owner.draw(change.objects[z]);
-		}
-	}
+	//private onProxyStateChanges(change: XDrawingChange) {
+	//  //console.info("onProxyStateChanges:", change);
+	//  // refresh drawings
+	//  this._ct.clear();
+	//  //this._ct.ctx.save();
+	//  //let state: XDrawingProxyState = this._dp.state;
+	//  //this._ct.ctx.rect(state.container.left, state.container.top, state.container.width, state.container.height);
+	//  //this._ct.ctx.stroke();
+	//  //this._ct.ctx.restore();
+	//  for (let z: number = 0; z < change.objects.length; z++) {
+	//    if (!change.objects[z].owner.draw) continue;
+	//    change.objects[z].owner.draw(change.objects[z]);
+	//  }
+	//}
 
 	//-------------------------------------------------------------------------------------
 	private onReceiveDrawingObjects(p: IDrawingObject[][]) {
+		this._ct.clear();
 		// z: client index
 		for (let z: number = 0; z < this._dp.drawingClients.length; z++) {
 			if (this._dp.drawingClients[z].drawObjects && Array.isArray(p[z])) {
@@ -352,6 +353,8 @@ export class DrawableComponent implements OnInit {
 				this._dp.drawingClients[z].draw(p[z][0]);
 			}
 		}
+		p = null; // release refferences
+		this._dp.objectsF2 = null;
 	}
 
 	//-------------------------------------------------------------------------------------
