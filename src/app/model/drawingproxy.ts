@@ -1,8 +1,10 @@
 import { EventEmitter } from "@angular/core";
 import { XDrawingChange, XDrawingProxyState, XDrawingChangeSender } from "./misc";
 import {
+	BeatsDrawingClient, IDrawingClient, SignalDrawingClient,
 	XDrawingClient, XDrawingMode, AnsDrawingClient,
-	BeatsDrawingClient, IDrawingClient, SignalDrawingClient
+	CellDrawingClient, ClickablePointDrawingClient,
+	FPointDrawingClient, GridCellDrawingClient
 } from "./drawingclient";
 import {
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
@@ -14,6 +16,10 @@ import {
 	EcgAnnotationCode, EcgLeadCode, EcgRecord
 } from "./ecgdata"
 import { BehaviorSubject } from "rxjs";
+import {
+	XDrawingPrimitive, XDrawingPrimitiveState, XLabel,
+	XLine, XPeak, XPoint, XPolyline, XRectangle
+} from "./geometry";
 
 // -------------------------------------------------------------------------------------------------
 // DrawingProxy
@@ -28,16 +34,96 @@ export class XDrawingProxy {
 	public objectsF2: IDrawingObject[][];
 
 	// feature3
-	public allObjects: IDrawingObject[];
-	public visibleObjects: IDrawingObject[];
-	public leftObjects: IDrawingObject[];
-	public rightObjects: IDrawingObject[];
+	public allObjects: XDrawingObject[];
+	public visibleObjects: XDrawingObject[];
+	public leftObjects: XDrawingObject[];
+	public rightObjects: XDrawingObject[];
 
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		//console.info("DrawingProxy constructor");
 		this.init();
+		this.f3Test();
+	}
+
+	//-------------------------------------------------------------------------------------
+	public f3Test() {
+		let objCount: number = 150, leftCount: number = 30, visibleCount: number = 90, rightCount: number = 30;
+		let z: number, y: number, x: number;
+
+		let clients: XDrawingClient[] = [
+			new ClickablePointDrawingClient(),
+			new GridCellDrawingClient(),
+			new FPointDrawingClient(),
+			new SignalDrawingClient(),
+			new BeatsDrawingClient(),
+			new BeatsDrawingClient(),
+			new CellDrawingClient(),
+			new AnsDrawingClient(),
+			new XDrawingClient()
+		];
+
+		this.allObjects = new Array(objCount);
+
+		for (z = 0, y = 0; z < this.allObjects.length; z++ , y++) {
+			if (y >= clients.length) y = 0;
+			this.allObjects[z] = new XDrawingObject();
+			this.allObjects[z].index = z;
+			this.allObjects[z].container = new XRectangle(0, 0, 300, 100);
+			this.allObjects[z].owner = clients[y];
+		}
+
+		this.leftObjects = new Array(leftCount); // 30
+		this.visibleObjects = new Array(visibleCount); // 90
+		this.rightObjects = new Array(rightCount); // 30
+
+		let dest: IDrawingObject[];
+
+		for (z = 0, y = 0, x = 0; z < this.allObjects.length; z++ , y++) {
+			if (z < leftCount) {
+				dest = this.leftObjects;
+				y = z;
+			} else if (leftCount <= z && z < visibleCount + leftCount) {
+				dest = this.visibleObjects;
+				y = z - leftCount;
+			} else if (z >= visibleCount + leftCount) {
+				dest = this.rightObjects;
+				y = z - (visibleCount + leftCount);
+			}
+			dest[y] = this.allObjects[z];
+		}
+
+		console.info("OBJECTS: INIT", "\nall:", this.allObjects, "\nleft: ", this.leftObjects, "\nvisible:", this.visibleObjects, "\nright:", this.rightObjects);
+		let ti: number = 25;
+		let la: XDrawingObject, va: XDrawingObject, ra: XDrawingObject, laIndex: number, vaIndex: number, raIndex: number;
+
+		la = this.leftObjects[ti]; // this.allObjects[ti]
+		va = this.visibleObjects[ti]; //this.allObjects[ti + leftCount]
+		ra = this.rightObjects[ti]; //this.allObjects[ti + leftCount + visibleCount]
+
+		laIndex = this.leftObjects.indexOf(la); // 25
+		vaIndex = this.visibleObjects.indexOf(va);// 25
+		raIndex = this.rightObjects.indexOf(ra);// 25
+
+		la.cellIndex = 112;
+		va.cellIndex = 112;
+		ra.cellIndex = 112;
+
+		// scroll left:
+		// first v > last l, first r > last v
+		let newLeft: XDrawingObject = this.visibleObjects.splice(0, 1)[0];
+		newLeft.cellIndex = 911;
+		this.leftObjects.push(newLeft);
+		let newVisible: XDrawingObject = this.rightObjects.splice(0, 1)[0];
+		newVisible.cellIndex = 911;
+		this.visibleObjects.push(newVisible);
+		console.info("\n\nOBJECTS: SCROLL LEFT", "\nall:", this.allObjects, "\nleft: ", this.leftObjects, "\nvisible:",this.visibleObjects, "\nright:",this.rightObjects);
+
+		// scroll right:
+		// last v > first r, last l > first v
+
+		//console.info("\n\nOBJECTS: SCROLL RIGHT", "\nall:", this.allObjects, "\nleft: ", this.leftObjects, "\nvisible:", this.visibleObjects, "\nright:", this.rightObjects);
 	}
 
 	//-------------------------------------------------------------------------------------
