@@ -315,6 +315,7 @@ export class DrawableComponent implements OnInit {
 		// on real project we receive data in other place
 		this._dp.drawingData.projection = this._ds.ecgrecords;
 		this._dp.reset();
+		this._dp.rebuildDrawObjGroupsF3();
 		this._dp.refreshDrawings();
 	}
 
