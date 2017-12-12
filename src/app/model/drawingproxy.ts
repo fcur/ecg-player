@@ -34,17 +34,17 @@ export class XDrawingProxy {
 	public objectsF2: IDrawingObject[][];
 
 	// feature3
-	public allObjects: XDrawingObject[];
-	public visibleObjects: XDrawingObject[];
-	public leftObjects: XDrawingObject[];
-	public rightObjects: XDrawingObject[];
+	public allObjectsF3: XDrawingObject[];
+	public visibleObjectsF3: XDrawingObject[];
+	public leftObjectsF3: XDrawingObject[];
+	public rightObjectsF3: XDrawingObject[];
 
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		//console.info("DrawingProxy constructor");
 		this.init();
-		this.f3Test();
+		//this.f3Test();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -64,35 +64,35 @@ export class XDrawingProxy {
 			new XDrawingClient()
 		];
 
-		this.allObjects = new Array(objCount);
+		this.allObjectsF3 = new Array(objCount);
 
-		for (z = 0, y = 0; z < this.allObjects.length; z++ , y++) {
+		for (z = 0, y = 0; z < this.allObjectsF3.length; z++ , y++) {
 			if (y >= clients.length) y = 0;
-			this.allObjects[z] = new XDrawingObject();
-			this.allObjects[z].index = z;
-			this.allObjects[z].cellIndex = z;
-			this.allObjects[z].container = new XRectangle(0, 0, 300, 100);
-			this.allObjects[z].owner = clients[y];
+			this.allObjectsF3[z] = new XDrawingObject();
+			this.allObjectsF3[z].index = z;
+			this.allObjectsF3[z].cellIndex = z;
+			this.allObjectsF3[z].container = new XRectangle(0, 0, 300, 100);
+			this.allObjectsF3[z].owner = clients[y];
 		}
 
-		this.leftObjects = new Array(leftCount); // 30
-		this.visibleObjects = new Array(visibleCount); // 90
-		this.rightObjects = new Array(rightCount); // 30
+		this.leftObjectsF3 = new Array(leftCount); // 30
+		this.visibleObjectsF3 = new Array(visibleCount); // 90
+		this.rightObjectsF3 = new Array(rightCount); // 30
 
 		let dest: IDrawingObject[];
 
-		for (z = 0, y = 0, x = 0; z < this.allObjects.length; z++ , y++) {
+		for (z = 0, y = 0, x = 0; z < this.allObjectsF3.length; z++ , y++) {
 			if (z < leftCount) {
-				dest = this.leftObjects;
+				dest = this.leftObjectsF3;
 				y = z;
 			} else if (leftCount <= z && z < visibleCount + leftCount) {
-				dest = this.visibleObjects;
+				dest = this.visibleObjectsF3;
 				y = z - leftCount;
 			} else if (z >= visibleCount + leftCount) {
-				dest = this.rightObjects;
+				dest = this.rightObjectsF3;
 				y = z - (visibleCount + leftCount);
 			}
-			dest[y] = this.allObjects[z];
+			dest[y] = this.allObjectsF3[z];
 		}
 
 		//console.info("OBJECTS: INIT", "\nall:", this.allObjects, "\nleft: ", this.leftObjects, "\nvisible:", this.visibleObjects, "\nright:", this.rightObjects);
@@ -115,41 +115,72 @@ export class XDrawingProxy {
 		// first v > last l, first r > last v
 
 		start = 0; deleteCount = 1;
-		newLeft = this.visibleObjects.splice(start, deleteCount)[0];
+		newLeft = this.visibleObjectsF3.splice(start, deleteCount)[0];
 		newLeft.cellIndex--; // -2
 		//this.leftObjects.push(newLeft);
-		start = this.leftObjects.length; deleteCount = 0;
-		this.leftObjects.splice(start, deleteCount, newLeft); // add to end of array
+		start = this.leftObjectsF3.length; deleteCount = 0;
+		this.leftObjectsF3.splice(start, deleteCount, newLeft); // add to end of array
 
 		start = 0; deleteCount = 1;
-		newVisible = this.rightObjects.splice(start, deleteCount)[0];
+		newVisible = this.rightObjectsF3.splice(start, deleteCount)[0];
 		newVisible.cellIndex--; // -2
 		//this.visibleObjects.push(newVisible);
-		start = this.visibleObjects.length; deleteCount = 0;
-		this.visibleObjects.splice(start, deleteCount, newVisible); // add to end of array
+		start = this.visibleObjectsF3.length; deleteCount = 0;
+		this.visibleObjectsF3.splice(start, deleteCount, newVisible); // add to end of array
 
 		//console.info("\n\nOBJECTS: SCROLL LEFT", "\nall:", this.allObjects, "\nleft: ", this.leftObjects, "\nvisible:", this.visibleObjects, "\nright:", this.rightObjects);
 
 		// scroll right (restore initial state)
 		// last v > first r, last l > first v
-		start = this.visibleObjects.length - 1;
+		start = this.visibleObjectsF3.length - 1;
 		deleteCount = 1;
-		newRight = this.visibleObjects.splice(start, deleteCount)[0];
+		newRight = this.visibleObjectsF3.splice(start, deleteCount)[0];
 		newRight.cellIndex++; // -1
 		start = 0; deleteCount = 0;
-		this.rightObjects.splice(start, deleteCount, newRight); // add to start of array
+		this.rightObjectsF3.splice(start, deleteCount, newRight); // add to start of array
 
-		start = this.leftObjects.length - 1;
+		start = this.leftObjectsF3.length - 1;
 		deleteCount = 1;
-		newVisible = this.leftObjects.splice(start, deleteCount)[0];
+		newVisible = this.leftObjectsF3.splice(start, deleteCount)[0];
 		newVisible.cellIndex++; // -1
 		start = 0; deleteCount = 0;
-		this.visibleObjects.splice(start, deleteCount, newVisible); // add to start of array
+		this.visibleObjectsF3.splice(start, deleteCount, newVisible); // add to start of array
 
 		// release refferences
 		newLeft = null; newVisible = null; newRight = null;
 
 		//console.info("\n\nOBJECTS: SCROLL RIGHT", "\nall:", this.allObjects, "\nleft: ", this.leftObjects, "\nvisible:", this.visibleObjects, "\nright:", this.rightObjects);
+
+
+		let omap: Map<string, XDrawingObject> = new Map();
+		omap.set("first-left", this.leftObjectsF3[0]);
+		omap.set("last-left", this.leftObjectsF3[this.leftObjectsF3.length - 1]);
+		omap.set("first-visible", this.visibleObjectsF3[0]);
+		omap.set("last-visible", this.visibleObjectsF3[this.visibleObjectsF3.length - 1]);
+		omap.set("first-right", this.rightObjectsF3[0]);
+		omap.set("last-right", this.rightObjectsF3[this.rightObjectsF3.length - 1]);
+		//  {
+		//  "first-left": this.leftObjects[0],
+		//  "last-left": this.leftObjects[this.leftObjects.length - 1],
+		//  "first-visible": this.visibleObjects[0],
+		//  "last-visible": this.visibleObjects[this.visibleObjects.length - 1],
+		//  "first-right": this.rightObjects[0],
+		//  "last-right": this.rightObjects[this.rightObjects.length - 1],
+		//};
+		//omap["first-left"].cellIndex = 112;
+		//omap["last-left"].cellIndex = 911;
+		//omap["first-visible"].cellIndex = 112;
+		//omap["last-visible"].cellIndex = 911;
+		//omap["first-right"].cellIndex = 112;
+		//omap["last-right"].cellIndex = 911;
+
+		omap.get("first-left").cellIndex = 112;
+		omap.get("last-left").cellIndex = 911;
+		omap.get("first-visible").cellIndex = 112;
+		omap.get("last-visible").cellIndex = 911;
+		omap.get("first-right").cellIndex = 112;
+		omap.get("last-right").cellIndex = 911;
+		console.info("\n\nMap", "\nall:", this.allObjectsF3, "\nleft: ", this.leftObjectsF3, "\nvisible:", this.visibleObjectsF3, "\nright:", this.rightObjectsF3);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -314,6 +345,23 @@ export class XDrawingProxy {
 			//data = data.concat(this._clientsF2[z].prepareDrawings(this.drawingData, this.state));
 		}
 		return data;
+	}
+
+	//-------------------------------------------------------------------------------------
+	public rebuildDrawObjGroupsF3() {
+		// prepare groups of objects
+		//this.allObjectsF3
+		this.visibleObjectsF3 = new Array();
+		this.leftObjectsF3 = new Array();
+		this.rightObjectsF3 = new Array();
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public projectDrawObjF3() {
+		// prepare list of drawing objects
+		this.allObjectsF3 = new Array();
+
 	}
 
 	//-------------------------------------------------------------------------------------
