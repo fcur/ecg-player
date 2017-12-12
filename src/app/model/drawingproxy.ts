@@ -34,10 +34,10 @@ export class XDrawingProxy {
 	public objectsF2: IDrawingObject[][];
 
 	// feature3
-	public allObjectsF3: XDrawingObject[];
-	public visibleObjectsF3: XDrawingObject[];
-	public leftObjectsF3: XDrawingObject[];
-	public rightObjectsF3: XDrawingObject[];
+	public allObjectsF3: IDrawingObject[];
+	public visibleObjectsF3: IDrawingObject[];
+	public leftObjectsF3: IDrawingObject[];
+	public rightObjectsF3: IDrawingObject[];
 
 
 	//-------------------------------------------------------------------------------------
@@ -65,14 +65,15 @@ export class XDrawingProxy {
 		];
 
 		this.allObjectsF3 = new Array(objCount);
-
+		let xdo: XDrawingObject;
 		for (z = 0, y = 0; z < this.allObjectsF3.length; z++ , y++) {
 			if (y >= clients.length) y = 0;
-			this.allObjectsF3[z] = new XDrawingObject();
-			this.allObjectsF3[z].index = z;
-			this.allObjectsF3[z].cellIndex = z;
-			this.allObjectsF3[z].container = new XRectangle(0, 0, 300, 100);
-			this.allObjectsF3[z].owner = clients[y];
+			xdo = new XDrawingObject();
+			xdo.index = z;
+			xdo.cellIndex = z;
+			xdo.container = new XRectangle(0, 0, 300, 100);
+			xdo.owner = clients[y];
+			this.allObjectsF3[z] = xdo;
 		}
 
 		this.leftObjectsF3 = new Array(leftCount); // 30
@@ -115,14 +116,14 @@ export class XDrawingProxy {
 		// first v > last l, first r > last v
 
 		start = 0; deleteCount = 1;
-		newLeft = this.visibleObjectsF3.splice(start, deleteCount)[0];
+		newLeft = this.visibleObjectsF3.splice(start, deleteCount)[0] as XDrawingObject;
 		newLeft.cellIndex--; // -2
 		//this.leftObjects.push(newLeft);
 		start = this.leftObjectsF3.length; deleteCount = 0;
 		this.leftObjectsF3.splice(start, deleteCount, newLeft); // add to end of array
 
 		start = 0; deleteCount = 1;
-		newVisible = this.rightObjectsF3.splice(start, deleteCount)[0];
+		newVisible = this.rightObjectsF3.splice(start, deleteCount)[0] as XDrawingObject;
 		newVisible.cellIndex--; // -2
 		//this.visibleObjects.push(newVisible);
 		start = this.visibleObjectsF3.length; deleteCount = 0;
@@ -134,14 +135,14 @@ export class XDrawingProxy {
 		// last v > first r, last l > first v
 		start = this.visibleObjectsF3.length - 1;
 		deleteCount = 1;
-		newRight = this.visibleObjectsF3.splice(start, deleteCount)[0];
+		newRight = this.visibleObjectsF3.splice(start, deleteCount)[0] as XDrawingObject;
 		newRight.cellIndex++; // -1
 		start = 0; deleteCount = 0;
 		this.rightObjectsF3.splice(start, deleteCount, newRight); // add to start of array
 
 		start = this.leftObjectsF3.length - 1;
 		deleteCount = 1;
-		newVisible = this.leftObjectsF3.splice(start, deleteCount)[0];
+		newVisible = this.leftObjectsF3.splice(start, deleteCount)[0] as XDrawingObject;
 		newVisible.cellIndex++; // -1
 		start = 0; deleteCount = 0;
 		this.visibleObjectsF3.splice(start, deleteCount, newVisible); // add to start of array
@@ -153,12 +154,12 @@ export class XDrawingProxy {
 
 
 		let omap: Map<string, XDrawingObject> = new Map();
-		omap.set("first-left", this.leftObjectsF3[0]);
-		omap.set("last-left", this.leftObjectsF3[this.leftObjectsF3.length - 1]);
-		omap.set("first-visible", this.visibleObjectsF3[0]);
-		omap.set("last-visible", this.visibleObjectsF3[this.visibleObjectsF3.length - 1]);
-		omap.set("first-right", this.rightObjectsF3[0]);
-		omap.set("last-right", this.rightObjectsF3[this.rightObjectsF3.length - 1]);
+		omap.set("first-left", this.leftObjectsF3[0] as XDrawingObject);
+		omap.set("last-left", this.leftObjectsF3[this.leftObjectsF3.length - 1] as XDrawingObject);
+		omap.set("first-visible", this.visibleObjectsF3[0] as XDrawingObject);
+		omap.set("last-visible", this.visibleObjectsF3[this.visibleObjectsF3.length - 1] as XDrawingObject);
+		omap.set("first-right", this.rightObjectsF3[0] as XDrawingObject);
+		omap.set("last-right", this.rightObjectsF3[this.rightObjectsF3.length - 1] as XDrawingObject);
 		//  {
 		//  "first-left": this.leftObjects[0],
 		//  "last-left": this.leftObjects[this.leftObjects.length - 1],
@@ -350,18 +351,31 @@ export class XDrawingProxy {
 	//-------------------------------------------------------------------------------------
 	public rebuildDrawObjGroupsF3() {
 		// prepare groups of objects
-		//this.allObjectsF3
+		this.projectDrawObjF3();
 		this.visibleObjectsF3 = new Array();
 		this.leftObjectsF3 = new Array();
 		this.rightObjectsF3 = new Array();
-
+		let z: number;
+		for (let z: number = 0; z < this.allObjectsF3.length; z++) {
+			// if(allObjectsF3[z].end < state.start) >> leftObjectsF3
+			// else if (allObjectsF3[z] in state) >> visibleObjectsF3
+			// else allObjectsF3[z] >> visibleObjectsF3
+		}
 	}
 
 	//-------------------------------------------------------------------------------------
 	public projectDrawObjF3() {
+		let data: IDrawingObject[] = new Array();
 		// prepare list of drawing objects
 		this.allObjectsF3 = new Array();
-
+		let z: number, y: number;
+		for (z= 0; z < this._clientsF2.length; z++) {
+			data = this._clientsF2[z].prepareDrawings(this.drawingData, this.state);
+			//data = this._clientsF2[z].prepareDrawings2(this.drawingData);
+			for (y = 0; y < data.length; y++) {
+				this.allObjectsF3.push(data[y]);
+			}
+		}
 	}
 
 	//-------------------------------------------------------------------------------------
