@@ -49,7 +49,7 @@ export class XDrawingProxy {
 
 	//-------------------------------------------------------------------------------------
 	public f3Test() {
-		let objCount: number = 150, leftCount: number = 30, visibleCount: number = 90, rightCount: number = 30;
+		let objCount: number = 15, leftCount: number = 3, visibleCount: number = 9, rightCount: number = 3;
 		let z: number, y: number, x: number;
 
 		let clients: XDrawingClient[] = [
@@ -70,6 +70,7 @@ export class XDrawingProxy {
 			if (y >= clients.length) y = 0;
 			this.allObjects[z] = new XDrawingObject();
 			this.allObjects[z].index = z;
+			this.allObjects[z].cellIndex = z;
 			this.allObjects[z].container = new XRectangle(0, 0, 300, 100);
 			this.allObjects[z].owner = clients[y];
 		}
@@ -94,34 +95,59 @@ export class XDrawingProxy {
 			dest[y] = this.allObjects[z];
 		}
 
-		console.info("OBJECTS: INIT", "\nall:", this.allObjects, "\nleft: ", this.leftObjects, "\nvisible:", this.visibleObjects, "\nright:", this.rightObjects);
-		let ti: number = 25;
-		let la: XDrawingObject, va: XDrawingObject, ra: XDrawingObject, laIndex: number, vaIndex: number, raIndex: number;
+		//console.info("OBJECTS: INIT", "\nall:", this.allObjects, "\nleft: ", this.leftObjects, "\nvisible:", this.visibleObjects, "\nright:", this.rightObjects);
+		//let ti: number = 25;
+		//let la: XDrawingObject, va: XDrawingObject, ra: XDrawingObject, laIndex: number, vaIndex: number, raIndex: number;
 
-		la = this.leftObjects[ti]; // this.allObjects[ti]
-		va = this.visibleObjects[ti]; //this.allObjects[ti + leftCount]
-		ra = this.rightObjects[ti]; //this.allObjects[ti + leftCount + visibleCount]
+		//la = this.leftObjects[ti]; // this.allObjects[ti]
+		//va = this.visibleObjects[ti]; //this.allObjects[ti + leftCount]
+		//ra = this.rightObjects[ti]; //this.allObjects[ti + leftCount + visibleCount]
+		//laIndex = this.leftObjects.indexOf(la); // 25
+		//vaIndex = this.visibleObjects.indexOf(va);// 25
+		//raIndex = this.rightObjects.indexOf(ra);// 25
+		//la.cellIndex = 112;
+		//va.cellIndex = 112;
+		//ra.cellIndex = 112;
 
-		laIndex = this.leftObjects.indexOf(la); // 25
-		vaIndex = this.visibleObjects.indexOf(va);// 25
-		raIndex = this.rightObjects.indexOf(ra);// 25
 
-		la.cellIndex = 112;
-		va.cellIndex = 112;
-		ra.cellIndex = 112;
-
-		// scroll left:
+		let start: number, deleteCount: number, newLeft: XDrawingObject, newVisible: XDrawingObject, newRight: XDrawingObject;
+		// scroll left
 		// first v > last l, first r > last v
-		let newLeft: XDrawingObject = this.visibleObjects.splice(0, 1)[0];
-		newLeft.cellIndex = 911;
-		this.leftObjects.push(newLeft);
-		let newVisible: XDrawingObject = this.rightObjects.splice(0, 1)[0];
-		newVisible.cellIndex = 911;
-		this.visibleObjects.push(newVisible);
-		console.info("\n\nOBJECTS: SCROLL LEFT", "\nall:", this.allObjects, "\nleft: ", this.leftObjects, "\nvisible:",this.visibleObjects, "\nright:",this.rightObjects);
 
-		// scroll right:
+		start = 0; deleteCount = 1;
+		newLeft = this.visibleObjects.splice(start, deleteCount)[0];
+		newLeft.cellIndex--; // -2
+		//this.leftObjects.push(newLeft);
+		start = this.leftObjects.length; deleteCount = 0;
+		this.leftObjects.splice(start, deleteCount, newLeft); // add to end of array
+
+		start = 0; deleteCount = 1;
+		newVisible = this.rightObjects.splice(start, deleteCount)[0];
+		newVisible.cellIndex--; // -2
+		//this.visibleObjects.push(newVisible);
+		start = this.visibleObjects.length; deleteCount = 0;
+		this.visibleObjects.splice(start, deleteCount, newVisible); // add to end of array
+
+		//console.info("\n\nOBJECTS: SCROLL LEFT", "\nall:", this.allObjects, "\nleft: ", this.leftObjects, "\nvisible:", this.visibleObjects, "\nright:", this.rightObjects);
+
+		// scroll right (restore initial state)
 		// last v > first r, last l > first v
+		start = this.visibleObjects.length - 1;
+		deleteCount = 1;
+		newRight = this.visibleObjects.splice(start, deleteCount)[0];
+		newRight.cellIndex++; // -1
+		start = 0; deleteCount = 0;
+		this.rightObjects.splice(start, deleteCount, newRight); // add to start of array
+
+		start = this.leftObjects.length - 1;
+		deleteCount = 1;
+		newVisible = this.leftObjects.splice(start, deleteCount)[0];
+		newVisible.cellIndex++; // -1
+		start = 0; deleteCount = 0;
+		this.visibleObjects.splice(start, deleteCount, newVisible); // add to start of array
+
+		// release refferences
+		newLeft = null; newVisible = null; newRight = null;
 
 		//console.info("\n\nOBJECTS: SCROLL RIGHT", "\nall:", this.allObjects, "\nleft: ", this.leftObjects, "\nvisible:", this.visibleObjects, "\nright:", this.rightObjects);
 	}

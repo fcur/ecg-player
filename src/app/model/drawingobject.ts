@@ -86,7 +86,7 @@ export class XDrawingObject implements IDrawingObject {
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		this.container = new XRectangle(0, 0, 0, 0);
-		this.cellIndex = -1; // fill full container 
+		this.cellIndex = -1; // fill full container
 	}
 
 	//-------------------------------------------------------------------------------------
