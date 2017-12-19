@@ -33,12 +33,16 @@ import {
 // Drawing object interface
 // -------------------------------------------------------------------------------------------------
 export interface IDrawingObject {
+	/** Object index. */
+	index: number;
 	/** Object owner. */
 	owner: XDrawingClient;
 	/** Object type. */
 	type: XDrawingObjectType;
 	/** Container of drawing object (required). */
 	container: XRectangle;
+	/** Drawing object assigned cell index. -1: fill cells container */
+	cellIndex: number;
 
 	render(ctx: CanvasRenderingContext2D)
 }
@@ -54,8 +58,6 @@ export interface IDrawingObject {
 export class XDrawingObject implements IDrawingObject {
 	/** Object index. */
 	public index: number;
-	/** Object inner indexes. */
-	public indexes: number[];
 	/** Object owner. */
 	public owner: XDrawingClient;
 	/** Object type. */
@@ -344,6 +346,8 @@ export class BeatsDrawingObject extends XDrawingObject {
 export class SignalDrawingObject extends XDrawingObject {
 	/** Drawing object polylines.*/
 	public polylines: XPolyline[];
+
+	public leadCode: EcgLeadCode;
 }
 
 
@@ -401,6 +405,9 @@ export class FPointDrawingObject extends XDrawingObject {
 export class GridCellDrawingObject extends XDrawingObject {
 	/** Drawing object polylines.*/
 	public polylines: XPolyline[];
+	/** Drawing object left scroll position. */
+	public left: number;
+
 }
 
 

@@ -369,9 +369,9 @@ export class XDrawingProxy {
 		// prepare list of drawing objects
 		this.allObjectsF3 = new Array();
 		let z: number, y: number;
-		for (z= 0; z < this._clientsF2.length; z++) {
-			data = this._clientsF2[z].prepareDrawings(this.drawingData, this.state);
-			//data = this._clientsF2[z].prepareDrawings2(this.drawingData);
+		for (z = 0; z < this._clientsF2.length; z++) {
+			//data = this._clientsF2[z].prepareDrawings(this.drawingData, this.state);
+			data = this._clientsF2[z].prepareAllDrawings(this.drawingData, this.state);
 			for (y = 0; y < data.length; y++) {
 				this.allObjectsF3.push(data[y]);
 			}

@@ -50,7 +50,7 @@ export interface IDrawingClient {
 	drawObjects: Function;
 
 	/** Prepare drawing objects. */
-		prepareDrawings2(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
+	prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
 }
 
 
@@ -77,8 +77,8 @@ export class XDrawingClient implements IDrawingClient {
 		return [];
 	}
 
- //-------------------------------------------------------------------------------------
-		public prepareDrawings2(data: DrawingData, state: XDrawingProxyState): IDrawingObject[] {
+	//-------------------------------------------------------------------------------------
+	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[] {
 		return [];
 	}
 
@@ -129,7 +129,7 @@ export class AnsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-		public prepareDrawings2(data: DrawingData, state: XDrawingProxyState): AnsDrawingObject[] {
+	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): AnsDrawingObject[] {
 		console.info("prepareDrawings2", "not implemented");
 		return [];
 	}
@@ -216,7 +216,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-		public prepareDrawings2(data: DrawingData, state: XDrawingProxyState): BeatsDrawingObject[] {
+	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): BeatsDrawingObject[] {
 		console.info("prepareDrawings2", "not implemented");
 		return [];
 	}
@@ -277,6 +277,8 @@ export class GridCellDrawingClient extends XDrawingClient {
 			results[z].owner = this;
 			results[z].cellIndex = z;
 			results[z].index = z;
+			results[z].container = state.gridCells[z].container.clone;
+			results[z].left = state.skipPx;
 			// TODO: return container borders as lines
 			// border
 			borderPoints = [
@@ -292,7 +294,6 @@ export class GridCellDrawingClient extends XDrawingClient {
 				new XPoint(state.gridCells[z].container.maxOx, state.gridCells[z].container.midOy)
 			];
 			results[z].polylines = [new XPolyline(borderPoints), new XPolyline(axisPoints)];
-			results[z].container = state.gridCells[z].container.clone;
 			results[z].container.resetStart();
 		}
 		return results;
@@ -300,9 +301,8 @@ export class GridCellDrawingClient extends XDrawingClient {
 
 
 	//-------------------------------------------------------------------------------------
-		public prepareDrawings2(data: DrawingData, state: XDrawingProxyState): GridCellDrawingObject[] {
-		console.info("prepareDrawings2", "not implemented");
-		return [];
+	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): GridCellDrawingObject[] {
+		return this.prepareDrawings(data, state);
 	}
 
 }
@@ -317,10 +317,18 @@ export class SignalDrawingClient extends XDrawingClient {
 	opacity: number;
 	lineJoin: string;
 
+	/** Minimum milliseconds count between two records */
+	recordsThreshold: number;
+	recordSpace: number; // count of pixels between two records with  
+	layoutSpace: number; // count of pixels between two grid layouts
+
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
 		this.color = "#0e9aff";
+		this.recordsThreshold = 0;
+		this.recordSpace = 10;
+		this.layoutSpace = 30;
 		this.opacity = 1;
 		this.lineJoin = "miter";// round|miter|bevel
 		this.mode = XDrawingMode.Canvas;
@@ -391,8 +399,21 @@ export class SignalDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-		public prepareDrawings2(data: DrawingData, state: XDrawingProxyState): SignalDrawingObject[] {
-		console.info("prepareDrawings2", "not implemented");
+	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): SignalDrawingObject[] {
+		if (!data.headers.hasOwnProperty(state.sampleRate) || !data.data.hasOwnProperty(state.sampleRate) || !data.data[state.sampleRate]) return [];
+
+		let headers: { [recordId: string]: RecordProjection } = data.headers[state.sampleRate];
+		let recordId: string;
+		for (let p in headers) {
+
+			if (!headers.hasOwnProperty(p)) continue;
+
+
+		}
+
+		console.info(headers);
+
+
 		return [];
 	}
 
@@ -568,7 +589,7 @@ export class FPointDrawingClient extends XDrawingClient {
 
 
 	//-------------------------------------------------------------------------------------
-		public prepareDrawings2(data: DrawingData, state: XDrawingProxyState): FPointDrawingObject[] {
+	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): FPointDrawingObject[] {
 		console.info("prepareDrawings2", "not implemented");
 		return [];
 	}

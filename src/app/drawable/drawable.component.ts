@@ -438,17 +438,21 @@ export class DrawableComponent implements OnInit {
 	private drawGridObjectsF2(objs: GridCellDrawingObject[]) {
 		//console.log("drawGridObjectsF2");
 		let state: XDrawingProxyState = this._dp.state;
-		let z: number = 0, y: number = 0, x: number = 0, point: XPoint;
+		let z: number = 0, y: number = 0, x: number = 0, point: XPoint, l: number, t: number;
 		this._ct.ctx.save();
 		this._ct.ctx.beginPath();
 		for (z = 0; z < objs.length; z++) {
 			for (y = 0; y < objs[z].polylines.length; y++) {
 				x = 0;
 				point = objs[z].polylines[y].points[x++];
-				this._ct.ctx.moveTo(point.left + 0.5, point.top + 0.5);
+				l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
+				t = point.top;
+				this._ct.ctx.moveTo(l + 0.5, t + 0.5);
 				for (; x < objs[z].polylines[y].points.length; x++) {
 					point = objs[z].polylines[y].points[x];
-					this._ct.ctx.lineTo(point.left + 0.5, point.top + 0.5);
+					l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
+					t = point.top;
+					this._ct.ctx.lineTo(l + 0.5, t + 0.5);
 				}
 			}
 		}
