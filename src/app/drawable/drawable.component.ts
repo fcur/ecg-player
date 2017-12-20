@@ -21,7 +21,7 @@ import {
 } from "../model/drawingclient";
 import {
 	CellDrawingObject, SignalDrawingObject, FPointDrawingObject,
-	BeatsDrawingObject, IDrawingObject, ClPointDrawingObject,
+	BeatsRangeDrawingObject, IDrawingObject, ClPointDrawingObject,
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
 	GridCellDrawingObject
 } from "../model/drawingobject";
@@ -497,7 +497,7 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private drawBeatsObjectsF2(objs: BeatsDrawingObject[]) {
+	private drawBeatsObjectsF2(objs: BeatsRangeDrawingObject[]) {
 		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
 		let state: XDrawingProxyState = this._dp.state;
 		// cell index = drawing object index

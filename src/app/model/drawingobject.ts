@@ -1,18 +1,5 @@
 // src/app/model/drawingobject.ts
 
-// -------------------------------------------------------------------------------------------------
-// Drawing object type
-// -------------------------------------------------------------------------------------------------
-export enum XDrawingObjectType {
-	Signal,
-	Beats,
-	Annotations,
-	PQRST,
-	Measure,
-	Object,
-	Grid
-}
-
 import { XDrawingClient, XDrawingMode } from "./drawingclient";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState, XLabel,
@@ -28,6 +15,20 @@ import {
 	XDrawingChangeSender, XDrawingGridMode,
 	XDrawingProxyState
 } from "./misc";
+
+// -------------------------------------------------------------------------------------------------
+// Drawing object type
+// -------------------------------------------------------------------------------------------------
+export enum XDrawingObjectType {
+	Signal,
+	Beats,
+	Annotations,
+	PQRST,
+	Measure,
+	Object,
+	Grid
+}
+
 
 
 // -------------------------------------------------------------------------------------------------
@@ -57,7 +58,7 @@ export interface IDrawingObject {
 // Absolute, relative from canvas start, relative from cell start (via cell index)
 
 export class XDrawingObject implements IDrawingObject {
-	/** Object index. */
+	/** REDUNDANT Object index. */
 	public index: number;
 	/** Object owner. */
 	public owner: XDrawingClient;
@@ -65,18 +66,19 @@ export class XDrawingObject implements IDrawingObject {
 	public type: XDrawingObjectType;
 	/** Container of drawing object (required). */
 	public container: XRectangle;
-	/** Drawing object assigned cell index. -1: fill cells container */
+	/** REDUNDANT Drawing object assigned cell index. */
 	public cellIndex: number;
 
 	//-------------------------------------------------------------------------------------
-	public get isFloating(): boolean {
-		return this.container.floating;
-	}
+	//public get isFloating(): boolean {
+	//	return this.container.floating;
+	//}
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		this.container = new XRectangle(0, 0, 0, 0);
-		this.cellIndex = -1; // fill full container
+		this.index = -1; // do not use index
+		this.cellIndex = -1; // do not use cell index fill full container
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -333,11 +335,27 @@ export class AnsDrawingObject extends XDrawingObject {
 
 
 // -------------------------------------------------------------------------------------------------
-// Beats drawing object
+// Beats range drawing object
 // -------------------------------------------------------------------------------------------------
-export class BeatsDrawingObject extends XDrawingObject {
+export class BeatsRangeDrawingObject extends XDrawingObject {
+	//container - body of drawing object & clickable area
+	// points.length = leadCodes.length
+	// use [leadCodes map] in grid cell projection
+
 	/** Drawing object points. */
 	public points: XPoint[];
+	/** Lead codes for points groups. */
+	public leadCodes: EcgLeadCode[];
+	/** Object beats for each grid lead. */
+	//public polylines: XPolyline[];
+
+	//-------------------------------------------------------------------------------------
+	public prepareLeads(leads: EcgLeadCode[]) {
+		if (!Array.isArray(leads)) return;
+		this.leadCodes = leads;
+		//this.polylines = new Array(leads.length);
+		this.points = new Array(leads.length);
+	}
 }
 
 

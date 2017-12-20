@@ -8,7 +8,7 @@ import {
 } from "./drawingclient";
 import {
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	BeatsDrawingObject, IDrawingObject
+	BeatsRangeDrawingObject, IDrawingObject
 } from "./drawingobject";
 import { DrawingData } from "./drawingdata";
 import {
@@ -349,6 +349,12 @@ export class XDrawingProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
+	public updateDrawObjGroupsF3() {
+		// handle mouse actions (move, drag, click)
+
+	}
+
+	//-------------------------------------------------------------------------------------
 	public rebuildDrawObjGroupsF3() {
 		// prepare groups of objects
 		this.projectDrawObjF3();
@@ -356,11 +362,20 @@ export class XDrawingProxy {
 		this.leftObjectsF3 = new Array();
 		this.rightObjectsF3 = new Array();
 		let z: number;
+		let minOx: number, maxOx: number;
 		for (let z: number = 0; z < this.allObjectsF3.length; z++) {
-			// if(allObjectsF3[z].end < state.start) >> leftObjectsF3
-			// else if (allObjectsF3[z] in state) >> visibleObjectsF3
-			// else allObjectsF3[z] >> visibleObjectsF3
+			minOx = this.allObjectsF3[z].container.minOx;
+			maxOx = this.allObjectsF3[z].container.maxOx;
+
+			if (maxOx < this.state.minPx) {
+				this.leftObjectsF3.push(this.allObjectsF3[z]);
+			} else if (minOx > this.state.maxPx) {
+				this.rightObjectsF3.push(this.allObjectsF3[z]);
+			} else {
+				this.visibleObjectsF3.push(this.allObjectsF3[z]);
+			}
 		}
+		//console.log(`F3 visible: ${this.visibleObjectsF3.length} left: ${this.leftObjectsF3.length} right: ${this.rightObjectsF3.length}`)
 	}
 
 	//-------------------------------------------------------------------------------------

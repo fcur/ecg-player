@@ -3,7 +3,7 @@ import {
 	FPointDrawingObject, GridCellDrawingObject,
 	ClPointDrawingObject, CellDrawingObject,
 	XDrawingObjectType, AnsDrawingObject,
-	BeatsDrawingObject, IDrawingObject,
+	BeatsRangeDrawingObject, IDrawingObject,
 	XDrawingObject, SignalDrawingObject
 } from "./drawingobject";
 import {
@@ -106,17 +106,17 @@ export class AnsDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public drawAnnotations(p1: number, p2: number, p3: string) {
-		console.info("drawAnnotations", "not implemented");
+		console.info("AnsDrawingClient.drawAnnotations", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public afterdrawAnnotations() {
-		console.info("afterdrawAnnotations", "not implemented");
+		console.info("AnsDrawingClient.afterdrawAnnotations", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public createAnsDrawingObject(): AnsDrawingObject {
-		console.info("createAnsDrawingObject", "not implemented");
+		console.info("AnsDrawingClient.createAnsDrawingObject", "not implemented");
 		let result: AnsDrawingObject = new AnsDrawingObject();
 
 		return result;
@@ -124,7 +124,7 @@ export class AnsDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): AnsDrawingObject[] {
-		console.info("prepareDrawings", "not implemented");
+		console.info("AnsDrawingClient.prepareDrawings", "not implemented");
 		let ansDrawObj: AnsDrawingObject[] = new Array();
 		ansDrawObj.push(new AnsDrawingObject());
 		ansDrawObj[0].owner = this;
@@ -133,7 +133,7 @@ export class AnsDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): AnsDrawingObject[] {
-		console.info("prepareDrawings2", "not implemented");
+		console.info("AnsDrawingClient.prepareAllDrawings", "not implemented");
 		return [];
 	}
 }
@@ -143,14 +143,24 @@ export class AnsDrawingClient extends XDrawingClient {
 // Beats drawing client
 // -------------------------------------------------------------------------------------------------
 export class BeatsDrawingClient extends XDrawingClient {
+
 	radius: number;
 	color: string;
 	opacity: number;
+
+	/** Minimum milliseconds count between two records */
+	recordsThreshold: number;
+	recordSpace: number; // count of pixels between two records with  
+	layoutSpace: number; // count of pixels between two grid layouts
+
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
 		this.radius = 2;
 		this.color = "orange";
+		this.recordsThreshold = 0;
+		this.recordSpace = 10;
+		this.layoutSpace = 30;
 		this.opacity = 1;
 		this.mode = XDrawingMode.Canvas;
 		this.type = XDrawingObjectType.Beats;
@@ -161,36 +171,36 @@ export class BeatsDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public drawBeats(p1: number[], p2: number, p3: string[]) {
-		console.info("drawBeats", "not implemented");
+		console.info("BeatsDrawingClient.drawBeats", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public afterDrawBeats() {
-		console.info("afterDrawBeats", "not implemented");
+		console.info("BeatsDrawingClient.afterDrawBeats", "not implemented");
 	}
 
 
 	//-------------------------------------------------------------------------------------
-	public createBeatsDrawingObject(): BeatsDrawingObject {
-		console.info("createBeatsDrawingObject", "not implemented");
-		let result: BeatsDrawingObject = new BeatsDrawingObject();
+	public createBeatsDrawingObject(): BeatsRangeDrawingObject {
+		console.info("BeatsDrawingClient.createBeatsDrawingObject", "not implemented");
+		let result: BeatsRangeDrawingObject = new BeatsRangeDrawingObject();
 
 		return result;
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): BeatsDrawingObject[] {
+	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): BeatsRangeDrawingObject[] {
 		// TODO: handle space between records
 		if (!data.headers.hasOwnProperty(state.sampleRate) || !data.data.hasOwnProperty(state.sampleRate) || !data.data[state.sampleRate]) return [];
 
 		let z: number, y: number, x: number;
 		let start: number, limit: number, end: number, cellRecordStart: number;
-		let results: BeatsDrawingObject[] = new Array();
+		let results: BeatsRangeDrawingObject[] = new Array();
 		let headers: RecordProjection[] = data.getHeaders(state.skipPx, state.limitPx, state.sampleRate);
 		let beats: { [lead: number]: XPoint[] }, beatsPoints: XPoint[], curPoint: XPoint;
 		for (z = 0; z < state.gridCells.length; z++) {
 			// DrawingObject for each XDrawingCell
-			results[z] = new BeatsDrawingObject();
+			results[z] = new BeatsRangeDrawingObject();
 			results[z].owner = this;
 			results[z].cellIndex = z;
 			results[z].index = z;
@@ -219,9 +229,77 @@ export class BeatsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): BeatsDrawingObject[] {
-		console.info("prepareDrawings2", "not implemented");
-		return [];
+	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): BeatsRangeDrawingObject[] {
+		// TODO: add drawings merge method (example: signal for other leads)
+		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
+
+		let recData: RecordDrawingData,
+			recProj: RecordProjection,
+			leadCode: EcgLeadCode,
+			prewBeatLeft: number,
+			nextBeatLeft: number,
+			curBeatLeft: number,
+			beatsCount: number,
+			y: number,
+			z: number;
+
+		let results: BeatsRangeDrawingObject[] = new Array();
+		let headObjs: { [recordId: string]: RecordProjection } = dd.headers[ps.sampleRate];
+		// record >> beats drawing object
+		// drawing object >> XPolyline[] >> polylines[channels.length] (channel=lead)
+		let drawObj: BeatsRangeDrawingObject;
+		/**  record data left position in pixels. */
+		let recLeftPos: number = 0;
+		/** Last record milliseconds end value. */
+		let lastRecMs: number = 0;
+
+		for (let recId in headObjs) {
+			if (!headObjs.hasOwnProperty(recId)) continue;
+			recProj = headObjs[recId];
+			recData = dd.data[ps.sampleRate][recId];
+
+			beatsCount = recData.beats[recData.leads[0]].length;
+			if (beatsCount < 2) continue; // we need 2+ (sample indexes) for drawing object
+
+			// merge recordSpace&layoutSpace
+			if (lastRecMs != 0) {
+				if (recProj.endMs - lastRecMs > this.recordsThreshold)
+					recLeftPos += this.layoutSpace;
+				else
+					recLeftPos += this.recordSpace;
+			}
+
+			// z - beat index
+			// (beatsCount-1) - count of drawing objects
+			for (z = 0; z < beatsCount; z++) {
+				drawObj = new BeatsRangeDrawingObject();
+				drawObj.owner = this;
+				drawObj.prepareLeads(recData.leads);
+				// prepare beats points
+				for (y = 0; y < drawObj.leadCodes.length; y++) {
+					leadCode = drawObj.leadCodes[y];
+					drawObj.points[y] = recData.beats[leadCode][z];
+				}
+
+				curBeatLeft = recData.beats[leadCode][z].left;
+				if (z > 0 && z < beatsCount - 1) {
+					prewBeatLeft = recData.beats[leadCode][z - 1].left;
+					nextBeatLeft = recData.beats[leadCode][z + 1].left;
+				} else if (z === 0) {
+					prewBeatLeft = curBeatLeft;
+					nextBeatLeft = recData.beats[leadCode][z + 1].left;
+				} else if (z === beatsCount - 1) {
+					prewBeatLeft = recData.beats[leadCode][z - 1].left;
+					nextBeatLeft = curBeatLeft;
+				}
+				// do not use container [height] and [top position]
+				drawObj.container = new XRectangle(recLeftPos + prewBeatLeft, 0, nextBeatLeft - prewBeatLeft, 0);
+				results.push(drawObj);
+			}
+			lastRecMs = recProj.endMs;
+			recLeftPos += recProj.limitPixels;
+		}
+		return results;
 	}
 
 }
@@ -251,17 +329,17 @@ export class GridCellDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public drawGrid() {
-		console.info("drawGrid", "not implemented");
+		console.info("GridCellDrawingClient.drawGrid", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public afterDrawGrid() {
-		console.info("afterDrawGrid", "not implemented");
+		console.info("GridCellDrawingClient.afterDrawGrid", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public createGridDrawingObject(): GridCellDrawingObject {
-		console.info("createGridDrawingObject", "not implemented");
+		console.info("GridCellDrawingClient.createGridDrawingObject", "not implemented");
 		let result: GridCellDrawingObject = new GridCellDrawingObject();
 
 		return result;
@@ -343,17 +421,17 @@ export class SignalDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public drawSignal() {
-		console.info("drawSignal", "not implemented");
+		console.info("SignalDrawingClient.drawSignal", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public afterDrawSignal() {
-		console.info("afterDrawSignal", "not implemented");
+		console.info("SignalDrawingClient.afterDrawSignal", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public createSignalDrawingObject(): SignalDrawingObject {
-		console.info("createSignalDrawingObject", "not implemented");
+		console.info("SignalDrawingClient.createSignalDrawingObject", "not implemented");
 		let result: SignalDrawingObject = new SignalDrawingObject();
 
 		return result;
@@ -417,6 +495,8 @@ export class SignalDrawingClient extends XDrawingClient {
 		let drawObj: SignalDrawingObject;
 		/**  record data left position in pixels. */
 		let recLeftPos: number = 0;
+		/** Last record milliseconds end value. */
+		let lastRecMs: number = 0;
 
 		for (let recId in headObjs) {
 			if (!headObjs.hasOwnProperty(recId)) continue;
@@ -426,8 +506,15 @@ export class SignalDrawingClient extends XDrawingClient {
 			drawObj = new SignalDrawingObject();
 			drawObj.owner = this;
 			drawObj.prepareLeads(recData.leads);
-			drawObj.index = -1; // do not index
-			drawObj.cellIndex = -1; // do not cell index
+
+			// merge recordSpace&layoutSpace
+			if (lastRecMs != 0) {
+				if (recProj.endMs - lastRecMs > this.recordsThreshold)
+					recLeftPos += this.layoutSpace;
+				else
+					recLeftPos += this.recordSpace;
+			}
+
 			// do not use container [height] and [top position]
 			drawObj.container = new XRectangle(recLeftPos, 0, recProj.limitPixels, 0);
 			for (z = 0; z < drawObj.leadCodes.length; z++) {
@@ -437,11 +524,14 @@ export class SignalDrawingClient extends XDrawingClient {
 			}
 			results.push(drawObj);
 
-			// TODO: merge recordSpace&layoutSpace
-			recLeftPos += this.layoutSpace + recProj.limitPixels;
+			lastRecMs = recProj.endMs;
+			recLeftPos += recProj.limitPixels;
 		}
 		return results;
 	}
+
+
+
 
 }
 
@@ -464,17 +554,17 @@ export class ClickablePointDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public drawPonint() {
-		console.info("drawPonint", "not implemented");
+		console.info("ClickablePointDrawingClient.drawPonint", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public afterDrawPoint() {
-		console.info("afterDrawPoint", "not implemented");
+		console.info("ClickablePointDrawingClient.afterDrawPoint", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public createPointDrawingObject(): ClPointDrawingObject {
-		console.info("createPointDrawingObject", "not implemented");
+		console.info("ClickablePointDrawingClient.createPointDrawingObject", "not implemented");
 		let result: ClPointDrawingObject = new ClPointDrawingObject();
 		return result;
 	}
@@ -509,17 +599,17 @@ export class CellDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public drawCell() {
-		console.info("drawCell", "not implemented");
+		console.info("CellDrawingClient.drawCell", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public afterDrawCell() {
-		console.info("afterDrawCell", "not implemented");
+		console.info("CellDrawingClient.afterDrawCell", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public createCellDrawingObject(): CellDrawingObject {
-		console.info("createCellDrawingObject", "not implemented");
+		console.info("CellDrawingClient.createCellDrawingObject", "not implemented");
 		let result: CellDrawingObject = new CellDrawingObject();
 		return result;
 	}
@@ -567,17 +657,17 @@ export class FPointDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public drawFPoint() {
-		console.info("drawFPoint", "not implemented");
+		console.info("FPointDrawingClient.drawFPoint", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public afterDrawFPoint() {
-		console.info("afterDrawFPoint", "not implemented");
+		console.info("FPointDrawingClient.afterDrawFPoint", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
 	public createFPointDrawingObject(): FPointDrawingObject {
-		console.info("createFPointDrawingObject", "not implemented");
+		console.info("FPointDrawingClient.createFPointDrawingObject", "not implemented");
 		let result: FPointDrawingObject = new FPointDrawingObject();
 		return result;
 	}
@@ -614,7 +704,7 @@ export class FPointDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): FPointDrawingObject[] {
-		console.info("prepareDrawings2", "not implemented");
+		console.info("FPointDrawingClient.prepareAllDrawings", "not implemented");
 		return [];
 	}
 }

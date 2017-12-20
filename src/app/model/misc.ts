@@ -4,7 +4,7 @@ import {
 } from "./ecgdata";
 import {
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	BeatsDrawingObject, IDrawingObject
+	BeatsRangeDrawingObject, IDrawingObject
 } from "./drawingobject";
 import {
 	XDrawingClient, XDrawingMode, AnsDrawingClient,

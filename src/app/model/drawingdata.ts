@@ -155,6 +155,7 @@ export class RecordDrawingData {
 			if (leads.length != 0 && leads.indexOf(leadCode) < 0) continue;
 			points = new Array(beats.length);
 			for (let z: number = 0; z < beats.length; z++) {
+				// top - position in microvolts
 				points[z] = new XPoint(beats[z], this.signal[lead][beats[z]].top);
 			}
 			this.beats[lead] = points;
@@ -192,6 +193,11 @@ export class RecordProjection {
 	//-------------------------------------------------------------------------------------
 	public get endPx(): number {
 		return this.skipPixels + this.limitPixels;
+	}
+
+	//-------------------------------------------------------------------------------------
+	public get endMs(): number {
+		return this.startMs + this.lengthMs;
 	}
 
 }
