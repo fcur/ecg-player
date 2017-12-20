@@ -11,7 +11,7 @@ import { DataService } from "./service/data.service"
 		DrawableComponent
 	],
 	imports: [
-			BrowserModule
+		BrowserModule
 	],
 	providers: [DataService],
 	bootstrap: [AppComponent]

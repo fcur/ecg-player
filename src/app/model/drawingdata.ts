@@ -76,37 +76,39 @@ export class DrawingData {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public set recordHeaders(p: EcgRecord[]) {
-		if (!Array.isArray(p) || p.length === 0) return;
+	public set recordHeaders(er: EcgRecord[]) {
+		if (!Array.isArray(er) || er.length === 0) return;
 
-		let proj: RecordProjection;
+		let recProj: RecordProjection;
 		let skipPx: number = 0;
-		let srKey: string = p[0].sampleRateForCls.toString();
+		let srKey: string = er[0].sampleRateForCls.toString();
 
 		if (!this.headers[srKey]) this.headers[srKey] = {};
-	
-		for (let z: number = 0; z < p.length; z++) {
-			proj = new RecordProjection();
-			proj.skipPixels = skipPx;
-			proj.record = p[z];
-			skipPx += proj.limitPixels;
-			this.headers[srKey][proj.id] = proj;
+
+		for (let z: number = 0; z < er.length; z++) {
+			recProj = new RecordProjection();
+			recProj.skipPixels = skipPx;
+			recProj.record = er[z];
+			skipPx += recProj.limitPixels;
+			this.headers[srKey][recProj.id] = recProj;
 		}
 	}
 
 	//-------------------------------------------------------------------------------------
-	public set projection(p: EcgRecord[]) {
-		if (!Array.isArray(p) || p.length === 0) return;
+	public set projection(er: EcgRecord[]) {
+		if (!Array.isArray(er) || er.length === 0) return;
 
 		let srKey: string;
-		let rdd: RecordDrawingData;
-		for (let z: number = 0; z < p.length; z++) {
-			srKey = p[z].signal.sampleRate.toString();
+		let rdData: RecordDrawingData;
+		for (let z: number = 0; z < er.length; z++) {
+			srKey = er[z].signal.sampleRate.toString();
 			if (!this.data[srKey]) this.data[srKey] = {};
-			if (!this.data[srKey][p[z].id]) this.data[srKey][p[z].id] = new RecordDrawingData();
-			rdd = this.data[srKey][p[z].id];
-			rdd.trySaveSignalPoints(p[z].signal);
-			rdd.trySaveBeatsPoints(p[z].beats, this.leadsForBeats);
+			if (!this.data[srKey][er[z].id]) this.data[srKey][er[z].id] = new RecordDrawingData();
+			rdData = this.data[srKey][er[z].id];
+			rdData.leads = er[z].signal.leads;
+			rdData.trySaveSignalPoints(er[z].signal);
+			rdData.trySaveBeatsPoints(er[z].beats, this.leadsForBeats);
+			// TODO: save annotations, wave points, other
 		}
 	}
 

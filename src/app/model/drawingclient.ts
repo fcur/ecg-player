@@ -6,7 +6,10 @@ import {
 	BeatsDrawingObject, IDrawingObject,
 	XDrawingObject, SignalDrawingObject
 } from "./drawingobject";
-
+import {
+	EcgWavePoint, EcgWavePointType, EcgAnnotation, EcgSignal,
+	EcgAnnotationCode, EcgLeadCode, EcgRecord
+} from "./ecgdata"
 import {
 	DrawingData, RecordDrawingData,
 	RecordProjection
@@ -224,7 +227,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 }
 
 // -------------------------------------------------------------------------------------------------
-// Signal drawing glient
+// Grid cell drawing glient
 // -------------------------------------------------------------------------------------------------
 export class GridCellDrawingClient extends XDrawingClient {
 
@@ -240,7 +243,7 @@ export class GridCellDrawingClient extends XDrawingClient {
 		this.opacity = 0.5;
 		this.lineJoin = "miter";// round|miter|bevel
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Signal;
+		this.type = XDrawingObjectType.Grid;
 		this.draw = this.drawGrid.bind(this);
 		this.afterDraw = this.afterDrawGrid.bind(this);
 		this.createDrawingObject = this.createGridDrawingObject.bind(this);
@@ -399,22 +402,45 @@ export class SignalDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): SignalDrawingObject[] {
-		if (!data.headers.hasOwnProperty(state.sampleRate) || !data.data.hasOwnProperty(state.sampleRate) || !data.data[state.sampleRate]) return [];
+	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): SignalDrawingObject[] {
+		// TODO: add drawings merge method (example: signal for other leads)
+		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
-		let headers: { [recordId: string]: RecordProjection } = data.headers[state.sampleRate];
-		let recordId: string;
-		for (let p in headers) {
+		let recData: RecordDrawingData,
+			recProj: RecordProjection,
+			leadCode: EcgLeadCode,
+			z: number;
+		let results: SignalDrawingObject[] = new Array();
+		let headObjs: { [recordId: string]: RecordProjection } = dd.headers[ps.sampleRate];
+		// record >> signal drawing object
+		// drawing object >> XPolyline[] >> polylines[channels.length] (channel=lead)
+		let drawObj: SignalDrawingObject;
+		/**  record data left position in pixels. */
+		let recLeftPos: number = 0;
 
-			if (!headers.hasOwnProperty(p)) continue;
+		for (let recId in headObjs) {
+			if (!headObjs.hasOwnProperty(recId)) continue;
+			recProj = headObjs[recId];
+			recData = dd.data[ps.sampleRate][recId];
 
+			drawObj = new SignalDrawingObject();
+			drawObj.owner = this;
+			drawObj.prepareLeads(recData.leads);
+			drawObj.index = -1; // do not index
+			drawObj.cellIndex = -1; // do not cell index
+			// do not use container [height] and [top position]
+			drawObj.container = new XRectangle(recLeftPos, 0, recProj.limitPixels, 0);
+			for (z = 0; z < drawObj.leadCodes.length; z++) {
+				leadCode = drawObj.leadCodes[z];
+				if (!recData.signal.hasOwnProperty(leadCode)) continue;
+				drawObj.polylines[z] = new XPolyline(recData.signal[leadCode]);
+			}
+			results.push(drawObj);
 
+			// TODO: merge recordSpace&layoutSpace
+			recLeftPos += this.layoutSpace + recProj.limitPixels;
 		}
-
-		console.info(headers);
-
-
-		return [];
+		return results;
 	}
 
 }
@@ -452,8 +478,6 @@ export class ClickablePointDrawingClient extends XDrawingClient {
 		let result: ClPointDrawingObject = new ClPointDrawingObject();
 		return result;
 	}
-
-
 
 	//-------------------------------------------------------------------------------------
 	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): ClPointDrawingObject[] {

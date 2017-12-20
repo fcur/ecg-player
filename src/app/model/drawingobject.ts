@@ -9,7 +9,8 @@ export enum XDrawingObjectType {
 	Annotations,
 	PQRST,
 	Measure,
-	Object
+	Object,
+	Grid
 }
 
 import { XDrawingClient, XDrawingMode } from "./drawingclient";
@@ -344,10 +345,19 @@ export class BeatsDrawingObject extends XDrawingObject {
 // Signal drawing object
 // -------------------------------------------------------------------------------------------------
 export class SignalDrawingObject extends XDrawingObject {
-	/** Drawing object polylines.*/
+	/** Drawing object polylines. */
 	public polylines: XPolyline[];
+	/** Lead codes for polylines. */
+	public leadCodes: EcgLeadCode[];
+	// leadCodes.length = polylines.length
 
-	public leadCode: EcgLeadCode;
+	//-------------------------------------------------------------------------------------
+	public prepareLeads(leads: EcgLeadCode[]) {
+		if (!Array.isArray(leads)) return;
+		this.leadCodes = leads;
+		this.polylines = new Array(leads.length);
+	}
+
 }
 
 

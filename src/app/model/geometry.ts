@@ -108,8 +108,8 @@ export class XRectangle extends XDrawingPrimitive {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public resetStart(){
-		this._l=0;
+	public resetStart() {
+		this._l = 0;
 		this._t = 0;
 	}
 
