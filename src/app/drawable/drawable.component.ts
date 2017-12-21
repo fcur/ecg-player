@@ -67,6 +67,7 @@ export class DrawableComponent implements OnInit {
 
 	private _threshold: number;
 	private _lastEmitTime: number;
+	private _drawingScrollSubs: Subscription;
 
 	//-------------------------------------------------------------------------------------
 	@ViewChild("waveformCanvas")
@@ -196,6 +197,7 @@ export class DrawableComponent implements OnInit {
 		this._hideFileDrop = false;
 		this._pinBeatsToSignal = true;
 		this._loadDataSubs = null;
+		this._drawingScrollSubs = null;
 		this._waveformDragStartPosition = null;
 		this._threshold = 100;
 		this._lastEmitTime = 0;
@@ -211,6 +213,7 @@ export class DrawableComponent implements OnInit {
 		//console.info("DrawableComponent: init");
 		this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
 		this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord[]));
+		this._drawingScrollSubs = this._dp.state.onScrollBs.subscribe(v => this.onScrollDrawings(v as number));
 		this._canvasContainer.nativeElement.addEventListener("dragover", this.onDragOver.bind(this), false);
 		this._canvasContainer.nativeElement.addEventListener("drop", this.onDragDrop.bind(this), false);
 	}
@@ -228,6 +231,7 @@ export class DrawableComponent implements OnInit {
 	public ngOnDestroy() {
 		//console.info("DrawableComponent: destroy");
 		if (this._loadDataSubs) this._loadDataSubs.unsubscribe();
+		if (this._drawingScrollSubs) this._drawingScrollSubs.unsubscribe();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -341,6 +345,15 @@ export class DrawableComponent implements OnInit {
 	//}
 
 	//-------------------------------------------------------------------------------------
+	private onScrollDrawings(val: number) {
+		if (!Number.isInteger(val)) return;
+		console.log("scroll:", val);
+
+		this._dp.scrollDrawObjGroupsF3();
+		this._dp.refreshDrawings();
+	}
+
+	//-------------------------------------------------------------------------------------
 	private onReceiveDrawingObjects(p: IDrawingObject[][]) {
 		this._ct.clear();
 		// z: client index
@@ -419,8 +432,10 @@ export class DrawableComponent implements OnInit {
 		let endpoint: XPoint = this.getEventPosition(event);
 		let actionPoint: XPoint = this._waveformDragStartPosition.subtract(endpoint);
 		this._waveformDragStartPosition = endpoint;
+		if (actionPoint.left === 0) return; // skip scrolling
 		this._dp.scroll(actionPoint.left);
-		this._dp.refreshDrawings();
+		//this._dp.scrollDrawObjGroupsF3();
+		//this._dp.refreshDrawings();
 	}
 
 	//-------------------------------------------------------------------------------------

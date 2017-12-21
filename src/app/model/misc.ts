@@ -116,7 +116,7 @@ export class XDrawingCell {
 
 }
 
-
+import { Subscription, BehaviorSubject } from "rxjs";
 // -------------------------------------------------------------------------------------------------
 // Drawing proxy state
 // -------------------------------------------------------------------------------------------------
@@ -167,9 +167,27 @@ export class XDrawingProxyState {
 	public pointerY: number;
 
 
+	public onScrollBs: BehaviorSubject<number>;
+
+
+	// TODO: add surface dimentions getter
+
+
+	//-------------------------------------------------------------------------------------------------
+	public get onLeftEdge(): boolean {
+		return this.skipPx === 0;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public get onRightEdge(): boolean {
+		return false;
+	}
+
 	//-------------------------------------------------------------------------------------------------
 	public set scroll(delta: number) {
 		this.skipPx = Math.max(Math.floor(this.skipPx + delta), 0);
+		if (this.skipPx != this.onScrollBs.value)
+			this.onScrollBs.next(this.skipPx);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -185,6 +203,7 @@ export class XDrawingProxyState {
 	//-------------------------------------------------------------------------------------------------
 	constructor() {
 		this.devMode = true;
+		this.onScrollBs = new BehaviorSubject(NaN);
 		this.timestamp = Date.now();            // drawing proxy state creation time
 		this.scale = 1;                         // default scale = 1   
 		this.apxmm = 3;                         // for default dpi

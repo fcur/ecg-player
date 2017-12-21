@@ -40,6 +40,7 @@ export class XDrawingProxy {
 	public rightObjectsF3: IDrawingObject[];
 
 
+
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		//console.info("DrawingProxy constructor");
@@ -349,9 +350,9 @@ export class XDrawingProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public updateDrawObjGroupsF3() {
+	public scrollDrawObjGroupsF3() {
 		// handle mouse actions (move, drag, click)
-
+		//console.log(this.state.skipPx);
 	}
 
 	//-------------------------------------------------------------------------------------
