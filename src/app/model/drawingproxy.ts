@@ -210,7 +210,7 @@ export class XDrawingProxy {
 
 	//-------------------------------------------------------------------------------------
 	public scroll(delta: number) {
-		this.state.scroll = -delta;
+		this.state.scroll(delta);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -352,8 +352,32 @@ export class XDrawingProxy {
 	//-------------------------------------------------------------------------------------
 	public scrollDrawObjGroupsF3() {
 		// handle mouse actions (move, drag, click)
-		//console.log(this.state.skipPx);
+		let log: string = `\n[position: ${this.state.skipPx}] V: ${this.visibleObjectsF3.length} L: ${this.leftObjectsF3.length} R: ${this.rightObjectsF3.length} A: ${this.allObjectsF3.length}`;
+		let z: number, minOx: number, maxOx: number;
+
+		this.visibleObjectsF3 = new Array();
+		this.leftObjectsF3 = new Array();
+		this.rightObjectsF3 = new Array();
+
+		for (let z: number = 0; z < this.allObjectsF3.length; z++) {
+			minOx = this.allObjectsF3[z].container.minOx;
+			maxOx = this.allObjectsF3[z].container.maxOx;
+
+			if (maxOx < this.state.minPx) {
+				this.leftObjectsF3.push(this.allObjectsF3[z]);
+			} else if (minOx > this.state.maxPx) {
+				this.rightObjectsF3.push(this.allObjectsF3[z]);
+			} else {
+				this.visibleObjectsF3.push(this.allObjectsF3[z]);
+			}
+		}
+
+		log += `\n[position: ${this.state.skipPx}] V: ${this.visibleObjectsF3.length} L: ${this.leftObjectsF3.length} R: ${this.rightObjectsF3.length} A: ${this.allObjectsF3.length}`;
+		console.log("scroll:", log);
+		this.sortDrawObjGroups();
 	}
+
+
 
 	//-------------------------------------------------------------------------------------
 	public rebuildDrawObjGroupsF3() {
@@ -395,6 +419,13 @@ export class XDrawingProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
+	public sortDrawObjGroups() {
+		// TODO: sort drawing objects vis start (left) position
+		// compare sort methods
+	}
+
+	//-------------------------------------------------------------------------------------
+	/** Start grabbage collection */
 	public gc() {
 		// handle proxy limits
 		// remove unused objects

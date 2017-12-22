@@ -347,7 +347,7 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private onScrollDrawings(val: number) {
 		if (!Number.isInteger(val)) return;
-		console.log("scroll:", val);
+		//console.log("scroll:", val);
 
 		this._dp.scrollDrawObjGroupsF3();
 		this._dp.refreshDrawings();

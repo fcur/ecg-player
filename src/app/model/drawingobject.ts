@@ -45,7 +45,7 @@ export interface IDrawingObject {
 	container: XRectangle;
 	/** Drawing object assigned cell index. -1: fill cells container */
 	cellIndex: number;
-
+	/** Draw object on canvas. */
 	render(ctx: CanvasRenderingContext2D)
 }
 

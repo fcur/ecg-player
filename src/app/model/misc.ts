@@ -133,7 +133,7 @@ export class XDrawingProxyState {
 	/** Scale coefficient 1X1. */
 	public scale: number = 1;
 	/** Absolute surfce left offset in pixels. */
-	public skipPx: number;
+	private _skipPx: number;
 	/** Absolute surfce width in pixels. */
 	public limitPx: number;
 
@@ -168,14 +168,15 @@ export class XDrawingProxyState {
 
 
 	public onScrollBs: BehaviorSubject<number>;
-
+	/** Last scroll movement delta. */
+	public movDelta: number;
 
 	// TODO: add surface dimentions getter
 
 
 	//-------------------------------------------------------------------------------------------------
 	public get onLeftEdge(): boolean {
-		return this.skipPx === 0;
+		return this._skipPx === 0;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -184,21 +185,32 @@ export class XDrawingProxyState {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public set scroll(delta: number) {
-		this.skipPx = Math.max(Math.floor(this.skipPx + delta), 0);
-		if (this.skipPx != this.onScrollBs.value)
-			this.onScrollBs.next(this.skipPx);
+	public scroll(delta: number) {
+		if (!Number.isInteger(delta)) return;
+		this.movDelta = delta;
+		this._skipPx = Math.max(Math.floor(this._skipPx - delta), 0);
+		if (!Number.isInteger(this.onScrollBs.value) || this._skipPx != this.onScrollBs.value)
+			this.onScrollBs.next(this._skipPx);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public get minPx(): number {
-		return this.skipPx;
+		return this._skipPx;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public get maxPx(): number {
-		return this.skipPx + this.limitPx;
+		return this._skipPx + this.limitPx;
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	public get skipPx(): number {
+		return this._skipPx;
+	}
+
+	//public set skipPx(v: number) {
+
+	//}
 
 	//-------------------------------------------------------------------------------------------------
 	constructor() {
@@ -211,7 +223,7 @@ export class XDrawingProxyState {
 		this.signalMicrovoltsClip = 5000;       // from settings
 		this.maxSample = 32767;                 // from input signal
 		this.gridCells = [];
-		this.skipPx = 0;
+		this._skipPx = 0;
 		this.limitPx = 0;
 		this.signalSamplesClip = Math.floor(this.maxSample * this.signalMicrovoltsClip / this.signalScale);
 		this.gridMode = XDrawingGridMode.EMPTY;
