@@ -47,6 +47,8 @@ export interface IDrawingObject {
 	cellIndex: number;
 	/** Draw object on canvas. */
 	render(ctx: CanvasRenderingContext2D)
+	/** Visiblity of drawing object. */
+	hidden: boolean;
 }
 
 
@@ -68,6 +70,9 @@ export class XDrawingObject implements IDrawingObject {
 	public container: XRectangle;
 	/** REDUNDANT Drawing object assigned cell index. */
 	public cellIndex: number;
+	/** Visiblity of drawing object. */
+	public hidden: boolean;
+
 
 	//-------------------------------------------------------------------------------------
 	//public get isFloating(): boolean {
@@ -79,6 +84,7 @@ export class XDrawingObject implements IDrawingObject {
 		this.container = new XRectangle(0, 0, 0, 0);
 		this.index = -1; // do not use index
 		this.cellIndex = -1; // do not use cell index fill full container
+		this.hidden = true;
 	}
 
 	//-------------------------------------------------------------------------------------

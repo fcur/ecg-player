@@ -50,8 +50,11 @@ export interface IDrawingClient {
 	/** Prepare drawing objects. */
 	prepareDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
 
+	/** Client groups drawing method (required). */
 	drawObjects: Function;
 
+	/** Client groups drawing method F3(required). */
+	drawObjectsF3: Function;
 	/** Prepare drawing objects. */
 	prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
 }
@@ -75,6 +78,10 @@ export class XDrawingClient implements IDrawingClient {
 	createDrawingObject: Function;
 	/** Client groups drawing method (required). */
 	drawObjects: Function;
+
+	/** Client groups drawing method F3(required). */
+	drawObjectsF3: Function;
+
 	//-------------------------------------------------------------------------------------
 	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[] {
 		return [];
@@ -349,6 +356,8 @@ export class GridCellDrawingClient extends XDrawingClient {
 	//-------------------------------------------------------------------------------------
 	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): GridCellDrawingObject[] {
 		let z: number, y: number, x: number;
+		// TODO: prepare drawings for all headers
+		// cell length = header.length
 		let results: GridCellDrawingObject[] = new Array(state.gridCells.length);
 
 		let borderPoints: XPoint[];

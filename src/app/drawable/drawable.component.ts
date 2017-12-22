@@ -351,7 +351,21 @@ export class DrawableComponent implements OnInit {
 
 		this._dp.scrollDrawObjGroupsF3();
 		this._dp.refreshDrawings();
+		this.renderVisibleGroupF3();
 	}
+
+	//-------------------------------------------------------------------------------------
+	private renderVisibleGroupF3() {
+		let z: number, y: number;
+		for (z = 0; z < this._dp.drawingClients.length; z++) {
+			if (!this._dp.drawingClients[z].drawObjectsF3 ||
+				!Array.isArray(this._dp.doF3CGroups[z]) ||
+				this._dp.doF3CGroups[z].length === 0) continue;
+			//console.log(`drawObjectsF3 for  ${this._dp.drawingClients[z].constructor.name}`);
+			//this._dp.drawingClients[z].drawObjectsF3(this._dp.doF3CGroups[z]);
+		}
+	}
+
 
 	//-------------------------------------------------------------------------------------
 	private onReceiveDrawingObjects(p: IDrawingObject[][]) {
@@ -395,10 +409,14 @@ export class DrawableComponent implements OnInit {
 		// prepare feature 2 clients
 		this._signalF2Client = new SignalDrawingClient();
 		this._signalF2Client.drawObjects = this.drawSignalObjectsF2.bind(this);
+		this._signalF2Client.drawObjectsF3 = this.drawSignalObjectsF3.bind(this);
 		this._gridF2Client = new GridCellDrawingClient();
 		this._gridF2Client.drawObjects = this.drawGridObjectsF2.bind(this);
+		this._gridF2Client.drawObjectsF3 = this.drawGridObjectsF3.bind(this);
+
 		this._beatsF2Client = new BeatsDrawingClient();
 		this._beatsF2Client.drawObjects = this.drawBeatsObjectsF2.bind(this);
+		this._beatsF2Client.drawObjectsF3 = this.drawBeatsRangesObjectsF3.bind(this);
 		this._fpointF2Client = new FPointDrawingClient();
 		this._fpointF2Client.drawObjects = this.drawFPointObjectsF2.bind(this);
 		this._dp.pushClients(this._gridF2Client, this._signalF2Client, this._beatsF2Client, this._fpointF2Client);
@@ -571,6 +589,111 @@ export class DrawableComponent implements OnInit {
 
 		this._ct.ctx.restore();
 	}
+
+
+
+
+
+
+
+	//-------------------------------------------------------------------------------------
+	private drawSignalObjectsF3(objs: SignalDrawingObject[]) {
+		//let state: XDrawingProxyState = this._dp.state;
+		//// cell index = drawing object index
+		//let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
+		//this._ct.ctx.beginPath();
+		//let points: XPoint[];
+		//let shift: number = 0;
+		//for (z = 0; z < state.gridCells.length; z++) {
+		//	// TODO: handle multy polylines
+		//	points = objs[z].polylines[0].points;
+		//	y = 0;
+		//	left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
+		//	dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel); // microvolts to pixels
+		//	top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
+		//	this._ct.ctx.moveTo(left, top);
+		//	for (y++; y < points.length; y++) {
+		//		left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
+		//		dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
+		//		top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
+		//		this._ct.ctx.lineTo(left, top);
+		//	}
+		//}
+		//this._ct.ctx.lineWidth = 1;
+		//this._ct.ctx.strokeStyle = this._signalF2Client.color;
+		//this._ct.ctx.globalAlpha = this._signalF2Client.opacity;
+		//this._ct.ctx.lineJoin = this._signalF2Client.lineJoin;
+		//this._ct.ctx.stroke();
+		//this._ct.ctx.closePath();
+		//this._ct.ctx.restore();
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	private drawBeatsRangesObjectsF3(objs: BeatsRangeDrawingObject[]) {
+		//let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
+		//let state: XDrawingProxyState = this._dp.state;
+		//// cell index = drawing object index
+		//this._ct.ctx.save();
+		//this._ct.ctx.beginPath();
+		//let points: XPoint[];
+		//let shift: number = 0;
+		//for (z = 0; z < state.gridCells.length; z++) {
+		//	points = objs[z].points;
+		//	for (y = 0; y < points.length; y++) {
+		//		left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
+		//		dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel); // microvolts to pixels
+		//		top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
+		//		this._ct.ctx.moveTo(left + 0.5, top + 0.5);
+		//		this._ct.ctx.arc(left + 0.5, top + 0.5, this._beatsF2Client.radius, 0, 2 * Math.PI, false);
+		//	}
+		//}
+		//this._ct.ctx.fillStyle = this._beatsF2Client.color;
+		//this._ct.ctx.globalAlpha = this._beatsF2Client.opacity;
+		//this._ct.ctx.fill();
+		//this._ct.ctx.closePath();
+		//this._ct.ctx.restore();
+	}
+
+
+
+	//-------------------------------------------------------------------------------------
+	private drawGridObjectsF3(objs: GridCellDrawingObject[]) {
+		//console.log("drawGridObjectsF2");
+		//let state: XDrawingProxyState = this._dp.state;
+		//let z: number = 0, y: number = 0, x: number = 0, point: XPoint, l: number, t: number;
+		//this._ct.ctx.save();
+		//this._ct.ctx.beginPath();
+		//for (z = 0; z < objs.length; z++) {
+		//	for (y = 0; y < objs[z].polylines.length; y++) {
+		//		x = 0;
+		//		point = objs[z].polylines[y].points[x++];
+		//		l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
+		//		t = point.top;
+		//		this._ct.ctx.moveTo(l + 0.5, t + 0.5);
+		//		for (; x < objs[z].polylines[y].points.length; x++) {
+		//			point = objs[z].polylines[y].points[x];
+		//			l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
+		//			t = point.top;
+		//			this._ct.ctx.lineTo(l + 0.5, t + 0.5);
+		//		}
+		//	}
+		//}
+		//this._ct.ctx.strokeStyle = this._gridF2Client.color;
+		//this._ct.ctx.globalAlpha = this._gridF2Client.opacity;
+		//this._ct.ctx.lineJoin = this._gridF2Client.lineJoin;
+		//this._ct.ctx.stroke();
+		//this._ct.ctx.closePath();
+		//this._ct.ctx.restore();
+	}
+
+
+
+
+
+
+
+
 
 
 }
