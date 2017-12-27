@@ -364,7 +364,10 @@ export class GridCellDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): GridCellDrawingObject[] {
-		let z: number, y: number, x: number;
+		let z: number,
+			y: number,
+			x: number,
+			container: XRectangle;
 		// TODO: prepare drawings for all headers
 		// cell length = header.length
 		let results: GridCellDrawingObject[] = new Array(state.gridCells.length);
@@ -378,22 +381,25 @@ export class GridCellDrawingClient extends XDrawingClient {
 			results[z].index = z;
 			results[z].container = state.gridCells[z].container.clone;
 			results[z].left = state.skipPx;
+			results[z].lead = state.gridCells[z].lead;
+			results[z].leadLabel = state.gridCells[z].leadLabel;
+			container = state.gridCells[z].container;
 			// TODO: return container borders as lines
 			// border
 			borderPoints = [
-				new XPoint(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy),
-				new XPoint(state.gridCells[z].container.maxOx, state.gridCells[z].container.minOy),
-				new XPoint(state.gridCells[z].container.maxOx, state.gridCells[z].container.maxOy),
-				new XPoint(state.gridCells[z].container.minOx, state.gridCells[z].container.maxOy),
-				new XPoint(state.gridCells[z].container.minOx, state.gridCells[z].container.minOy)
+				new XPoint(0, 0),
+				new XPoint(container.width, 0),
+				new XPoint(container.width, container.height),
+				new XPoint(0, container.height),
+				new XPoint(0, 0)
 			];
 			// OX axis
 			axisPoints = [
-				new XPoint(state.gridCells[z].container.minOx, state.gridCells[z].container.midOy),
-				new XPoint(state.gridCells[z].container.maxOx, state.gridCells[z].container.midOy)
+				new XPoint(0, container.midOy - container.minOy),
+				new XPoint(container.width, container.midOy - container.minOy)
 			];
 			results[z].polylines = [new XPolyline(borderPoints), new XPolyline(axisPoints)];
-			results[z].container.resetStart();
+			//results[z].container.resetStart();
 		}
 		return results;
 	}
@@ -439,7 +445,7 @@ export class SignalDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public drawSignal() {
-		console.info("SignalDrawingClient.drawSignal", "not implemented");
+		//console.info("SignalDrawingClient.drawSignal", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------

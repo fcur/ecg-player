@@ -441,7 +441,10 @@ export class GridCellDrawingObject extends XDrawingObject {
 	public polylines: XPolyline[];
 	/** Drawing object left scroll position. */
 	public left: number;
-
+	/** Cell assigned lead code. */
+	public lead: EcgLeadCode;
+	/** Cell assigned lead text. */
+	public leadLabel: string;
 }
 
 
