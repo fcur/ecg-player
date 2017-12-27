@@ -412,6 +412,10 @@ export class XDrawingProxy {
 			if (ownerIndex < 0) continue;
 			this.doF3CGroups[ownerIndex].push(this._doF3Viaible[z]);
 		}
+
+
+
+
 	}
 
 	//-------------------------------------------------------------------------------------

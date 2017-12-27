@@ -167,6 +167,8 @@ export class XDrawingProxyState {
 	public pointerY: number;
 
 
+	public leadsCodes: EcgLeadCode[];
+
 	public onScrollBs: BehaviorSubject<number>;
 	/** Last scroll movement delta. */
 	public movDelta: number;
@@ -215,6 +217,7 @@ export class XDrawingProxyState {
 	//-------------------------------------------------------------------------------------------------
 	constructor() {
 		this.devMode = true;
+		this.leadsCodes = [];
 		this.onScrollBs = new BehaviorSubject(NaN);
 		this.timestamp = Date.now();            // drawing proxy state creation time
 		this.scale = 1;                         // default scale = 1   
@@ -255,6 +258,8 @@ export class XDrawingProxyState {
 		let cellContainer: XRectangle;
 		cellLeft = this.container.left;
 		let ci: number; // column indx
+		this.leadsCodes = leads; // show all leads
+		// TODO: merge leads & grid schema
 		this.gridCells = new Array(leads.length);
 		for (z = 0, cellTop = this.container.top, ci = 0; z < leads.length; z++ , ci++) {
 			for (y = 0; y < rwCount; y++ , z++) {

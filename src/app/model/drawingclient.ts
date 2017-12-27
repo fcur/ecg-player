@@ -11,14 +11,16 @@ import {
 	EcgAnnotationCode, EcgLeadCode, EcgRecord
 } from "./ecgdata"
 import {
-	DrawingData, RecordDrawingData,
-	RecordProjection
+	DrawingData, RecordDrawingData, RecordProjection
 } from "./drawingdata";
-import { XDrawingProxyState } from "./misc";
 import {
-	XDrawingPrimitive, XDrawingPrimitiveState,
-	XLabel, XPeak, XPoint, XLine, XRectangle,
-	XPolyline
+	XDrawingChange, XDrawingChangeSender, XDrawingCoordinates,
+	XDrawingProxyState, XCanvasTool, XDrawingCell,
+	XDrawingGridMode
+} from "./misc";
+import {
+	XDrawingPrimitive, XDrawingPrimitiveState, XLabel, XPeak,
+	XPoint, XLine, XRectangle, XPolyline
 } from "./geometry";
 
 // -------------------------------------------------------------------------------------------------
@@ -57,6 +59,9 @@ export interface IDrawingClient {
 	drawObjectsF3: Function;
 	/** Prepare drawing objects. */
 	prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
+	/** Draw client drawing objects. */
+	render(obj: IDrawingObject[], st: XDrawingProxyState, ct: XCanvasTool);
+
 }
 
 
@@ -92,6 +97,10 @@ export class XDrawingClient implements IDrawingClient {
 		return [];
 	}
 
+	/** Draw client drawing objects. */
+	public render(obj: IDrawingObject[], st: XDrawingProxyState, ct: XCanvasTool) {
+
+	}
 }
 
 // -------------------------------------------------------------------------------------------------
