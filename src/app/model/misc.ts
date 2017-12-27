@@ -4,7 +4,7 @@ import {
 } from "./ecgdata";
 import {
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	BeatsDrawingObject, IDrawingObject
+	BeatsRangeDrawingObject, IDrawingObject
 } from "./drawingobject";
 import {
 	XDrawingClient, XDrawingMode, AnsDrawingClient,
@@ -116,7 +116,7 @@ export class XDrawingCell {
 
 }
 
-
+import { Subscription, BehaviorSubject } from "rxjs";
 // -------------------------------------------------------------------------------------------------
 // Drawing proxy state
 // -------------------------------------------------------------------------------------------------
@@ -133,7 +133,7 @@ export class XDrawingProxyState {
 	/** Scale coefficient 1X1. */
 	public scale: number = 1;
 	/** Absolute surfce left offset in pixels. */
-	public skipPx: number;
+	private _skipPx: number;
 	/** Absolute surfce width in pixels. */
 	public limitPx: number;
 
@@ -167,24 +167,58 @@ export class XDrawingProxyState {
 	public pointerY: number;
 
 
+	public leadsCodes: EcgLeadCode[];
+
+	public onScrollBs: BehaviorSubject<number>;
+	/** Last scroll movement delta. */
+	public movDelta: number;
+
+	// TODO: add surface dimentions getter
+
+
 	//-------------------------------------------------------------------------------------------------
-	public set scroll(delta: number) {
-		this.skipPx = Math.max(Math.floor(this.skipPx + delta), 0);
+	public get onLeftEdge(): boolean {
+		return this._skipPx === 0;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public get onRightEdge(): boolean {
+		return false;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public scroll(delta: number) {
+		if (!Number.isInteger(delta)) return;
+		this.movDelta = delta;
+		this._skipPx = Math.max(Math.floor(this._skipPx - delta), 0);
+		if (!Number.isInteger(this.onScrollBs.value) || this._skipPx != this.onScrollBs.value)
+			this.onScrollBs.next(this._skipPx);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public get minPx(): number {
-		return this.skipPx;
+		return this._skipPx;
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	public get maxPx(): number {
-		return this.skipPx + this.limitPx;
+		return this._skipPx + this.limitPx;
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	public get skipPx(): number {
+		return this._skipPx;
+	}
+
+	//public set skipPx(v: number) {
+
+	//}
 
 	//-------------------------------------------------------------------------------------------------
 	constructor() {
 		this.devMode = true;
+		this.leadsCodes = [];
+		this.onScrollBs = new BehaviorSubject(NaN);
 		this.timestamp = Date.now();            // drawing proxy state creation time
 		this.scale = 1;                         // default scale = 1   
 		this.apxmm = 3;                         // for default dpi
@@ -192,7 +226,7 @@ export class XDrawingProxyState {
 		this.signalMicrovoltsClip = 5000;       // from settings
 		this.maxSample = 32767;                 // from input signal
 		this.gridCells = [];
-		this.skipPx = 0;
+		this._skipPx = 0;
 		this.limitPx = 0;
 		this.signalSamplesClip = Math.floor(this.maxSample * this.signalMicrovoltsClip / this.signalScale);
 		this.gridMode = XDrawingGridMode.EMPTY;
@@ -224,6 +258,8 @@ export class XDrawingProxyState {
 		let cellContainer: XRectangle;
 		cellLeft = this.container.left;
 		let ci: number; // column indx
+		this.leadsCodes = leads; // show all leads
+		// TODO: merge leads & grid schema
 		this.gridCells = new Array(leads.length);
 		for (z = 0, cellTop = this.container.top, ci = 0; z < leads.length; z++ , ci++) {
 			for (y = 0; y < rwCount; y++ , z++) {

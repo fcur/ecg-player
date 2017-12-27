@@ -15,19 +15,19 @@ export enum XDrawingPrimitiveState {
 export class XDrawingPrimitive {
 	zindex: number;
 	state: XDrawingPrimitiveState;
-	floatingX: boolean;
-	floatingY: boolean;
+	//floatingX: boolean;
+	//floatingY: boolean;
 
 	//-------------------------------------------------------------------------------------
-	public get floating(): boolean {
-		return this.floatingX || this.floatingY;
-	}
+	//public get floating(): boolean {
+	//	return this.floatingX || this.floatingY;
+	//}
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		this.zindex = 0;
-		this.floatingX = false;
-		this.floatingY = false;
+		//this.floatingX = false;
+		//this.floatingY = false;
 		this.state = XDrawingPrimitiveState.Default;
 	}
 
@@ -108,8 +108,8 @@ export class XRectangle extends XDrawingPrimitive {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public resetStart(){
-		this._l=0;
+	public resetStart() {
+		this._l = 0;
 		this._t = 0;
 	}
 
