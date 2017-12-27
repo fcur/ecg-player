@@ -649,29 +649,42 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private drawBeatsRangesObjectsF3(objs: BeatsRangeDrawingObject[]) {
-		//console.log("drawBeatsRangesObjectsF3", objs.length);
-		//let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
-		//let state: XDrawingProxyState = this._dp.state;
-		//// cell index = drawing object index
-		//this._ct.ctx.save();
-		//this._ct.ctx.beginPath();
-		//let points: XPoint[];
-		//let shift: number = 0;
-		//for (z = 0; z < state.gridCells.length; z++) {
-		//	points = objs[z].points;
-		//	for (y = 0; y < points.length; y++) {
-		//		left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
-		//		dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel); // microvolts to pixels
-		//		top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
-		//		this._ct.ctx.moveTo(left + 0.5, top + 0.5);
-		//		this._ct.ctx.arc(left + 0.5, top + 0.5, this._beatsF2Client.radius, 0, 2 * Math.PI, false);
-		//	}
-		//}
-		//this._ct.ctx.fillStyle = this._beatsF2Client.color;
-		//this._ct.ctx.globalAlpha = this._beatsF2Client.opacity;
-		//this._ct.ctx.fill();
-		//this._ct.ctx.closePath();
-		//this._ct.ctx.restore();
+		this._ct.ctx.save();
+		// draw beat ranges: drawObj.container for all channels
+		// draw beat peaks: drawObj.points for each channel
+		let z: number, y: number, x: number, w: number, left: number, top: number, dy: number;
+		let state: XDrawingProxyState = this._dp.state;
+		let beatRange: BeatsRangeDrawingObject;
+
+		// draw beats
+		this._ct.ctx.beginPath();
+		let points: XPoint[];
+		let point: XPoint;
+		let shift: number = 10;
+		let cell: XDrawingCell;
+
+		for (y = 0; y < objs.length; y++) {
+			beatRange = objs[y];
+
+			for (x = 0; x < beatRange.leadCodes.length; x++) {
+				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
+				if (w < 0) continue;
+				cell = state.gridCells[w];
+
+				point = beatRange.points[x];
+				left = cell.container.left + point.left + beatRange.container.left + 0.5 - state.minPx;
+				dy = Math.floor(point.top * cell.microvoltsToPixel);
+				top = dy + cell.container.midOy + 0.5 + shift;
+				this._ct.ctx.moveTo(left, top);
+				this._ct.ctx.arc(left, top, this._beatsClient.radius * 2, 0, 2 * Math.PI, false);
+			}
+		}
+		this._ct.ctx.fillStyle = this._beatsClient.colorF3;
+		this._ct.ctx.globalAlpha = this._beatsClient.opacity;
+		this._ct.ctx.fill();
+		this._ct.ctx.closePath();
+		//
+		this._ct.ctx.restore();
 	}
 
 	//-------------------------------------------------------------------------------------

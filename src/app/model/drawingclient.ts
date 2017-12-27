@@ -162,7 +162,12 @@ export class BeatsDrawingClient extends XDrawingClient {
 
 	radius: number;
 	color: string;
+	colorF3: string;
 	opacity: number;
+
+	backgroundColor1: string;
+	backgroundColor2: string;
+	backgroundOpacity: number;
 
 	/** Minimum milliseconds count between two records */
 	recordsThreshold: number;
@@ -174,6 +179,10 @@ export class BeatsDrawingClient extends XDrawingClient {
 		super();
 		this.radius = 2;
 		this.color = "orange";
+		this.colorF3 = "#00f8cd";
+		this.backgroundOpacity = 0.5;
+		this.backgroundColor1 = "#00f8cd";
+		this.backgroundColor2 = "#ff71e3";
 		this.recordsThreshold = 0;
 		this.recordSpace = 10;
 		this.layoutSpace = 30;
@@ -268,7 +277,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 		let recLeftPos: number = 0;
 		/** Last record milliseconds end value. */
 		let lastRecMs: number = 0;
-
+		
 		for (let recId in headObjs) {
 			if (!headObjs.hasOwnProperty(recId)) continue;
 			recProj = headObjs[recId];
@@ -310,6 +319,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 				}
 				// do not use container [height] and [top position]
 				drawObj.container = new XRectangle(recLeftPos + prewBeatLeft, 0, nextBeatLeft - prewBeatLeft, 0);
+				drawObj.index = results.length;
 				results.push(drawObj);
 			}
 			lastRecMs = recProj.endMs;
