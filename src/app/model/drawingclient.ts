@@ -277,7 +277,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 		let recLeftPos: number = 0;
 		/** Last record milliseconds end value. */
 		let lastRecMs: number = 0;
-		
+
 		for (let recId in headObjs) {
 			if (!headObjs.hasOwnProperty(recId)) continue;
 			recProj = headObjs[recId];
@@ -318,7 +318,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 					nextBeatLeft = curBeatLeft;
 				}
 				// do not use container [height] and [top position]
-				drawObj.container = new XRectangle(recLeftPos + prewBeatLeft, 0, nextBeatLeft - prewBeatLeft, 0);
+				drawObj.container = new XRectangle(recLeftPos + Math.floor(curBeatLeft - (curBeatLeft - prewBeatLeft) / 2), 0, Math.floor((nextBeatLeft - prewBeatLeft) / 2), 0);
 				drawObj.index = results.length;
 				results.push(drawObj);
 			}

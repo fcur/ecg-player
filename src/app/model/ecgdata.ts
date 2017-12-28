@@ -222,6 +222,7 @@ export class EcgParser {
 		}
 		if (input.hasOwnProperty(EcgParser.BEATS_KEY)) {
 			ecgrecord.beats = input[EcgParser.BEATS_KEY] as number[];
+			//console.info("beats:", ecgrecord.beats);
 		} else {
 			ecgrecord.beats = [];
 		}

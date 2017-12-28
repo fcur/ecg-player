@@ -369,6 +369,7 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private onReceiveDrawingObjects(p: IDrawingObject[][]) {
 		this._ct.clear();
+		this.renderVisibleGroupF3();
 		// z: client index
 		for (let z: number = 0; z < this._dp.drawingClients.length; z++) {
 			if (this._dp.drawingClients[z].drawObjects && Array.isArray(p[z])) {
@@ -382,8 +383,7 @@ export class DrawableComponent implements OnInit {
 		}
 		p = null; // release refferences
 		this._dp.objectsF2 = null;
-
-		this.renderVisibleGroupF3();
+		this.drawCursotPosition();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -587,8 +587,12 @@ export class DrawableComponent implements OnInit {
 	private drawBeatsObjectsF2(objs: BeatsRangeDrawingObject[]) {
 		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
 		let state: XDrawingProxyState = this._dp.state;
+		let textSize: number = 10;
 		// cell index = drawing object index
 		this._ct.ctx.save();
+		this._ct.ctx.font = `${textSize}px Roboto`;
+		this._ct.ctx.textBaseline = "middle";
+		this._ct.ctx.textAlign = "center";
 		this._ct.ctx.beginPath();
 		let points: XPoint[];
 		let shift: number = 0;
@@ -600,6 +604,7 @@ export class DrawableComponent implements OnInit {
 				top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
 				this._ct.ctx.moveTo(left + 0.5, top + 0.5);
 				this._ct.ctx.arc(left + 0.5, top + 0.5, this._beatsClient.radius, 0, 2 * Math.PI, false);
+				this._ct.ctx.fillText(points[y].left.toString(), left, top + textSize);
 			}
 		}
 		this._ct.ctx.fillStyle = this._beatsClient.color;
@@ -618,11 +623,11 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.globalAlpha = this._fpointClient.opacity;
 		// pointer line
 		this._ct.ctx.beginPath();
-		left = state.container.left + obj.lines[0].ax;
-		top = state.container.top + obj.lines[0].ay;
-		this._ct.ctx.moveTo(left + 0.5, top + 0.5);
-		top = state.container.top + obj.lines[0].by;
-		this._ct.ctx.lineTo(left + 0.5, top + 0.5);
+		left = state.container.left + obj.lines[0].ax + 0.5;
+		top = state.container.top + obj.lines[0].ay + 0.5;
+		this._ct.ctx.moveTo(left, top);
+		top = state.container.top + obj.lines[0].by + 0.5;
+		this._ct.ctx.lineTo(left, top);
 		this._ct.ctx.strokeStyle = this._fpointClient.lineColor;
 		this._ct.ctx.stroke();
 		this._ct.ctx.closePath();
@@ -635,11 +640,37 @@ export class DrawableComponent implements OnInit {
 			left = state.container.left + obj.points[z].left + 0.5;
 			dy = Math.floor(obj.points[z].top * state.gridCells[z].microvoltsToPixel);
 			top = dy + state.gridCells[z].container.midOy + testShift + 0.5;
-			this._ct.ctx.moveTo(left + 0.5, top + 0.5);
-			this._ct.ctx.arc(left + 0.5, top + 0.5, this._fpointClient.pointRadius, 0, 2 * Math.PI, false);
+			this._ct.ctx.moveTo(left, top);
+			this._ct.ctx.arc(left, top, this._fpointClient.pointRadius, 0, 2 * Math.PI, false);
 		}
 		this._ct.ctx.fill();
 		this._ct.ctx.closePath();
+		this._ct.ctx.restore();
+	}
+
+	//-------------------------------------------------------------------------------------
+	private drawCursotPosition() {
+		let left: number,
+			top: number,
+			text: string;
+		let textSize: number = 12;
+		this._ct.ctx.save();
+		this._ct.ctx.beginPath();
+		this._ct.ctx.fillStyle = "pink";
+		left = this._dp.state.container.left + this._dp.state.pointerX + 0.5;
+		top = this._dp.state.container.left + this._dp.state.pointerY + 0.5;
+		this._ct.ctx.moveTo(left, top);
+		this._ct.ctx.arc(left, top, 3, 0, 2 * Math.PI, false);
+		this._ct.ctx.fill();
+		this._ct.ctx.closePath();
+
+		this._ct.ctx.fillStyle = "#111";
+		this._ct.ctx.font = `${textSize}px Roboto`;
+		this._ct.ctx.textBaseline = "bottom";
+		this._ct.ctx.textAlign = "left";
+
+		text = `${this._dp.state.pointerX},${this._dp.state.pointerY}`;
+		this._ct.ctx.fillText(text, left, top);
 
 		this._ct.ctx.restore();
 	}
@@ -652,15 +683,27 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.save();
 		// draw beat ranges: drawObj.container for all channels
 		// draw beat peaks: drawObj.points for each channel
-		let z: number, y: number, x: number, w: number, left: number, top: number, dy: number;
+		let z: number,
+			y: number,
+			x: number,
+			w: number,
+			left: number,
+			top: number,
+			dx: number,
+			dy: number;
 		let state: XDrawingProxyState = this._dp.state;
 		let beatRange: BeatsRangeDrawingObject;
+		let textSize: number = 10;
+
+		this._ct.ctx.font = `${textSize}px Roboto`;
+		this._ct.ctx.textBaseline = "middle";
+		this._ct.ctx.textAlign = "center";
 
 		// draw beats
 		this._ct.ctx.beginPath();
 		let points: XPoint[];
 		let point: XPoint;
-		let shift: number = 10;
+		let shift: number = 20;
 		let cell: XDrawingCell;
 
 		for (y = 0; y < objs.length; y++) {
@@ -672,12 +715,26 @@ export class DrawableComponent implements OnInit {
 				cell = state.gridCells[w];
 
 				point = beatRange.points[x];
-				left = cell.container.left + point.left + beatRange.container.left + 0.5 - state.minPx;
+				dx = point.left - state.minPx;
 				dy = Math.floor(point.top * cell.microvoltsToPixel);
+				left = cell.container.left + dx + 0.5;
 				top = dy + cell.container.midOy + 0.5 + shift;
 				this._ct.ctx.moveTo(left, top);
-				this._ct.ctx.arc(left, top, this._beatsClient.radius * 2, 0, 2 * Math.PI, false);
+				this._ct.ctx.arc(left, top, this._beatsClient.radius, 0, 2 * Math.PI, false);
+				this._ct.ctx.fillText(`${point.left}`, left, top + textSize);
+
+				
 			}
+
+			if (point) {
+				top = state.container.maxOy - textSize;
+				
+				this._ct.ctx.fillText(`${beatRange.container.minOx}-${beatRange.container.maxOx}`, left, top);
+
+			}
+
+			
+
 		}
 		this._ct.ctx.fillStyle = this._beatsClient.colorF3;
 		this._ct.ctx.globalAlpha = this._beatsClient.opacity;
@@ -725,7 +782,7 @@ export class DrawableComponent implements OnInit {
 			top: number,
 			textWidth: number;
 		this._ct.ctx.save();
-		this._ct.ctx.fillStyle = "#ccc";
+		this._ct.ctx.fillStyle = "#111";
 		this._ct.ctx.font = `${textSize}px Roboto`;
 		this._ct.ctx.textBaseline = "middle";
 		this._ct.ctx.textAlign = "center";
@@ -744,7 +801,7 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.fillText(text, left, top);
 
 		// size
-		text = `${Math.floor(this._ct.width)}X${Math.floor(this._ct.height)}, W=${this._dp.state.limitPx}, H=${this._dp.state.signalScale}`;
+		text = `${Math.floor(this._ct.width)}X${Math.floor(this._ct.height)}  W=${this._dp.state.limitPx}  H=${this._dp.state.signalScale}`;
 		textWidth = this._ct.ctx.measureText(text).width;
 		left = this._ct.width / 2;
 		top = this._ct.height - textSize;
