@@ -180,9 +180,9 @@ export class BeatsDrawingClient extends XDrawingClient {
 		this.radius = 2;
 		this.color = "orange";
 		this.colorF3 = "#00f8cd";
-		this.backgroundOpacity = 0.5;
-		this.backgroundColor1 = "#00f8cd";
-		this.backgroundColor2 = "#ff71e3";
+		this.backgroundOpacity = 0.15;
+		this.backgroundColor1 = "#00355d";
+		this.backgroundColor2 = "#485400";
 		this.recordsThreshold = 0;
 		this.recordSpace = 10;
 		this.layoutSpace = 30;
