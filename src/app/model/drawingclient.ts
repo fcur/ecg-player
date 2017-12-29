@@ -1,10 +1,12 @@
 
 import {
+	WavepointDrawingObject, CursorDrawingObject,
 	FPointDrawingObject, GridCellDrawingObject,
 	ClPointDrawingObject, CellDrawingObject,
-	XDrawingObjectType, AnsDrawingObject,
 	BeatsRangeDrawingObject, IDrawingObject,
-	XDrawingObject, SignalDrawingObject
+	XDrawingObjectType, AnsDrawingObject,
+	XDrawingObject, SignalDrawingObject,
+	PeakDrawingObject, WaveDrawingObject
 } from "./drawingobject";
 import {
 	EcgWavePoint, EcgWavePointType, EcgAnnotation, EcgSignal,
@@ -743,6 +745,55 @@ export class FPointDrawingClient extends XDrawingClient {
 	//-------------------------------------------------------------------------------------
 	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): FPointDrawingObject[] {
 		console.info("FPointDrawingClient.prepareAllDrawings", "not implemented");
+		return [];
+	}
+}
+
+
+// -------------------------------------------------------------------------------------------------
+// Floating cursor drawing client
+// -------------------------------------------------------------------------------------------------
+export class CursorClient extends XDrawingClient {
+
+	//-------------------------------------------------------------------------------------
+	constructor() {
+		super();
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): CursorDrawingObject[] {
+		return [];
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): CursorDrawingObject[] {
+		return [];
+	}
+}
+
+
+// -------------------------------------------------------------------------------------------------
+// Wavepoint drawing client
+// -------------------------------------------------------------------------------------------------
+export class WavepointClient extends XDrawingClient {
+
+
+	//-------------------------------------------------------------------------------------
+	constructor() {
+		super();
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): WavepointDrawingObject[] {
+		return [];
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): WavepointDrawingObject[] {
 		return [];
 	}
 }

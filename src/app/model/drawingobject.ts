@@ -62,14 +62,15 @@ export interface IDrawingObject {
 export class XDrawingObject implements IDrawingObject {
 	/** REDUNDANT Object index. */
 	public index: number;
+	/** REDUNDANT Drawing object assigned cell index. */
+	public cellIndex: number;
+
 	/** Object owner. */
 	public owner: XDrawingClient;
 	/** Object type. */
 	public type: XDrawingObjectType;
 	/** Container of drawing object (required). */
 	public container: XRectangle;
-	/** REDUNDANT Drawing object assigned cell index. */
-	public cellIndex: number;
 	/** Visiblity of drawing object. */
 	public hidden: boolean;
 
@@ -447,4 +448,33 @@ export class GridCellDrawingObject extends XDrawingObject {
 	public leadLabel: string;
 }
 
+// -------------------------------------------------------------------------------------------------
+// Floating cursor
+// -------------------------------------------------------------------------------------------------
+export class CursorDrawingObject extends XDrawingObject {
 
+
+}
+
+// -------------------------------------------------------------------------------------------------
+// Wavepoint base drawing object
+// -------------------------------------------------------------------------------------------------
+export class WavepointDrawingObject extends XDrawingObject {
+
+
+}
+
+// -------------------------------------------------------------------------------------------------
+// Wavepoint wave drawing object
+// -------------------------------------------------------------------------------------------------
+export class WaveDrawingObject extends WavepointDrawingObject {
+
+}
+
+
+// -------------------------------------------------------------------------------------------------
+// Wavepoint peak drawing object
+// -------------------------------------------------------------------------------------------------
+export class PeakDrawingObject extends WavepointDrawingObject {
+
+}

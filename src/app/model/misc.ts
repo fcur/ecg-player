@@ -1,14 +1,20 @@
 import {
 	EcgLeadCode, EcgWavePoint, EcgAnnotation, EcgAnnotationCode,
-	EcgRecord, EcgSignal, EcgWavePointType
+	EcgRecord, EcgSignal, EcgWavePointType, EcgParser
 } from "./ecgdata";
 import {
+	SignalDrawingObject, WaveDrawingObject, WavepointDrawingObject,
+	FPointDrawingObject, GridCellDrawingObject, PeakDrawingObject,
+	CellDrawingObject, ClPointDrawingObject, CursorDrawingObject,
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
 	BeatsRangeDrawingObject, IDrawingObject
 } from "./drawingobject";
 import {
+	BeatsDrawingClient, IDrawingClient, ClickablePointDrawingClient,
+	CursorClient, FPointDrawingClient, GridCellDrawingClient,
 	XDrawingClient, XDrawingMode, AnsDrawingClient,
-	BeatsDrawingClient, IDrawingClient
+	SignalDrawingClient, WavepointClient,
+	CellDrawingClient
 } from "./drawingclient";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState,

@@ -4,11 +4,17 @@ import {
 	BeatsDrawingClient, IDrawingClient, SignalDrawingClient,
 	XDrawingClient, XDrawingMode, AnsDrawingClient,
 	CellDrawingClient, ClickablePointDrawingClient,
-	FPointDrawingClient, GridCellDrawingClient
+	FPointDrawingClient, GridCellDrawingClient, CursorClient,
+	WavepointClient
 } from "./drawingclient";
 import {
-	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	BeatsRangeDrawingObject, IDrawingObject
+	FPointDrawingObject, GridCellDrawingObject,
+	ClPointDrawingObject, CellDrawingObject,
+	XDrawingObjectType, AnsDrawingObject,
+	BeatsRangeDrawingObject, IDrawingObject,
+	XDrawingObject, SignalDrawingObject,
+	WavepointDrawingObject, CursorDrawingObject,
+	PeakDrawingObject, WaveDrawingObject
 } from "./drawingobject";
 import { DrawingData } from "./drawingdata";
 import {
@@ -30,7 +36,7 @@ export class XDrawingProxy {
 	//public onChangeState: EventEmitter<XDrawingChange>;
 	public onPrepareDrawings: EventEmitter<IDrawingObject[][]>;
 	//public drawingObjects: IDrawingObject[];
-	private _clientsF2: IDrawingClient[]; // F2, F3
+	private _clients: IDrawingClient[]; // F2, F3
 	public objectsF2: IDrawingObject[][];
 
 	// feature3
@@ -203,16 +209,16 @@ export class XDrawingProxy {
 
 	//-------------------------------------------------------------------------------------
 	public get drawingClients(): IDrawingClient[] {
-		if (!this._clientsF2) return [];
-		return this._clientsF2;
+		if (!this._clients) return [];
+		return this._clients;
 	}
 
 	//-------------------------------------------------------------------------------------
 	public pushClients(...items: IDrawingClient[]) {
 		for (let z: number = 0; z < items.length; z++) {
-			this._clientsF2.push(items[z]);
+			this._clients.push(items[z]);
 		}
-		this.doF3CGroups = new Array(this._clientsF2.length);
+		this.doF3CGroups = new Array(this._clients.length);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -325,7 +331,7 @@ export class XDrawingProxy {
 	//-------------------------------------------------------------------------------------
 	private init() {
 		//this.drawingObjects = [];
-		this._clientsF2 = new Array();
+		this._clients = new Array();
 		this.doF3CGroups = new Array();
 		this.drawingData = new DrawingData();
 		this.state = new XDrawingProxyState();
@@ -355,8 +361,8 @@ export class XDrawingProxy {
 	//-------------------------------------------------------------------------------------
 	public prepareDrawingObjectsF2(): IDrawingObject[][] {
 		let data: IDrawingObject[][] = new Array();
-		for (let z: number = 0; z < this._clientsF2.length; z++) {
-			data[z] = this._clientsF2[z].prepareDrawings(this.drawingData, this.state);
+		for (let z: number = 0; z < this._clients.length; z++) {
+			data[z] = this._clients[z].prepareDrawings(this.drawingData, this.state);
 			//data = data.concat(this._clientsF2[z].prepareDrawings(this.drawingData, this.state));
 		}
 		return data;
@@ -408,7 +414,7 @@ export class XDrawingProxy {
 			if (doAllIndex < 0 || this._doF3All[doAllIndex].hidden != this._doF3Viaible[z].hidden) {
 				console.warn("scrollDrawObjGroupsF3");
 			}
-			ownerIndex = this._clientsF2.indexOf(this._doF3Viaible[z].owner);
+			ownerIndex = this._clients.indexOf(this._doF3Viaible[z].owner);
 			if (ownerIndex < 0) continue;
 			this.doF3CGroups[ownerIndex].push(this._doF3Viaible[z]);
 		}
@@ -462,9 +468,9 @@ export class XDrawingProxy {
 		// prepare list of drawing objects
 		this._doF3All = new Array();
 		let z: number, y: number;
-		for (z = 0; z < this._clientsF2.length; z++) {
+		for (z = 0; z < this._clients.length; z++) {
 			//data = this._clientsF2[z].prepareDrawings(this.drawingData, this.state);
-			data = this._clientsF2[z].prepareAllDrawings(this.drawingData, this.state);
+			data = this._clients[z].prepareAllDrawings(this.drawingData, this.state);
 			for (y = 0; y < data.length; y++) {
 				this._doF3All.push(data[y]);
 			}

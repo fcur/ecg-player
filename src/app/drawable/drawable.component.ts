@@ -17,13 +17,15 @@ import {
 	XDrawingClient, XDrawingMode, IDrawingClient,
 	SignalDrawingClient, CellDrawingClient,
 	AnsDrawingClient, BeatsDrawingClient,
-	GridCellDrawingClient
+	GridCellDrawingClient, CursorClient,
+	WavepointClient
 } from "../model/drawingclient";
 import {
-	CellDrawingObject, SignalDrawingObject, FPointDrawingObject,
 	BeatsRangeDrawingObject, IDrawingObject, ClPointDrawingObject,
+	GridCellDrawingObject, CursorDrawingObject, PeakDrawingObject,
+	CellDrawingObject, SignalDrawingObject, FPointDrawingObject,
 	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	GridCellDrawingObject
+	WaveDrawingObject, WavepointDrawingObject
 } from "../model/drawingobject";
 import {
 	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType,
@@ -452,48 +454,48 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private drawGridObjectsF2(objs: GridCellDrawingObject[]) {
 		//console.log("drawGridObjectsF2");
-		let state: XDrawingProxyState = this._dp.state;
-		let textSize: number = 15;
-		let z: number,
-			y: number,
-			x: number,
-			top: number,
-			left: number,
-			point: XPoint;
-		this._ct.ctx.save();
-		this._ct.ctx.fillStyle = this._gridClient.color;
-		this._ct.ctx.textBaseline = "middle";
-		this._ct.ctx.textAlign = "center";
-		this._ct.ctx.font = `${textSize}px Roboto`;
+		//let state: XDrawingProxyState = this._dp.state;
+		//let textSize: number = 15;
+		//let z: number,
+		//	y: number,
+		//	x: number,
+		//	top: number,
+		//	left: number,
+		//	point: XPoint;
+		//this._ct.ctx.save();
+		//this._ct.ctx.fillStyle = this._gridClient.color;
+		//this._ct.ctx.textBaseline = "middle";
+		//this._ct.ctx.textAlign = "center";
+		//this._ct.ctx.font = `${textSize}px Roboto`;
 
-		// print borders
-		this._ct.ctx.beginPath();
-		for (z = 0; z < objs.length; z++) {
-			// print lead
-			left = objs[z].container.midOx;
-			top = objs[z].container.top + textSize / 2 + 1;
-			this._ct.ctx.fillText(objs[z].leadLabel, left, top);
+		//// print borders
+		//this._ct.ctx.beginPath();
+		//for (z = 0; z < objs.length; z++) {
+		//	// print lead
+		//	left = objs[z].container.midOx;
+		//	top = objs[z].container.top + textSize / 2 + 1;
+		//	this._ct.ctx.fillText(objs[z].leadLabel, left, top);
 
-			for (y = 0; y < objs[z].polylines.length; y++) {
-				x = 0;
-				point = objs[z].polylines[y].points[x++];
-				left = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left + 0.5;
-				top = point.top + objs[z].container.top + 0.5;
-				this._ct.ctx.moveTo(left, top);
-				for (; x < objs[z].polylines[y].points.length; x++) {
-					point = objs[z].polylines[y].points[x];
-					left = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left + 0.5;
-					top = point.top + objs[z].container.top + 0.5;
-					this._ct.ctx.lineTo(left, top);
-				}
-			}
-		}
-		this._ct.ctx.strokeStyle = this._gridClient.color;
-		this._ct.ctx.globalAlpha = this._gridClient.opacity;
-		this._ct.ctx.lineJoin = this._gridClient.lineJoin;
-		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
-		this._ct.ctx.restore();
+		//	for (y = 0; y < objs[z].polylines.length; y++) {
+		//		x = 0;
+		//		point = objs[z].polylines[y].points[x++];
+		//		left = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left + 0.5;
+		//		top = point.top + objs[z].container.top + 0.5;
+		//		this._ct.ctx.moveTo(left, top);
+		//		for (; x < objs[z].polylines[y].points.length; x++) {
+		//			point = objs[z].polylines[y].points[x];
+		//			left = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left + 0.5;
+		//			top = point.top + objs[z].container.top + 0.5;
+		//			this._ct.ctx.lineTo(left, top);
+		//		}
+		//	}
+		//}
+		//this._ct.ctx.strokeStyle = this._gridClient.color;
+		//this._ct.ctx.globalAlpha = this._gridClient.opacity;
+		//this._ct.ctx.lineJoin = this._gridClient.lineJoin;
+		//this._ct.ctx.stroke();
+		//this._ct.ctx.closePath();
+		//this._ct.ctx.restore();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -698,6 +700,8 @@ export class DrawableComponent implements OnInit {
 		let shift: number = 0;
 		let textSize: number = 10;
 		let state: XDrawingProxyState = this._dp.state;
+		let printText: boolean;
+
 
 		// fill beat background
 		this._ct.ctx.font = `${textSize}px Roboto`;
@@ -708,8 +712,9 @@ export class DrawableComponent implements OnInit {
 			beatRange = objs[y];
 
 			if (beatRange.container.minOx - state.minPx < 0 ||
-				beatRange.container.maxOx - state.maxPx > 0) continue;
-
+				beatRange.container.maxOx - state.maxPx > 0) {
+				continue;
+			}
 			for (x = 0; x < beatRange.leadCodes.length; x++) {
 				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
 				if (w < 0) continue;
@@ -736,6 +741,9 @@ export class DrawableComponent implements OnInit {
 		for (y = 0; y < objs.length; y++) {
 			beatRange = objs[y];
 
+			printText = !(beatRange.container.minOx - state.minPx < 0 ||
+				beatRange.container.maxOx - state.maxPx > 0);
+
 			for (x = 0; x < beatRange.leadCodes.length; x++) {
 				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
 				if (w < 0) continue;
@@ -750,10 +758,12 @@ export class DrawableComponent implements OnInit {
 				top = dy + cell.container.midOy + 0.5 + shift;
 				this._ct.ctx.moveTo(left, top);
 				this._ct.ctx.arc(left, top, this._beatsClient.radius, 0, 2 * Math.PI, false);
-				this._ct.ctx.fillText(`${point.left}`, left, top + textSize);
+				if (printText) {
+					this._ct.ctx.fillText(`${point.left}`, left, top + textSize);
+				}
 			}
 
-			if (point) {
+			if (point && printText) {
 				// print beat range info
 				top = state.container.maxOy - textSize;
 				this._ct.ctx.fillText(`${beatRange.container.minOx}-${beatRange.container.maxOx}`, left, top);
@@ -771,31 +781,31 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private drawGridObjectsF3(objs: GridCellDrawingObject[]) {
 		//console.log("drawGridObjectsF3", objs.length);
-		//let state: XDrawingProxyState = this._dp.state;
-		//let z: number = 0, y: number = 0, x: number = 0, point: XPoint, l: number, t: number;
-		//this._ct.ctx.save();
-		//this._ct.ctx.beginPath();
-		//for (z = 0; z < objs.length; z++) {
-		//	for (y = 0; y < objs[z].polylines.length; y++) {
-		//		x = 0;
-		//		point = objs[z].polylines[y].points[x++];
-		//		l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
-		//		t = point.top;
-		//		this._ct.ctx.moveTo(l + 0.5, t + 0.5);
-		//		for (; x < objs[z].polylines[y].points.length; x++) {
-		//			point = objs[z].polylines[y].points[x];
-		//			l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
-		//			t = point.top;
-		//			this._ct.ctx.lineTo(l + 0.5, t + 0.5);
-		//		}
-		//	}
-		//}
-		//this._ct.ctx.strokeStyle = this._gridF2Client.color;
-		//this._ct.ctx.globalAlpha = this._gridF2Client.opacity;
-		//this._ct.ctx.lineJoin = this._gridF2Client.lineJoin;
-		//this._ct.ctx.stroke();
-		//this._ct.ctx.closePath();
-		//this._ct.ctx.restore();
+		let state: XDrawingProxyState = this._dp.state;
+		let z: number = 0, y: number = 0, x: number = 0, point: XPoint, l: number, t: number;
+		this._ct.ctx.save();
+		this._ct.ctx.beginPath();
+		for (z = 0; z < objs.length; z++) {
+			for (y = 0; y < objs[z].polylines.length; y++) {
+				x = 0;
+				point = objs[z].polylines[y].points[x++];
+				l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
+				t = point.top;
+				this._ct.ctx.moveTo(l + 0.5, t + 0.5);
+				for (; x < objs[z].polylines[y].points.length; x++) {
+					point = objs[z].polylines[y].points[x];
+					l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
+					t = point.top;
+					this._ct.ctx.lineTo(l + 0.5, t + 0.5);
+				}
+			}
+		}
+		this._ct.ctx.strokeStyle = this._gridClient.color;
+		this._ct.ctx.globalAlpha = this._gridClient.opacity;
+		this._ct.ctx.lineJoin = this._gridClient.lineJoin;
+		this._ct.ctx.stroke();
+		this._ct.ctx.closePath();
+		this._ct.ctx.restore();
 	}
 
 	//-------------------------------------------------------------------------------------
