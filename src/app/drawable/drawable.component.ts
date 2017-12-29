@@ -585,33 +585,33 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private drawBeatsObjectsF2(objs: BeatsRangeDrawingObject[]) {
-		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
-		let state: XDrawingProxyState = this._dp.state;
-		let textSize: number = 10;
-		// cell index = drawing object index
-		this._ct.ctx.save();
-		this._ct.ctx.font = `${textSize}px Roboto`;
-		this._ct.ctx.textBaseline = "middle";
-		this._ct.ctx.textAlign = "center";
-		this._ct.ctx.beginPath();
-		let points: XPoint[];
-		let shift: number = 0;
-		for (z = 0; z < state.gridCells.length; z++) {
-			points = objs[z].points;
-			for (y = 0; y < points.length; y++) {
-				left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
-				dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel); // microvolts to pixels
-				top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
-				this._ct.ctx.moveTo(left + 0.5, top + 0.5);
-				this._ct.ctx.arc(left + 0.5, top + 0.5, this._beatsClient.radius, 0, 2 * Math.PI, false);
-				this._ct.ctx.fillText(points[y].left.toString(), left, top + textSize);
-			}
-		}
-		this._ct.ctx.fillStyle = this._beatsClient.color;
-		this._ct.ctx.globalAlpha = this._beatsClient.opacity;
-		this._ct.ctx.fill();
-		this._ct.ctx.closePath();
-		this._ct.ctx.restore();
+		//let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
+		//let state: XDrawingProxyState = this._dp.state;
+		//let textSize: number = 10;
+		//// cell index = drawing object index
+		//this._ct.ctx.save();
+		//this._ct.ctx.font = `${textSize}px Roboto`;
+		//this._ct.ctx.textBaseline = "middle";
+		//this._ct.ctx.textAlign = "center";
+		//this._ct.ctx.beginPath();
+		//let points: XPoint[];
+		//let shift: number = 0;
+		//for (z = 0; z < state.gridCells.length; z++) {
+		//	points = objs[z].points;
+		//	for (y = 0; y < points.length; y++) {
+		//		left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
+		//		dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel); // microvolts to pixels
+		//		top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
+		//		this._ct.ctx.moveTo(left + 0.5, top + 0.5);
+		//		this._ct.ctx.arc(left + 0.5, top + 0.5, this._beatsClient.radius, 0, 2 * Math.PI, false);
+		//		this._ct.ctx.fillText(points[y].left.toString(), left, top + textSize);
+		//	}
+		//}
+		//this._ct.ctx.fillStyle = this._beatsClient.color;
+		//this._ct.ctx.globalAlpha = this._beatsClient.opacity;
+		//this._ct.ctx.fill();
+		//this._ct.ctx.closePath();
+		//this._ct.ctx.restore();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -703,9 +703,11 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.beginPath();
 		let points: XPoint[];
 		let point: XPoint;
-		let shift: number = 20;
+		let shift: number = 0;
 		let cell: XDrawingCell;
 
+
+		this._ct.ctx.globalAlpha = 0.05;
 		for (y = 0; y < objs.length; y++) {
 			beatRange = objs[y];
 
@@ -713,6 +715,32 @@ export class DrawableComponent implements OnInit {
 				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
 				if (w < 0) continue;
 				cell = state.gridCells[w];
+				this._ct.ctx.fillStyle = beatRange.index % 2 == 0 ?
+					this._beatsClient.backgroundColor1 :
+					this._beatsClient.backgroundColor2;
+				this._ct.ctx.fillRect(
+					cell.container.left + beatRange.container.minOx - state.minPx,
+					cell.container.top,
+					beatRange.container.width,
+					cell.container.height
+				);
+			}
+		}
+
+
+		this._ct.ctx.globalAlpha = 1;
+		this._ct.ctx.fillStyle = "#111";
+		for (y = 0; y < objs.length; y++) {
+			beatRange = objs[y];
+			// fill beat background
+
+
+			for (x = 0; x < beatRange.leadCodes.length; x++) {
+				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
+				if (w < 0) continue;
+				cell = state.gridCells[w];
+
+
 
 				point = beatRange.points[x];
 				dx = point.left - state.minPx;
@@ -723,20 +751,19 @@ export class DrawableComponent implements OnInit {
 				this._ct.ctx.arc(left, top, this._beatsClient.radius, 0, 2 * Math.PI, false);
 				this._ct.ctx.fillText(`${point.left}`, left, top + textSize);
 
-				
+
 			}
 
 			if (point) {
+				// print beat range info
 				top = state.container.maxOy - textSize;
-				
 				this._ct.ctx.fillText(`${beatRange.container.minOx}-${beatRange.container.maxOx}`, left, top);
-
 			}
 
-			
+
 
 		}
-		this._ct.ctx.fillStyle = this._beatsClient.colorF3;
+		this._ct.ctx.fillStyle = this._beatsClient.color;
 		this._ct.ctx.globalAlpha = this._beatsClient.opacity;
 		this._ct.ctx.fill();
 		this._ct.ctx.closePath();

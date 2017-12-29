@@ -265,6 +265,8 @@ export class BeatsDrawingClient extends XDrawingClient {
 			nextBeatLeft: number,
 			curBeatLeft: number,
 			beatsCount: number,
+			left: number,
+			width: number,
 			y: number,
 			z: number;
 
@@ -318,7 +320,9 @@ export class BeatsDrawingClient extends XDrawingClient {
 					nextBeatLeft = curBeatLeft;
 				}
 				// do not use container [height] and [top position]
-				drawObj.container = new XRectangle(recLeftPos + Math.floor(curBeatLeft - (curBeatLeft - prewBeatLeft) / 2), 0, Math.floor((nextBeatLeft - prewBeatLeft) / 2), 0);
+				left = recLeftPos + Math.floor(curBeatLeft - (curBeatLeft - prewBeatLeft) / 2);
+				width = Math.floor((nextBeatLeft - prewBeatLeft) / 2);
+				drawObj.container = new XRectangle(left, 0, width, 0);
 				drawObj.index = results.length;
 				results.push(drawObj);
 			}
