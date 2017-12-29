@@ -39,6 +39,12 @@ export enum XDrawingMode {
 // Drawing client interface
 // -------------------------------------------------------------------------------------------------
 export interface IDrawingClient {
+	/** Minimum milliseconds count between two records */
+	recordsThreshold: number;
+	/** Count of pixels between two records with. */
+	recordSpace: number;
+	/** Count of pixels between two grid layouts. */
+	layoutSpace: number;
 	/** Drawing mode (required). */
 	mode: XDrawingMode;
 	/** Object type (required). */
@@ -53,17 +59,14 @@ export interface IDrawingClient {
 	createDrawingObject: Function;
 	/** Prepare drawing objects. */
 	prepareDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
-
 	/** Client groups drawing method (required). */
 	drawObjects: Function;
-
 	/** Client groups drawing method F3(required). */
 	drawObjectsF3: Function;
 	/** Prepare drawing objects. */
 	prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
 	/** Draw client drawing objects. */
 	render(obj: IDrawingObject[], st: XDrawingProxyState, ct: XCanvasTool);
-
 }
 
 
@@ -71,23 +74,39 @@ export interface IDrawingClient {
 // Default drawing client (without drawing methods).
 // -------------------------------------------------------------------------------------------------
 export class XDrawingClient implements IDrawingClient {
-	/** Drawing mode */
-	mode: XDrawingMode;
-	/** Object type. */
-	type: XDrawingObjectType;
-	/** Client drawing method (required). */
-	draw: Function;
-	/** Init drawing client (required). */
-	init: Function;
-	/** After view init drawing method (optional). */
-	afterDraw: Function;
-	/** Create drawing object factory method. */
-	createDrawingObject: Function;
-	/** Client groups drawing method (required). */
-	drawObjects: Function;
 
+	/** Minimum milliseconds count between two records */
+	public recordsThreshold: number;
+	/** Count of pixels between two records with. */
+	public recordSpace: number;
+	/** Count of pixels between two grid layouts. */
+	public layoutSpace: number;
+	/** Drawing mode */
+	public mode: XDrawingMode;
+	/** Object type. */
+	public type: XDrawingObjectType;
+	/** Client drawing method (required). */
+	public draw: Function;
+	/** Init drawing client (required). */
+	public init: Function;
+	/** After view init drawing method (optional). */
+	public afterDraw: Function;
+	/** Create drawing object factory method. */
+	public createDrawingObject: Function;
+	/** Client groups drawing method (required). */
+	public drawObjects: Function;
 	/** Client groups drawing method F3(required). */
-	drawObjectsF3: Function;
+	public drawObjectsF3: Function;
+
+
+	//-------------------------------------------------------------------------------------
+	constructor() {
+		this.recordsThreshold = 0;
+		this.recordSpace = 10;
+		this.layoutSpace = 30;
+	}
+
+
 
 	//-------------------------------------------------------------------------------------
 	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[] {
@@ -420,10 +439,93 @@ export class GridCellDrawingClient extends XDrawingClient {
 		return results;
 	}
 
-
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): GridCellDrawingObject[] {
-		return this.prepareDrawings(data, state);
+	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): GridCellDrawingObject[] {
+		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
+
+
+		let z: number,
+			y: number,
+			x: number,
+			leadCode: EcgLeadCode,
+			container: XRectangle,
+			recProj: RecordProjection,
+			recData: RecordDrawingData;
+		// TODO: prepare drawings for all headers
+		// cell length = header.length
+		let results: GridCellDrawingObject[] = new Array();
+		let headObjs: { [recordId: string]: RecordProjection } = dd.headers[ps.sampleRate];
+		let drawObj: GridCellDrawingObject;
+		/**  record data left position in pixels. */
+		let recLeftPos: number = 0;
+		/** Last record milliseconds end value. */
+		let lastRecMs: number = 0;
+
+		for (let recId in headObjs) {
+			if (!headObjs.hasOwnProperty(recId)) continue;
+			recProj = headObjs[recId];
+			recData = dd.data[ps.sampleRate][recId];
+
+			drawObj = new GridCellDrawingObject();
+			drawObj.owner = this;
+			drawObj.prepareLeads(recData.leads);
+
+			// merge recordSpace&layoutSpace
+			if (lastRecMs != 0) {
+				if (recProj.endMs - lastRecMs > this.recordsThreshold)
+					recLeftPos += this.layoutSpace;
+				else
+					recLeftPos += this.recordSpace;
+			}
+
+			// do not use container [height] and [top position]
+			drawObj.container = new XRectangle(recLeftPos, 0, recProj.limitPixels, 0);
+			for (z = 0; z < drawObj.leadCodes.length; z++) {
+				leadCode = drawObj.leadCodes[z];
+				if (!recData.signal.hasOwnProperty(leadCode)) continue;
+				//drawObj.polylines[z] = new XPolyline(recData.signal[leadCode]);
+			}
+
+
+			results.push(drawObj);
+
+			lastRecMs = recProj.endMs;
+			recLeftPos += recProj.limitPixels;
+		}
+
+
+		//let results: GridCellDrawingObject[] = new Array(ps.gridCells.length);
+		//let borderPoints: XPoint[];
+		//let axisPoints: XPoint[];
+		//for (z = 0; z < ps.gridCells.length; z++) {
+		//	results[z] = new GridCellDrawingObject();
+		//	results[z].owner = this;
+		//	results[z].cellIndex = z;
+		//	results[z].index = z;
+		//	results[z].container = ps.gridCells[z].container.clone;
+		//	results[z].left = ps.skipPx;
+		//	results[z].lead = ps.gridCells[z].lead;
+		//	results[z].leadLabel = ps.gridCells[z].leadLabel;
+		//	container = ps.gridCells[z].container;
+		//	// TODO: return container borders as lines
+		//	// border
+		//	borderPoints = [
+		//		new XPoint(0, 0),
+		//		new XPoint(container.width, 0),
+		//		new XPoint(container.width, container.height),
+		//		new XPoint(0, container.height),
+		//		new XPoint(0, 0)
+		//	];
+		//	// OX axis
+		//	axisPoints = [
+		//		new XPoint(0, container.midOy - container.minOy),
+		//		new XPoint(container.width, container.midOy - container.minOy)
+		//	];
+		//	results[z].polylines = [new XPolyline(borderPoints), new XPolyline(axisPoints)];
+		//	//results[z].container.resetStart();
+		//}
+		//return results;
+		return [];
 	}
 
 }
@@ -438,18 +540,12 @@ export class SignalDrawingClient extends XDrawingClient {
 	opacity: number;
 	lineJoin: string;
 
-	/** Minimum milliseconds count between two records */
-	recordsThreshold: number;
-	recordSpace: number; // count of pixels between two records with  
-	layoutSpace: number; // count of pixels between two grid layouts
+
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
 		this.color = "#0e9aff";
-		this.recordsThreshold = 0;
-		this.recordSpace = 10;
-		this.layoutSpace = 30;
 		this.opacity = 1;
 		this.lineJoin = "miter";// round|miter|bevel
 		this.mode = XDrawingMode.Canvas;
