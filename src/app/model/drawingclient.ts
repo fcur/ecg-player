@@ -364,11 +364,20 @@ export class GridCellDrawingClient extends XDrawingClient {
 	opacity: number;
 	lineJoin: string;
 
+	borderColor: string;
+	axisColor: string;
+
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
 		this.color = "#00c12e";
+
+		this.borderColor = "#00c12e";
+		this.axisColor = "blue";
+
+
+
 		this.opacity = 0.5;
 		this.lineJoin = "miter";// round|miter|bevel
 		this.mode = XDrawingMode.Canvas;
@@ -440,15 +449,31 @@ export class GridCellDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
+	/**
+	 * Prepare drawing object for each lead X header.
+	 * 1st polyline - border
+	 * 2nd polyline - OX axis
+	 * container = cell ranges
+	 * @param dd drawing data
+	 * @param ps proxy state
+	 */
 	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): GridCellDrawingObject[] {
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
-
+		// TODO: merge record leads count & proxy state grid layout
+		// Add grid layouts presets to client
+		let leftList: number[] = [];
 
 		let z: number,
 			y: number,
 			x: number,
+			top: number,
+			left: number,
+			width: number,
+			height: number,
+			axisPoints: XPoint[],
 			leadCode: EcgLeadCode,
 			container: XRectangle,
+			borderPoints: XPoint[],
 			recProj: RecordProjection,
 			recData: RecordDrawingData;
 		// TODO: prepare drawings for all headers
@@ -480,52 +505,47 @@ export class GridCellDrawingClient extends XDrawingClient {
 
 			// do not use container [height] and [top position]
 			drawObj.container = new XRectangle(recLeftPos, 0, recProj.limitPixels, 0);
+			leftList.push(recLeftPos);
 			for (z = 0; z < drawObj.leadCodes.length; z++) {
 				leadCode = drawObj.leadCodes[z];
 				if (!recData.signal.hasOwnProperty(leadCode)) continue;
 				//drawObj.polylines[z] = new XPolyline(recData.signal[leadCode]);
 			}
 
+			drawObj.borders = [];
+			drawObj.ox = [];
+
+			// TODO: grab borders & axis lisnes from client getter(width, height, layout)
+			for (z = 0; z < ps.gridCells.length; z++) {
+				container = ps.gridCells[z].container;
+				//left = ps.gridCells[z].container.left;
+				left = ps.gridCells[z].container.left - ps.container.left;
+				top = ps.gridCells[z].container.top;
+				//width = ps.gridCells[z].container.width;
+				width = 200;
+				height = ps.gridCells[z].container.height;
+				// border
+				borderPoints = [
+					new XPoint(left, top),
+					new XPoint(left + width, top),
+					new XPoint(left + width, top + height),
+					new XPoint(left, top + height),
+					new XPoint(left, top)
+				];
+				// OX axis
+				axisPoints = [
+					new XPoint(left, container.midOy - container.minOy),
+					new XPoint(left + width, container.midOy - container.minOy)
+				];
+				drawObj.borders.push(new XPolyline(borderPoints));
+				drawObj.ox.push(new XPolyline(axisPoints));
+			}
 
 			results.push(drawObj);
-
 			lastRecMs = recProj.endMs;
 			recLeftPos += recProj.limitPixels;
-		}
-
-
-		//let results: GridCellDrawingObject[] = new Array(ps.gridCells.length);
-		//let borderPoints: XPoint[];
-		//let axisPoints: XPoint[];
-		//for (z = 0; z < ps.gridCells.length; z++) {
-		//	results[z] = new GridCellDrawingObject();
-		//	results[z].owner = this;
-		//	results[z].cellIndex = z;
-		//	results[z].index = z;
-		//	results[z].container = ps.gridCells[z].container.clone;
-		//	results[z].left = ps.skipPx;
-		//	results[z].lead = ps.gridCells[z].lead;
-		//	results[z].leadLabel = ps.gridCells[z].leadLabel;
-		//	container = ps.gridCells[z].container;
-		//	// TODO: return container borders as lines
-		//	// border
-		//	borderPoints = [
-		//		new XPoint(0, 0),
-		//		new XPoint(container.width, 0),
-		//		new XPoint(container.width, container.height),
-		//		new XPoint(0, container.height),
-		//		new XPoint(0, 0)
-		//	];
-		//	// OX axis
-		//	axisPoints = [
-		//		new XPoint(0, container.midOy - container.minOy),
-		//		new XPoint(container.width, container.midOy - container.minOy)
-		//	];
-		//	results[z].polylines = [new XPolyline(borderPoints), new XPolyline(axisPoints)];
-		//	//results[z].container.resetStart();
-		//}
-		//return results;
-		return [];
+		}		
+		return results;
 	}
 
 }

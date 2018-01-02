@@ -783,31 +783,79 @@ export class DrawableComponent implements OnInit {
 		//console.log("drawGridObjectsF3", objs.length);
 		// dr object = ecg record
 
-		//let state: XDrawingProxyState = this._dp.state;
-		//let z: number = 0, y: number = 0, x: number = 0, point: XPoint, l: number, t: number;
-		//this._ct.ctx.save();
-		//this._ct.ctx.beginPath();
-		//for (z = 0; z < objs.length; z++) {
-		//	for (y = 0; y < objs[z].polylines.length; y++) {
-		//		x = 0;
-		//		point = objs[z].polylines[y].points[x++];
-		//		l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
-		//		t = point.top;
-		//		this._ct.ctx.moveTo(l + 0.5, t + 0.5);
-		//		for (; x < objs[z].polylines[y].points.length; x++) {
-		//			point = objs[z].polylines[y].points[x];
-		//			l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
-		//			t = point.top;
-		//			this._ct.ctx.lineTo(l + 0.5, t + 0.5);
-		//		}
-		//	}
-		//}
-		//this._ct.ctx.strokeStyle = this._gridClient.color;
-		//this._ct.ctx.globalAlpha = this._gridClient.opacity;
-		//this._ct.ctx.lineJoin = this._gridClient.lineJoin;
-		//this._ct.ctx.stroke();
-		//this._ct.ctx.closePath();
-		//this._ct.ctx.restore();
+		let z: number,
+			y: number,
+			x: number,
+			l: number,
+			t: number,
+
+			skip: number,
+			limit: number,
+			point: XPoint,
+			points: XPoint[],
+			lead: EcgLeadCode,
+			surfStart: number,
+			cellIndex: number,
+			renderCell: boolean,
+			polyline: XPolyline,
+			container: XRectangle,
+			state: XDrawingProxyState,
+			floatingContainer: XRectangle;
+
+		state = this._dp.state;
+		surfStart = state.container.left;
+
+		this._ct.ctx.save();
+		this._ct.ctx.globalAlpha = this._gridClient.opacity;
+		this._ct.ctx.lineJoin = this._gridClient.lineJoin;
+
+		// draw borders
+
+		this._ct.ctx.beginPath();
+		for (z = 0; z < objs.length; z++) {
+			container = objs[z].container;
+			floatingContainer = container.clone;
+
+			skip = container.left - state.skipPx; // skip pixels
+
+			//console.log("draw borders:", skip);
+			for (y = 0; y < objs[z].leadCodes.length; y++) {
+				lead = objs[z].leadCodes[y];
+				cellIndex = state.leadsCodes.indexOf(lead);
+				if (cellIndex < 0) continue;
+				renderCell = state.gridCells[cellIndex].container.state != XDrawingPrimitiveState.Hidden;
+				if (!renderCell) continue;
+
+				polyline = objs[z].borders[y];
+				x = 0;
+				points = objs[z].borders[y].points;
+
+				point = points[x++];
+				l = point.left + surfStart;
+				//console.info(point.left + container.left - state.skipPx);
+				t = point.top;
+				this._ct.ctx.moveTo(l + 0.5, t + 0.5);
+				for (; x < points.length; x++) {
+					point = points[x];
+					l = point.left + surfStart;
+					t = point.top;
+					this._ct.ctx.lineTo(l + 0.5, t + 0.5);
+				}
+			}
+		}
+		this._ct.ctx.strokeStyle = this._gridClient.borderColor;
+		this._ct.ctx.stroke();
+		this._ct.ctx.closePath();
+
+		// draw axis
+		this._ct.ctx.beginPath();
+
+
+		this._ct.ctx.strokeStyle = this._gridClient.borderColor;
+		this._ct.ctx.stroke();
+		this._ct.ctx.closePath();
+
+		this._ct.ctx.restore();
 	}
 
 	//-------------------------------------------------------------------------------------
