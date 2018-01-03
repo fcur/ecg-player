@@ -46,14 +46,6 @@ import { Subscription, BehaviorSubject } from "rxjs";
 export class DrawableComponent implements OnInit {
 
 	private _dp: XDrawingProxy;
-	//private _ansClient: XDrawingClient;
-	//private _pqrstClient: XDrawingClient;
-	//private _signalClient: XDrawingClient;
-	//private _beatsClient: XDrawingClient;
-	//private _floatingObjectsClient: XDrawingClient;
-	//private _floatingPeaksClient: XDrawingClient;
-	//private _gridClient: XDrawingClient;
-	// feature 2 clients
 	private _signalClient: SignalDrawingClient;
 	private _gridClient: GridCellDrawingClient;
 	private _beatsClient: BeatsDrawingClient;
@@ -61,7 +53,7 @@ export class DrawableComponent implements OnInit {
 
 	private _fileReader: FileReader;
 	private _hideFileDrop: boolean;
-	/**Canvas tool. */
+	/** Canvas tool. */
 	private _ct: XCanvasTool;
 	private _loadDataSubs: Subscription;
 	private _waveformDragStartPosition: XPoint;
@@ -526,7 +518,7 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.globalAlpha = this._signalClient.opacity;
 		this._ct.ctx.lineJoin = this._signalClient.lineJoin;
 		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
+		//this._ct.ctx.closePath();
 		this._ct.ctx.restore();
 	}
 
@@ -581,7 +573,7 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.globalAlpha = this._signalClient.opacity;
 		this._ct.ctx.lineJoin = this._signalClient.lineJoin;
 		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
+		//this._ct.ctx.closePath();
 		this._ct.ctx.restore();
 	}
 
@@ -631,8 +623,8 @@ export class DrawableComponent implements OnInit {
 		top = state.container.top + obj.lines[0].by + 0.5;
 		this._ct.ctx.lineTo(left, top);
 		this._ct.ctx.strokeStyle = this._fpointClient.lineColor;
-		this._ct.ctx.stroke();
 		this._ct.ctx.closePath();
+		this._ct.ctx.stroke();
 
 		let testShift: number = 0;
 		this._ct.ctx.beginPath();
@@ -645,8 +637,8 @@ export class DrawableComponent implements OnInit {
 			this._ct.ctx.moveTo(left, top);
 			this._ct.ctx.arc(left, top, this._fpointClient.pointRadius, 0, 2 * Math.PI, false);
 		}
-		this._ct.ctx.fill();
 		this._ct.ctx.closePath();
+		this._ct.ctx.fill();
 		this._ct.ctx.restore();
 	}
 
@@ -663,8 +655,8 @@ export class DrawableComponent implements OnInit {
 		top = this._dp.state.container.left + this._dp.state.pointerY + 0.5;
 		this._ct.ctx.moveTo(left, top);
 		this._ct.ctx.arc(left, top, 3, 0, 2 * Math.PI, false);
-		this._ct.ctx.fill();
 		this._ct.ctx.closePath();
+		this._ct.ctx.fill();
 
 		this._ct.ctx.fillStyle = "#111";
 		this._ct.ctx.font = `${textSize}px Roboto`;
@@ -772,89 +764,114 @@ export class DrawableComponent implements OnInit {
 		}
 		this._ct.ctx.fillStyle = this._beatsClient.color;
 		this._ct.ctx.globalAlpha = this._beatsClient.opacity;
-		this._ct.ctx.fill();
 		this._ct.ctx.closePath();
+		this._ct.ctx.fill();
 		//
 		this._ct.ctx.restore();
 	}
 
 	//-------------------------------------------------------------------------------------
 	private drawGridObjectsF3(objs: GridCellDrawingObject[]) {
-		//console.log("drawGridObjectsF3", objs.length);
-		// dr object = ecg record
 
 		let z: number,
 			y: number,
 			x: number,
-			l: number,
-			t: number,
-
-			skip: number,
-			limit: number,
-			point: XPoint,
-			points: XPoint[],
-			lead: EcgLeadCode,
-			surfStart: number,
+			w: number,
+			ax: number,
+			ay: number,
+			bx: number,
+			by: number,
+			line: XLine,
 			cellIndex: number,
 			renderCell: boolean,
-			polyline: XPolyline,
-			container: XRectangle,
-			state: XDrawingProxyState,
-			floatingContainer: XRectangle;
+			leadCode: EcgLeadCode,
+			state: XDrawingProxyState;
 
 		state = this._dp.state;
-		surfStart = state.container.left;
 
 		this._ct.ctx.save();
-		this._ct.ctx.globalAlpha = this._gridClient.opacity;
+		this._ct.ctx.rect(
+			state.container.left,
+			state.container.top,
+			state.container.width,
+			state.container.height);
+		this._ct.ctx.clip();
+
 		this._ct.ctx.lineJoin = this._gridClient.lineJoin;
+		this._ct.ctx.textBaseline = "top";
+		this._ct.ctx.textAlign = "left";
 
 		// draw borders
 
 		this._ct.ctx.beginPath();
+		this._ct.ctx.globalAlpha = this._gridClient.borderOpacity;
+		this._ct.ctx.strokeStyle = this._gridClient.borderColor;
+
 		for (z = 0; z < objs.length; z++) {
-			container = objs[z].container;
-			floatingContainer = container.clone;
-
-			skip = container.left - state.skipPx; // skip pixels
-
-			//console.log("draw borders:", skip);
 			for (y = 0; y < objs[z].leadCodes.length; y++) {
-				lead = objs[z].leadCodes[y];
-				cellIndex = state.leadsCodes.indexOf(lead);
+				leadCode = objs[z].leadCodes[y];
+				cellIndex = state.leadsCodes.indexOf(leadCode);
 				if (cellIndex < 0) continue;
 				renderCell = state.gridCells[cellIndex].container.state != XDrawingPrimitiveState.Hidden;
 				if (!renderCell) continue;
 
-				polyline = objs[z].borders[y];
-				x = 0;
-				points = objs[z].borders[y].points;
+				for (x = 0; x < objs[z].horizontal.length; x++) {
+					for (w = 0; w < objs[z].horizontal[x].length; w++) {
+						line = objs[z].horizontal[x][w];
+						ax = line.ax + objs[z].container.left - state.minPx;
+						ay = line.ay + objs[z].container.top;
+						bx = line.bx + objs[z].container.left - state.minPx;
+						by = line.by + objs[z].container.top;
+						this._ct.ctx.moveTo(ax + 0.5, ay + 0.5);
+						this._ct.ctx.lineTo(bx + 0.5, by + 0.5);
+					}
+				}
 
-				point = points[x++];
-				l = point.left + surfStart;
-				//console.info(point.left + container.left - state.skipPx);
-				t = point.top;
-				this._ct.ctx.moveTo(l + 0.5, t + 0.5);
-				for (; x < points.length; x++) {
-					point = points[x];
-					l = point.left + surfStart;
-					t = point.top;
-					this._ct.ctx.lineTo(l + 0.5, t + 0.5);
+				for (x = 0; x < objs[z].vertical.length; x++) {
+					for (w = 0; w < objs[z].vertical[x].length; w++) {
+						line = objs[z].vertical[x][w];
+						ax = line.ax + objs[z].container.left - state.minPx;
+						ay = line.ay + objs[z].container.top;
+						bx = line.bx + objs[z].container.left - state.minPx;
+						by = line.by + objs[z].container.top;
+						if (ax < 0 || bx < 0) continue;
+						if (ax > state.container.maxOx || bx > state.container.maxOx) break;
+						this._ct.ctx.moveTo(ax + 0.5, ay + 0.5);
+						this._ct.ctx.lineTo(bx + 0.5, by + 0.5);
+						this._ct.ctx.fillText(line.ax.toString(), ax, ay);
+				
+					}
 				}
 			}
 		}
-		this._ct.ctx.strokeStyle = this._gridClient.borderColor;
 		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
 
 		// draw axis
 		this._ct.ctx.beginPath();
+		this._ct.ctx.globalAlpha = this._gridClient.axisOpacity;
+		this._ct.ctx.strokeStyle = this._gridClient.axisColor;
 
+		for (z = 0; z < objs.length; z++) {
+			for (y = 0; y < objs[z].leadCodes.length; y++) {
+				leadCode = objs[z].leadCodes[y];
+				cellIndex = state.leadsCodes.indexOf(leadCode);
+				if (cellIndex < 0) continue;
+				renderCell = state.gridCells[cellIndex].container.state != XDrawingPrimitiveState.Hidden;
+				if (!renderCell) continue;
 
-		this._ct.ctx.strokeStyle = this._gridClient.borderColor;
+				for (x = 0; x < objs[z].ox.length; x++) {
+					line = objs[z].ox[x];
+					ax = line.ax + objs[z].container.left - state.minPx;
+					ay = line.ay + objs[z].container.top;
+					bx = line.bx + objs[z].container.left - state.minPx;
+					by = line.by + objs[z].container.top;
+
+					this._ct.ctx.moveTo(ax + 0.5, ay + 0.5);
+					this._ct.ctx.lineTo(bx + 0.5, by + 0.5);
+				}
+			}
+		}
 		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
-
 		this._ct.ctx.restore();
 	}
 

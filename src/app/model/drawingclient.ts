@@ -363,22 +363,20 @@ export class GridCellDrawingClient extends XDrawingClient {
 	color: string;
 	opacity: number;
 	lineJoin: string;
-
 	borderColor: string;
+	borderOpacity: number;
 	axisColor: string;
-
+	axisOpacity: number;
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
 		this.color = "#00c12e";
-
-		this.borderColor = "#00c12e";
-		this.axisColor = "blue";
-
-
-
 		this.opacity = 0.5;
+		this.borderColor = "#ddd";
+		this.borderOpacity = 0.1;
+		this.axisColor = "#ff58ff";
+		this.axisOpacity = 1;
 		this.lineJoin = "miter";// round|miter|bevel
 		this.mode = XDrawingMode.Canvas;
 		this.type = XDrawingObjectType.Grid;
@@ -463,19 +461,26 @@ export class GridCellDrawingClient extends XDrawingClient {
 		// Add grid layouts presets to client
 		let leftList: number[] = [];
 
+		let staticWidth: number = 300;
+
 		let z: number,
 			y: number,
 			x: number,
 			top: number,
 			left: number,
 			width: number,
+			vStep: number,
 			height: number,
+			axisTop: number,
 			axisPoints: XPoint[],
 			leadCode: EcgLeadCode,
 			container: XRectangle,
 			borderPoints: XPoint[],
 			recProj: RecordProjection,
 			recData: RecordDrawingData;
+
+
+
 		// TODO: prepare drawings for all headers
 		// cell length = header.length
 		let results: GridCellDrawingObject[] = new Array();
@@ -485,7 +490,7 @@ export class GridCellDrawingClient extends XDrawingClient {
 		let recLeftPos: number = 0;
 		/** Last record milliseconds end value. */
 		let lastRecMs: number = 0;
-
+		vStep = 100; // vertical line per 100 pixels
 		for (let recId in headObjs) {
 			if (!headObjs.hasOwnProperty(recId)) continue;
 			recProj = headObjs[recId];
@@ -504,7 +509,9 @@ export class GridCellDrawingClient extends XDrawingClient {
 			}
 
 			// do not use container [height] and [top position]
-			drawObj.container = new XRectangle(recLeftPos, 0, recProj.limitPixels, 0);
+
+			width = recProj.limitPixels;
+			drawObj.container = new XRectangle(recLeftPos, 0, width, ps.container.height);
 			leftList.push(recLeftPos);
 			for (z = 0; z < drawObj.leadCodes.length; z++) {
 				leadCode = drawObj.leadCodes[z];
@@ -512,39 +519,47 @@ export class GridCellDrawingClient extends XDrawingClient {
 				//drawObj.polylines[z] = new XPolyline(recData.signal[leadCode]);
 			}
 
-			drawObj.borders = [];
-			drawObj.ox = [];
+			drawObj.ox = new Array(ps.gridCells.length);
+			drawObj.horizontal = new Array(ps.gridCells.length);
+			drawObj.vertical = new Array(ps.gridCells.length);
 
 			// TODO: grab borders & axis lisnes from client getter(width, height, layout)
 			for (z = 0; z < ps.gridCells.length; z++) {
 				container = ps.gridCells[z].container;
-				//left = ps.gridCells[z].container.left;
+
 				left = ps.gridCells[z].container.left - ps.container.left;
 				top = ps.gridCells[z].container.top;
-				//width = ps.gridCells[z].container.width;
-				width = 200;
 				height = ps.gridCells[z].container.height;
-				// border
-				borderPoints = [
-					new XPoint(left, top),
-					new XPoint(left + width, top),
-					new XPoint(left + width, top + height),
-					new XPoint(left, top + height),
-					new XPoint(left, top)
-				];
-				// OX axis
-				axisPoints = [
-					new XPoint(left, container.midOy - container.minOy),
-					new XPoint(left + width, container.midOy - container.minOy)
-				];
-				drawObj.borders.push(new XPolyline(borderPoints));
-				drawObj.ox.push(new XPolyline(axisPoints));
-			}
+				axisTop = ps.gridCells[z].container.top + ps.gridCells[z].container.hHeight;
+				axisTop = ps.gridCells[z].container.midOy;
 
+				drawObj.horizontal[z] = [
+					// top
+					new XLine(
+						new XPoint(left, top),
+						new XPoint(left + width, top)
+					),
+					// bottom
+					new XLine(
+						new XPoint(left, top + height),
+						new XPoint(left + width, top + height)
+					)
+				];
+
+				drawObj.ox[z] = new XLine(new XPoint(left, axisTop), new XPoint(left + width, axisTop));
+
+				drawObj.vertical[z] = [];
+				for (x = 0; x < width; x += vStep) {
+					drawObj.vertical[z].push(new XLine(
+						new XPoint(x, top),
+						new XPoint(x, top + height)
+					));
+				}
+			}
 			results.push(drawObj);
 			lastRecMs = recProj.endMs;
 			recLeftPos += recProj.limitPixels;
-		}		
+		}
 		return results;
 	}
 

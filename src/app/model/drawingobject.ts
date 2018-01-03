@@ -455,20 +455,18 @@ export class GridCellDrawingObject extends XDrawingObject {
 
 	/** Cell assigned lead code. */
 	public leadCodes: EcgLeadCode[];
-	/** Cell borders. */
-	public borders: XPolyline[];
-	/** Cell axis. */
-	public ox: XPolyline[];
-
+	/** Cells axis. */
+	public ox: XLine[];
+	/** Cells horizontal lines. */
+	public horizontal: XLine[][];
+	/** Cells vertical lines. */
+	public vertical: XLine[][];
 
 	//-------------------------------------------------------------------------------------
 	public prepareLeads(leads: EcgLeadCode[]) {
 		if (!Array.isArray(leads)) return;
 		this.polylinesF3 = new Array(leads.length);
-
 		this.leadCodes = leads;
-		//this.borders = new Array(leads.length);
-		//this.xAxis = new Array(leads.length);
 	}
 }
 
