@@ -217,7 +217,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public drawBeats(p1: number[], p2: number, p3: string[]) {
-		console.info("BeatsDrawingClient.drawBeats", "not implemented");
+		//console.info("BeatsDrawingClient.drawBeats", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -387,7 +387,7 @@ export class GridCellDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public drawGrid() {
-		console.info("GridCellDrawingClient.drawGrid", "not implemented");
+		//console.info("GridCellDrawingClient.drawGrid", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -843,30 +843,25 @@ export class FPointDrawingClient extends XDrawingClient {
 		return result;
 	}
 
-
-
 	//-------------------------------------------------------------------------------------
-	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): FPointDrawingObject[] {
-		if (!data.headers.hasOwnProperty(state.sampleRate) || !data.data.hasOwnProperty(state.sampleRate) || !data.data[state.sampleRate]) return [];
+	public prepareDrawings(dd: DrawingData, ps: XDrawingProxyState): FPointDrawingObject[] {
+		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
-		let obj = new FPointDrawingObject();
-		obj.container = new XRectangle(state.pointerX - this.clientHalfWidth, 0, this.clientHalfWidth * 2, state.container.height);
+		let obj: FPointDrawingObject = new FPointDrawingObject();
+		//obj.container = new XRectangle(ps.pointerX - this.clientHalfWidth, 0, this.clientHalfWidth * 2, ps.container.height);
+		obj.container = new XRectangle(ps.minPx, 0, ps.limitPx, ps.container.height);
 
-		let lineHeight: number = state.gridCells[state.gridCells.length - 1].container.maxOy -
-			state.gridCells[0].container.minOy;
+		let lineHeight: number = ps.gridCells[ps.gridCells.length - 1].container.maxOy -
+			ps.gridCells[0].container.minOy;
 
-		let vertLine: XLine = new XLine(
-			new XPoint(state.pointerX, 0),
-			new XPoint(state.pointerX, lineHeight)
-		);
-		obj.lines = [vertLine];
-		obj.points = new Array(state.gridCells.length);
+		obj.lines = [new XLine(new XPoint(ps.pointerX, 0), new XPoint(ps.pointerX, lineHeight))];
+		obj.points = new Array(ps.gridCells.length);
 		// TODO move to state getter
-		let header: RecordProjection = data.getHeader(state.skipPx + state.pointerX, state.sampleRate);
+		let header: RecordProjection = dd.getHeader(ps.skipPx + ps.pointerX, ps.sampleRate);
 		let signalPoints: XPoint[];
-		for (let z: number = 0; z < state.gridCells.length; z++) {
-			signalPoints = data.data[state.sampleRate][header.id].signal[state.gridCells[z].lead];
-			obj.points[z] = new XPoint(state.pointerX, signalPoints[state.skipPx + state.pointerX].top);
+		for (let z: number = 0; z < ps.gridCells.length; z++) {
+			signalPoints = dd.data[ps.sampleRate][header.id].signal[ps.gridCells[z].lead];
+			obj.points[z] = new XPoint(ps.pointerX, signalPoints[ps.skipPx + ps.pointerX].top);
 		}
 		//results.push(obj);
 		return [obj];
@@ -874,8 +869,9 @@ export class FPointDrawingClient extends XDrawingClient {
 
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): FPointDrawingObject[] {
-		console.info("FPointDrawingClient.prepareAllDrawings", "not implemented");
+	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): FPointDrawingObject[] {
+		this.prepareDrawings(dd, ps);
+		//console.info("FPointDrawingClient.prepareAllDrawings", "not implemented");
 		return [];
 	}
 }

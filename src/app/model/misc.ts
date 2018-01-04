@@ -351,4 +351,29 @@ export class XCanvasTool {
 		this.ctx.fillText(text, this.width / 2, this.height / 2);
 		this.ctx.restore();
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	public clip(l: number, t: number, w: number, h: number) {
+		this.ctx.rect(l, t, w, h);
+		this.ctx.clip();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public clipRect(rect: XRectangle) {
+		this.clip(rect.left, rect.top, rect.width, rect.height);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public saveState() {
+		this.ctx.save();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public restoreState() {
+		this.ctx.restore();
+	}
+
+
 }
+
+

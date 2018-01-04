@@ -46,9 +46,15 @@ export interface IDrawingObject {
 	/** Drawing object assigned cell index. -1: fill cells container */
 	cellIndex: number;
 	/** Draw object on canvas. */
-	render(ctx: CanvasRenderingContext2D)
+	render(ctx: CanvasRenderingContext2D);
 	/** Visiblity of drawing object. */
 	hidden: boolean;
+	/** Animation progress state (0..100).*/
+	progress: number;
+	/** Head-up display / part of user innterface. */
+	hud: boolean;
+	/** Update drawing object proxy state. */
+	updateState(pd: XDrawingProxyState);
 }
 
 
@@ -64,7 +70,6 @@ export class XDrawingObject implements IDrawingObject {
 	public index: number;
 	/** REDUNDANT Drawing object assigned cell index. */
 	public cellIndex: number;
-
 	/** Object owner. */
 	public owner: XDrawingClient;
 	/** Object type. */
@@ -73,7 +78,10 @@ export class XDrawingObject implements IDrawingObject {
 	public container: XRectangle;
 	/** Visiblity of drawing object. */
 	public hidden: boolean;
-
+	/** Animation progress state (0..100).*/
+	public progress: number;
+	/** Head-up display / part of user innterface. */
+	public hud: boolean;
 
 	//-------------------------------------------------------------------------------------
 	//public get isFloating(): boolean {
@@ -86,12 +94,17 @@ export class XDrawingObject implements IDrawingObject {
 		this.index = -1; // do not use index
 		this.cellIndex = -1; // do not use cell index fill full container
 		this.hidden = true;
+		this.progress = 100;
+		this.hud = false;
 	}
 
 	//-------------------------------------------------------------------------------------
 	public render(ctx: CanvasRenderingContext2D) {
 
 	}
+
+	//-------------------------------------------------------------------------------------
+	public updateState(pd: XDrawingProxyState) { }
 
 	//-------------------------------------------------------------------------------------
 	// TODO remove
@@ -432,6 +445,19 @@ export class FPointDrawingObject extends XDrawingObject {
 	public lines: XLine[];
 	/**Drawing object points. */
 	public points: XPoint[];
+
+
+	//-------------------------------------------------------------------------------------
+	constructor() {
+		super();
+		this.hud = true; // important!
+	}
+
+	//-------------------------------------------------------------------------------------
+	public updateState(pd: XDrawingProxyState) {
+		console.log("FPointDrawingObject", "updateState");
+	}
+
 }
 
 // -------------------------------------------------------------------------------------------------
