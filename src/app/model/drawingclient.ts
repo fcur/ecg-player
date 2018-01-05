@@ -1,10 +1,8 @@
 
 import {
-	WavepointDrawingObject, CursorDrawingObject,
-	FPointDrawingObject, GridCellDrawingObject,
-	ClPointDrawingObject, CellDrawingObject,
-	BeatsRangeDrawingObject, IDrawingObject,
-	XDrawingObjectType, AnsDrawingObject,
+	WavepointDrawingObject, CursorDrawingObject, GridCellDrawingObject,
+	ClPointDrawingObject, CellDrawingObject, BeatsRangeDrawingObject,
+	IDrawingObject, XDrawingObjectType, AnsDrawingObject,
 	XDrawingObject, SignalDrawingObject,
 	PeakDrawingObject, WaveDrawingObject
 } from "./drawingobject";
@@ -67,6 +65,9 @@ export interface IDrawingClient {
 	prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
 	/** Draw client drawing objects. */
 	render(obj: IDrawingObject[], st: XDrawingProxyState, ct: XCanvasTool);
+
+	// add mouse/touch events handlers
+
 }
 
 
@@ -798,9 +799,9 @@ export class CellDrawingClient extends XDrawingClient {
 
 
 // -------------------------------------------------------------------------------------------------
-// Floating point drawing client
+// Cursor point drawing client
 // -------------------------------------------------------------------------------------------------
-export class FPointDrawingClient extends XDrawingClient {
+export class CursorDrawingClient extends XDrawingClient {
 	// floating point for each cell and vertical line
 	lineColor: string;
 	opacity: number;
@@ -821,33 +822,33 @@ export class FPointDrawingClient extends XDrawingClient {
 		this.pointRadius = 3;
 		this.mode = XDrawingMode.Canvas;
 		this.type = XDrawingObjectType.Object;
-		this.draw = this.drawFPoint.bind(this);
-		this.afterDraw = this.afterDrawFPoint.bind(this);
-		this.createDrawingObject = this.createFPointDrawingObject.bind(this);
+		this.draw = this.drawCursor.bind(this);
+		this.afterDraw = this.afterDrawFCursor.bind(this);
+		this.createDrawingObject = this.createCursorDrawingObject.bind(this);
 	}
 
 	//-------------------------------------------------------------------------------------
-	public drawFPoint() {
-		console.info("FPointDrawingClient.drawFPoint", "not implemented");
+	public drawCursor() {
+		console.info("CursorDrawingObject.drawCursor", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
-	public afterDrawFPoint() {
-		console.info("FPointDrawingClient.afterDrawFPoint", "not implemented");
+	public afterDrawFCursor() {
+		console.info("CursorDrawingObject.afterDrawFCursor", "not implemented");
 	}
 
 	//-------------------------------------------------------------------------------------
-	public createFPointDrawingObject(): FPointDrawingObject {
-		console.info("FPointDrawingClient.createFPointDrawingObject", "not implemented");
-		let result: FPointDrawingObject = new FPointDrawingObject();
+	public createCursorDrawingObject(): CursorDrawingObject {
+		console.info("CursorDrawingObject.createCursorDrawingObject", "not implemented");
+		let result: CursorDrawingObject = new CursorDrawingObject();
 		return result;
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareDrawings(dd: DrawingData, ps: XDrawingProxyState): FPointDrawingObject[] {
+	public prepareDrawings(dd: DrawingData, ps: XDrawingProxyState): CursorDrawingObject[] {
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
-		let obj: FPointDrawingObject = new FPointDrawingObject();
+		let obj: CursorDrawingObject = new CursorDrawingObject();
 		//obj.container = new XRectangle(ps.pointerX - this.clientHalfWidth, 0, this.clientHalfWidth * 2, ps.container.height);
 		obj.container = new XRectangle(ps.minPx, 0, ps.limitPx, ps.container.height);
 
@@ -869,36 +870,14 @@ export class FPointDrawingClient extends XDrawingClient {
 
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): FPointDrawingObject[] {
-		this.prepareDrawings(dd, ps);
-		//console.info("FPointDrawingClient.prepareAllDrawings", "not implemented");
-		return [];
-	}
-}
-
-
-// -------------------------------------------------------------------------------------------------
-// Floating cursor drawing client
-// -------------------------------------------------------------------------------------------------
-export class CursorClient extends XDrawingClient {
-
-	//-------------------------------------------------------------------------------------
-	constructor() {
-		super();
-	}
-
-
-	//-------------------------------------------------------------------------------------
-	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): CursorDrawingObject[] {
-		return [];
-	}
-
-
-	//-------------------------------------------------------------------------------------
 	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): CursorDrawingObject[] {
-		return [];
+		return this.prepareDrawings(dd, ps);
+		//console.info("FPointDrawingClient.prepareAllDrawings", "not implemented");
 	}
 }
+
+
+
 
 
 // -------------------------------------------------------------------------------------------------

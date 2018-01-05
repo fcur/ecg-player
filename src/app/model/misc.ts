@@ -4,17 +4,16 @@ import {
 } from "./ecgdata";
 import {
 	SignalDrawingObject, WaveDrawingObject, WavepointDrawingObject,
-	FPointDrawingObject, GridCellDrawingObject, PeakDrawingObject,
-	CellDrawingObject, ClPointDrawingObject, CursorDrawingObject,
-	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	BeatsRangeDrawingObject, IDrawingObject
+	CursorDrawingObject, GridCellDrawingObject, PeakDrawingObject,
+	XDrawingObjectType, AnsDrawingObject, BeatsRangeDrawingObject,
+	CellDrawingObject, ClPointDrawingObject, XDrawingObject,
+	IDrawingObject
 } from "./drawingobject";
 import {
 	BeatsDrawingClient, IDrawingClient, ClickablePointDrawingClient,
-	CursorClient, FPointDrawingClient, GridCellDrawingClient,
-	XDrawingClient, XDrawingMode, AnsDrawingClient,
-	SignalDrawingClient, WavepointClient,
-	CellDrawingClient
+	CursorDrawingClient, GridCellDrawingClient, XDrawingClient,
+	XDrawingMode, AnsDrawingClient, SignalDrawingClient,
+	WavepointClient, CellDrawingClient
 } from "./drawingclient";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState,

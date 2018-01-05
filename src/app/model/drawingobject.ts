@@ -7,13 +7,16 @@ import {
 } from "./geometry";
 import {
 	EcgAnnotation, EcgAnnotationCode, EcgLeadCode, EcgRecord,
-	EcgSignal, EcgWavePoint, EcgWavePointType
+	EcgSignal, EcgWavePoint, EcgWavePointType, EcgParser
 } from "./ecgdata";
-
+import {
+	DrawingData, RecordDrawingData,
+	RecordProjection
+} from "./drawingdata";
 import {
 	XCanvasTool, XDrawingCell, XDrawingChange,
 	XDrawingChangeSender, XDrawingGridMode,
-	XDrawingProxyState
+	XDrawingProxyState, XDrawingCoordinates
 } from "./misc";
 
 // -------------------------------------------------------------------------------------------------
@@ -54,7 +57,7 @@ export interface IDrawingObject {
 	/** Head-up display / part of user innterface. */
 	hud: boolean;
 	/** Update drawing object proxy state. */
-	updateState(pd: XDrawingProxyState);
+	updateState(dd: DrawingData, pd: XDrawingProxyState);
 }
 
 
@@ -104,7 +107,7 @@ export class XDrawingObject implements IDrawingObject {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public updateState(pd: XDrawingProxyState) { }
+	public updateState(dd: DrawingData, pd: XDrawingProxyState) { }
 
 	//-------------------------------------------------------------------------------------
 	// TODO remove
@@ -440,7 +443,7 @@ export class CellDrawingObject extends XDrawingObject {
 // -------------------------------------------------------------------------------------------------
 // Floating point drawing object
 // -------------------------------------------------------------------------------------------------
-export class FPointDrawingObject extends XDrawingObject {
+export class CursorDrawingObject extends XDrawingObject {
 	/** Drawing object lines. */
 	public lines: XLine[];
 	/**Drawing object points. */
@@ -454,8 +457,23 @@ export class FPointDrawingObject extends XDrawingObject {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public updateState(pd: XDrawingProxyState) {
-		console.log("FPointDrawingObject", "updateState");
+	public updateState(dd: DrawingData, ps: XDrawingProxyState) {
+		this.container.rebuild(ps.minPx, 0, ps.limitPx, ps.container.height);
+		let lineHeight: number = ps.gridCells[ps.gridCells.length - 1].container.maxOy -
+			ps.gridCells[0].container.minOy;
+
+		this.lines = [new XLine(new XPoint(ps.pointerX, 0), new XPoint(ps.pointerX, lineHeight))];
+		this.points = new Array(ps.gridCells.length);
+
+
+		// TODO move to state getter
+		let header: RecordProjection = dd.getHeader(ps.skipPx + ps.pointerX, ps.sampleRate);
+		let signalPoints: XPoint[];
+		for (let z: number = 0; z < ps.gridCells.length; z++) {
+			signalPoints = dd.data[ps.sampleRate][header.id].signal[ps.gridCells[z].lead];
+			this.points[z] = new XPoint(ps.pointerX, signalPoints[ps.skipPx + ps.pointerX].top);
+		}
+		console.log("CursorDrawingObject", "updateState");
 	}
 
 }
@@ -496,13 +514,6 @@ export class GridCellDrawingObject extends XDrawingObject {
 	}
 }
 
-// -------------------------------------------------------------------------------------------------
-// Floating cursor
-// -------------------------------------------------------------------------------------------------
-export class CursorDrawingObject extends XDrawingObject {
-
-
-}
 
 // -------------------------------------------------------------------------------------------------
 // Wavepoint base drawing object

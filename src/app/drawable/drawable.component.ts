@@ -13,19 +13,19 @@ import {
 	XLine, XPeak, XPoint, XPolyline, XRectangle
 } from "../model/geometry";
 import {
-	ClickablePointDrawingClient, FPointDrawingClient,
+	ClickablePointDrawingClient, CursorDrawingClient,
 	XDrawingClient, XDrawingMode, IDrawingClient,
 	SignalDrawingClient, CellDrawingClient,
 	AnsDrawingClient, BeatsDrawingClient,
-	GridCellDrawingClient, CursorClient,
+	GridCellDrawingClient,
 	WavepointClient
 } from "../model/drawingclient";
 import {
 	BeatsRangeDrawingObject, IDrawingObject, ClPointDrawingObject,
 	GridCellDrawingObject, CursorDrawingObject, PeakDrawingObject,
-	CellDrawingObject, SignalDrawingObject, FPointDrawingObject,
-	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	WaveDrawingObject, WavepointDrawingObject
+	XDrawingObjectType, AnsDrawingObject, WaveDrawingObject,
+	CellDrawingObject, SignalDrawingObject, XDrawingObject,
+	WavepointDrawingObject
 } from "../model/drawingobject";
 import {
 	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType, EcgParser,
@@ -49,7 +49,7 @@ export class DrawableComponent implements OnInit {
 	private _signalClient: SignalDrawingClient;
 	private _gridClient: GridCellDrawingClient;
 	private _beatsClient: BeatsDrawingClient;
-	private _fpointClient: FPointDrawingClient;
+	private _cursorClient: CursorDrawingClient;
 
 	private _fileReader: FileReader;
 	private _hideFileDrop: boolean;
@@ -396,15 +396,17 @@ export class DrawableComponent implements OnInit {
 	private prepareClients() {
 		// prepare clients
 		this._signalClient = new SignalDrawingClient();
-		this._signalClient.drawObjectsF3 = this.drawSignalObjectsF3.bind(this);
 		this._gridClient = new GridCellDrawingClient();
-		this._gridClient.drawObjectsF3 = this.drawGridObjectsF3.bind(this);
-
 		this._beatsClient = new BeatsDrawingClient();
+		this._cursorClient = new CursorDrawingClient();
+
+		this._signalClient.drawObjectsF3 = this.drawSignalObjectsF3.bind(this);
+		this._gridClient.drawObjectsF3 = this.drawGridObjectsF3.bind(this);
 		this._beatsClient.drawObjectsF3 = this.drawBeatsRangesObjectsF3.bind(this);
-		this._fpointClient = new FPointDrawingClient();
-		this._fpointClient.drawObjects = this.drawFPointObjectsF2.bind(this);
-		this._dp.pushClients(this._gridClient, this._signalClient, this._beatsClient, this._fpointClient);
+		//this._fpointClient.drawObjects = this.drawFPointObjectsF2.bind(this);
+		this._cursorClient.drawObjectsF3 = this.drawCursorObjectsF3.bind(this);
+
+		this._dp.pushClients(this._gridClient, this._signalClient, this._beatsClient, this._cursorClient);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -514,12 +516,12 @@ export class DrawableComponent implements OnInit {
 
 
 	//-------------------------------------------------------------------------------------
-	private drawFPointObjectsF2(objs: FPointDrawingObject[]) {
+	private drawFPointObjectsF2(objs: CursorDrawingObject[]) {
 		this._ct.saveState();
 		let state: XDrawingProxyState = this._dp.state;
 		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
-		let obj: FPointDrawingObject = objs[0];
-		this._ct.ctx.globalAlpha = this._fpointClient.opacity;
+		let obj: CursorDrawingObject = objs[0];
+		this._ct.ctx.globalAlpha = this._cursorClient.opacity;
 		// pointer line
 		this._ct.ctx.beginPath();
 		left = state.container.left + obj.lines[0].ax + 0.5;
@@ -527,20 +529,56 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.moveTo(left, top);
 		top = state.container.top + obj.lines[0].by + 0.5;
 		this._ct.ctx.lineTo(left, top);
-		this._ct.ctx.strokeStyle = this._fpointClient.lineColor;
+		this._ct.ctx.strokeStyle = this._cursorClient.lineColor;
 		this._ct.ctx.closePath();
 		this._ct.ctx.stroke();
 
 		let testShift: number = 0;
 		this._ct.ctx.beginPath();
-		this._ct.ctx.fillStyle = this._fpointClient.pointColor;
+		this._ct.ctx.fillStyle = this._cursorClient.pointColor;
 		for (let z: number = 0; z < state.gridCells.length; z++) {
 			// cell index = point index
 			left = state.container.left + obj.points[z].left + 0.5;
 			dy = Math.floor(obj.points[z].top * state.gridCells[z].microvoltsToPixel);
 			top = dy + state.gridCells[z].container.midOy + testShift + 0.5;
 			this._ct.ctx.moveTo(left, top);
-			this._ct.ctx.arc(left, top, this._fpointClient.pointRadius, 0, 2 * Math.PI, false);
+			this._ct.ctx.arc(left, top, this._cursorClient.pointRadius, 0, 2 * Math.PI, false);
+		}
+		this._ct.ctx.closePath();
+		this._ct.ctx.fill();
+		this._ct.restoreState();
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	private drawCursorObjectsF3(objs: CursorDrawingObject[]) {
+		console.log("draw cursor", objs);
+		this._ct.saveState();
+		let state: XDrawingProxyState = this._dp.state;
+		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
+		let obj: CursorDrawingObject = objs[0];
+		this._ct.ctx.globalAlpha = this._cursorClient.opacity;
+		// pointer line
+		this._ct.ctx.beginPath();
+		left = state.container.left + obj.lines[0].ax + 0.5;
+		top = state.container.top + obj.lines[0].ay + 0.5;
+		this._ct.ctx.moveTo(left, top);
+		top = state.container.top + obj.lines[0].by + 0.5;
+		this._ct.ctx.lineTo(left, top);
+		this._ct.ctx.strokeStyle = this._cursorClient.lineColor;
+		this._ct.ctx.closePath();
+		this._ct.ctx.stroke();
+
+		let testShift: number = 0;
+		this._ct.ctx.beginPath();
+		this._ct.ctx.fillStyle = this._cursorClient.pointColor;
+		for (let z: number = 0; z < state.gridCells.length; z++) {
+			// cell index = point index
+			left = state.container.left + obj.points[z].left + 0.5;
+			dy = Math.floor(obj.points[z].top * state.gridCells[z].microvoltsToPixel);
+			top = dy + state.gridCells[z].container.midOy + testShift + 0.5;
+			this._ct.ctx.moveTo(left, top);
+			this._ct.ctx.arc(left, top, this._cursorClient.pointRadius, 0, 2 * Math.PI, false);
 		}
 		this._ct.ctx.closePath();
 		this._ct.ctx.fill();

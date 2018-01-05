@@ -4,17 +4,17 @@ import {
 	BeatsDrawingClient, IDrawingClient, SignalDrawingClient,
 	XDrawingClient, XDrawingMode, AnsDrawingClient,
 	CellDrawingClient, ClickablePointDrawingClient,
-	FPointDrawingClient, GridCellDrawingClient, CursorClient,
+	CursorDrawingClient, GridCellDrawingClient,
 	WavepointClient
 } from "./drawingclient";
 import {
-	FPointDrawingObject, GridCellDrawingObject,
+	CursorDrawingObject, GridCellDrawingObject,
+	WavepointDrawingObject, PeakDrawingObject,
 	ClPointDrawingObject, CellDrawingObject,
-	XDrawingObjectType, AnsDrawingObject,
 	BeatsRangeDrawingObject, IDrawingObject,
+	XDrawingObjectType, AnsDrawingObject,
 	XDrawingObject, SignalDrawingObject,
-	WavepointDrawingObject, CursorDrawingObject,
-	PeakDrawingObject, WaveDrawingObject
+	WaveDrawingObject
 } from "./drawingobject";
 import { DrawingData } from "./drawingdata";
 import {
@@ -280,7 +280,7 @@ export class XDrawingProxy {
 	public performMouseMove(event: any) {
 		if (!this.state.container) return;
 		// TODO handle floating pointer
-		//console.info("proxy: mouse move", proxyX, proxyY);
+		//console.info("proxy: mouse move", this.state.pointerX, this.state.pointerY);
 		this.prepareCursor(event);
 		//this.prepareFloatingObjects(this.state.pointerX, this.state.pointerY);
 		//let objects: IDrawingObject[][] = this.prepareDrawingObjectsF2();
@@ -289,11 +289,25 @@ export class XDrawingProxy {
 		//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseMove, event);
 		//this.onChangeState.emit(changes);
 		//this.onPrepareDrawings.emit(objects);
+		let z1: number;
 
-		for (let z1: number = 0; z1 < this.doF3Visible.length; z1++) {
+		for (z1 = 0; z1 < this.doF3Visible.length; z1++) {
 			if (!this.doF3Visible[z1].hud) continue;
-			this.doF3Visible[z1].updateState(this.state);
+			this.doF3Visible[z1].updateState(this.drawingData,this.state);
 		}
+
+		//this.resetDOF3Groups();
+		//let ownerIndex: number, doAllIndex: number;
+		//for (z1 = 0; z1 < this.doF3Visible.length; z1++) {
+		//	doAllIndex = this.doF3All.indexOf(this.doF3Visible[z1]);
+		//	if (doAllIndex < 0 || this.doF3All[doAllIndex].hidden != this.doF3Visible[z1].hidden) {
+		//		console.warn("scrollDrawObjGroupsF3");
+		//	}
+		//	ownerIndex = this._clients.indexOf(this.doF3Visible[z1].owner);
+		//	if (ownerIndex < 0) continue;
+		//	this.doF3CGroups[ownerIndex].push(this.doF3Visible[z1]);
+		//}
+
 		this.onPrepareDrawings.emit([]/*this.objectsF2*/);
 		// add/update floating point client
 		//this._doF3Viaible.push()
