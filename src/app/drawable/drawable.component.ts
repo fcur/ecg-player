@@ -50,7 +50,7 @@ export class DrawableComponent implements OnInit {
 	private _gridClient: GridCellDrawingClient;
 	private _beatsClient: BeatsDrawingClient;
 	private _cursorClient: CursorDrawingClient;
-
+	private _zoomIntensity: number;
 	private _fileReader: FileReader;
 	private _hideFileDrop: boolean;
 	/** Canvas tool. */
@@ -192,6 +192,12 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
+	@HostListener("window:wheel", ["$event"]) onMouseWheel(event: WheelEvent) {
+		event.preventDefault();
+		this.onWheelScroll(event);
+	}
+
+	//-------------------------------------------------------------------------------------
 	constructor(private _el: ElementRef, private _ds: DataService) {
 		//console.info("DrawableComponent constructor");
 		this._hideFileDrop = false;
@@ -202,6 +208,7 @@ export class DrawableComponent implements OnInit {
 		this._waveformDragStartPosition = null;
 		this._threshold = 100;
 		this._lastEmitTime = 0;
+		this._zoomIntensity = 0.2;
 		this._dp = new XDrawingProxy();
 		//this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
 		this._dp.onPrepareDrawings.subscribe((v: IDrawingObject[][]) => this.onReceiveDrawingObjects(v));
@@ -324,8 +331,9 @@ export class DrawableComponent implements OnInit {
 		this._dp.refreshDrawings();
 	}
 
+
 	//-------------------------------------------------------------------------------------
-	public onLoadFile(event: ProgressEvent) {
+	private onLoadFile(event: ProgressEvent) {
 		this._ds.parseJsonFile(JSON.parse(this._fileReader.result));
 	}
 
@@ -345,6 +353,17 @@ export class DrawableComponent implements OnInit {
 	//  }
 	//}
 
+
+	//-------------------------------------------------------------------------------------
+	private onWheelScroll(event: WheelEvent) {
+		// Normalize wheel to +1 or -1
+		let wheel: number = event.wheelDelta / 120;
+		// Compute zoom factor
+		let zoom: number = Math.exp(wheel * this._zoomIntensity);
+
+		console.info("zoom:", zoom, wheel);
+	}
+
 	//-------------------------------------------------------------------------------------
 	private onScrollDrawings(val: number) {
 		if (!Number.isInteger(val)) return;
@@ -353,17 +372,17 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private renderVisibleGroupF3() {
+	private renderVisibleGroups() {
 		let z: number, y: number;
 		for (z = 0; z < this._dp.drawingClients.length; z++) {
 			if (!this._dp.drawingClients[z].drawObjects ||
-				!Array.isArray(this._dp.doF3CGroups[z]) ||
-				this._dp.doF3CGroups[z].length === 0) continue;
+				!Array.isArray(this._dp.doCGroups[z]) ||
+				this._dp.doCGroups[z].length === 0) continue;
 			//console.log(`drawObjectsF3 for  ${this._dp.drawingClients[z].constructor.name}`);
-			this._dp.drawingClients[z].drawObjects(this._dp.doF3CGroups[z]);
+			this._dp.drawingClients[z].drawObjects(this._dp.doCGroups[z]);
 		}
 
-		for (z = 0; z < this._dp.doF3Hud.length; z++) {
+		for (z = 0; z < this._dp.doHud.length; z++) {
 			console.log("draw hud:", z);
 		}
 
@@ -374,7 +393,7 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private onReceiveDrawingObjects(p: IDrawingObject[][]) {
 		this._ct.clear();
-		this.renderVisibleGroupF3();
+		this.renderVisibleGroups();
 		this.drawCursotPosition();
 	}
 
@@ -492,10 +511,6 @@ export class DrawableComponent implements OnInit {
 	}
 
 
-
-
-
-
 	//-------------------------------------------------------------------------------------
 	private drawCursorObjects(objs: CursorDrawingObject[]) {
 		//console.log("draw cursor", objs);
@@ -601,12 +616,12 @@ export class DrawableComponent implements OnInit {
 
 				dx = beatRange.container.minOx - state.minPx;
 				left = cell.container.left + dx;
-				this._ct.ctx.fillRect(
-					left,
-					cell.container.top,
-					beatRange.container.width,
-					cell.container.height
-				);
+				//this._ct.ctx.fillRect(
+				//	left,
+				//	cell.container.top,
+				//	beatRange.container.width,
+				//	cell.container.height
+				//);
 			}
 		}
 
@@ -785,7 +800,16 @@ export class DrawableComponent implements OnInit {
 	}
 
 
+	//-------------------------------------------------------------------------------------
+	private calcScaling(left: number, top: number, zoomX: number = 1, zoomY: number = 1): number[] {
+		// TODO: replace with matrix mul
+		return [left * zoomX, top * zoomY];
+	}
 
+	//-------------------------------------------------------------------------------------
+	private calcPointScaling(point: XPoint, zx: number = 1, zy: number = 1): number[] {
+		return this.calcScaling(point.left, point.top, zx, zy);
+	}
 
 
 

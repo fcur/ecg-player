@@ -40,20 +40,20 @@ export class XDrawingProxy {
 	//public objectsF2: IDrawingObject[][];
 	// feature3
 	/** All prepared drawing objects. */
-	public doF3All: IDrawingObject[];
+	public doAll: IDrawingObject[];
 	/** HUD drawing objects, always visible on surface. */
-	public doF3Hud: IDrawingObject[];
+	public doHud: IDrawingObject[];
 	/** Visible drawing objects. */
-	public doF3Visible: IDrawingObject[];
+	public doVisible: IDrawingObject[];
 	/** Hidden from the left drawing objects. */
-	public doF3HidLeft: IDrawingObject[];
+	public doHidLeft: IDrawingObject[];
 	/** Hidden from the right drawing objects. */
-	public doF3HidRight: IDrawingObject[];
+	public doHidRight: IDrawingObject[];
 	/** Groupped visible drawing objects [i][j].
 		[i] - index of DO client, max(i)= clients.length-1
 		[j] - index of DO
 	*/
-	public doF3CGroups: IDrawingObject[][];
+	public doCGroups: IDrawingObject[][];
 
 
 	//-------------------------------------------------------------------------------------
@@ -73,7 +73,7 @@ export class XDrawingProxy {
 		for (let z: number = 0; z < items.length; z++) {
 			this._clients.push(items[z]);
 		}
-		this.doF3CGroups = new Array(this._clients.length);
+		this.doCGroups = new Array(this._clients.length);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -88,18 +88,18 @@ export class XDrawingProxy {
 
 	//-------------------------------------------------------------------------------------
 	public get canDraw(): boolean {
-		return this.doF3CGroups.length > 0 || this.doF3Hud.length > 0;
+		return this.doCGroups.length > 0 || this.doHud.length > 0;
 	}
 
 	//-------------------------------------------------------------------------------------
 	private init() {
 		//this.drawingObjects = [];
 		this._clients = [];
-		this.doF3CGroups = [];
-		this.doF3Hud = [];
-		this.doF3Visible = [];
-		this.doF3HidLeft = [];
-		this.doF3HidRight = [];
+		this.doCGroups = [];
+		this.doHud = [];
+		this.doVisible = [];
+		this.doHidLeft = [];
+		this.doHidRight = [];
 		this.drawingData = new DrawingData();
 		this.state = new XDrawingProxyState();
 		//this.onChangeState = new EventEmitter<XDrawingChange>();
@@ -111,10 +111,10 @@ export class XDrawingProxy {
 		// TODO
 		// movement < 0 >> scrolling forward, sort left, visible 
 		// movement > 0 >> scrolling back, sort right, visible
-		if (!Array.isArray(this.doF3All) ||
-			!Array.isArray(this.doF3Visible) ||
-			!Array.isArray(this.doF3HidLeft) ||
-			!Array.isArray(this.doF3HidRight)) return;
+		if (!Array.isArray(this.doAll) ||
+			!Array.isArray(this.doVisible) ||
+			!Array.isArray(this.doHidLeft) ||
+			!Array.isArray(this.doHidRight)) return;
 
 		this.resetDOF3Groups();
 		// handle mouse actions (move, drag, click)
@@ -125,22 +125,22 @@ export class XDrawingProxy {
 			minOx: number,
 			maxOx: number;
 
-		this.doF3Visible.length = 0;
-		this.doF3HidLeft.length = 0;
-		this.doF3HidRight.length = 0;
+		this.doVisible.length = 0;
+		this.doHidLeft.length = 0;
+		this.doHidRight.length = 0;
 
-		for (z = 0; z < this.doF3All.length; z++) {
-			minOx = this.doF3All[z].container.minOx;
-			maxOx = this.doF3All[z].container.maxOx;
+		for (z = 0; z < this.doAll.length; z++) {
+			minOx = this.doAll[z].container.minOx;
+			maxOx = this.doAll[z].container.maxOx;
 			if (maxOx < this.state.minPx) {
-				this.doF3All[z].hidden = true;
-				this.doF3HidLeft.push(this.doF3All[z]);
+				this.doAll[z].hidden = true;
+				this.doHidLeft.push(this.doAll[z]);
 			} else if (minOx > this.state.maxPx) {
-				this.doF3All[z].hidden = true;
-				this.doF3HidRight.push(this.doF3All[z]);
+				this.doAll[z].hidden = true;
+				this.doHidRight.push(this.doAll[z]);
 			} else {
-				this.doF3All[z].hidden = false;
-				this.doF3Visible.push(this.doF3All[z]);
+				this.doAll[z].hidden = false;
+				this.doVisible.push(this.doAll[z]);
 			}
 		}
 
@@ -150,25 +150,25 @@ export class XDrawingProxy {
 
 		let ownerIndex: number, doAllIndex: number;
 
-		for (z = 0; z < this.doF3Visible.length; z++) {
-			doAllIndex = this.doF3All.indexOf(this.doF3Visible[z]);
-			if (doAllIndex < 0 || this.doF3All[doAllIndex].hidden != this.doF3Visible[z].hidden) {
+		for (z = 0; z < this.doVisible.length; z++) {
+			doAllIndex = this.doAll.indexOf(this.doVisible[z]);
+			if (doAllIndex < 0 || this.doAll[doAllIndex].hidden != this.doVisible[z].hidden) {
 				console.warn("scrollDrawObjGroupsF3");
 			}
-			ownerIndex = this._clients.indexOf(this.doF3Visible[z].owner);
+			ownerIndex = this._clients.indexOf(this.doVisible[z].owner);
 			if (ownerIndex < 0) continue;
-			this.doF3CGroups[ownerIndex].push(this.doF3Visible[z]);
+			this.doCGroups[ownerIndex].push(this.doVisible[z]);
 		}
 	}
 
 	//-------------------------------------------------------------------------------------
 	public resetDOF3Groups() {
-		for (let z: number = 0; z < this.doF3CGroups.length; z++) {
-			if (Array.isArray(this.doF3CGroups[z])) {
-				this.doF3CGroups[z].length = 0; // clear
+		for (let z: number = 0; z < this.doCGroups.length; z++) {
+			if (Array.isArray(this.doCGroups[z])) {
+				this.doCGroups[z].length = 0; // clear
 				continue;
 			}
-			this.doF3CGroups[z] = [];
+			this.doCGroups[z] = [];
 		}
 	}
 
@@ -176,23 +176,23 @@ export class XDrawingProxy {
 	public rebuildDrawObjGroupsF3() {
 		// prepare groups of objects
 		this.projectDrawObjF3();
-		this.doF3Visible = [];
-		this.doF3HidLeft = [];
-		this.doF3HidRight = [];
+		this.doVisible = [];
+		this.doHidLeft = [];
+		this.doHidRight = [];
 		this.resetDOF3Groups();
 		let z: number,
 			minOx: number,
 			maxOx: number;
-		for (let z: number = 0; z < this.doF3All.length; z++) {
-			minOx = this.doF3All[z].container.minOx;
-			maxOx = this.doF3All[z].container.maxOx;
-			this.doF3All[z].hidden = true;
+		for (let z: number = 0; z < this.doAll.length; z++) {
+			minOx = this.doAll[z].container.minOx;
+			maxOx = this.doAll[z].container.maxOx;
+			this.doAll[z].hidden = true;
 			if (maxOx < this.state.minPx) {
-				this.doF3HidLeft.push(this.doF3All[z]);
+				this.doHidLeft.push(this.doAll[z]);
 			} else if (minOx > this.state.maxPx) {
-				this.doF3HidRight.push(this.doF3All[z]);
+				this.doHidRight.push(this.doAll[z]);
 			} else {
-				this.doF3Visible.push(this.doF3All[z]);
+				this.doVisible.push(this.doAll[z]);
 			}
 		}
 		//console.log(`F3 visible: ${this.visibleObjectsF3.length} left: ${this.leftObjectsF3.length} right: ${this.rightObjectsF3.length}`)
@@ -202,14 +202,14 @@ export class XDrawingProxy {
 	public projectDrawObjF3() {
 		let data: IDrawingObject[] = new Array();
 		// prepare list of drawing objects
-		this.doF3All = [];
-		this.doF3Hud = [];
+		this.doAll = [];
+		this.doHud = [];
 		let z: number,
 			y: number;
 		for (z = 0; z < this._clients.length; z++) {
 			data = this._clients[z].prepareAllDrawings(this.drawingData, this.state);
 			for (y = 0; y < data.length; y++) {
-				this.doF3All.push(data[y]);
+				this.doAll.push(data[y]);
 			}
 		}
 	}
@@ -290,9 +290,9 @@ export class XDrawingProxy {
 		//this.onPrepareDrawings.emit(objects);
 		let z1: number;
 
-		for (z1 = 0; z1 < this.doF3Visible.length; z1++) {
-			if (!this.doF3Visible[z1].hud) continue;
-			this.doF3Visible[z1].updateState(this.drawingData,this.state);
+		for (z1 = 0; z1 < this.doVisible.length; z1++) {
+			if (!this.doVisible[z1].hud) continue;
+			this.doVisible[z1].updateState(this.drawingData,this.state);
 		}
 
 		//this.resetDOF3Groups();

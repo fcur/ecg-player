@@ -169,8 +169,8 @@ export class XDrawingProxyState {
 	public gridMode: XDrawingGridMode;
 	/** Cursor pointer X. */
 	public pointerX: number;
+	/** Cursor pointer Y. */
 	public pointerY: number;
-
 
 	public leadsCodes: EcgLeadCode[];
 
