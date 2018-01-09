@@ -372,7 +372,17 @@ export class XCanvasTool {
 		this.ctx.restore();
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	public makeLine(ax: number, ay: number, bx: number, by: number) {
+		this.ctx.moveTo(ax + 0.5, ay + 0.5);
+		this.ctx.lineTo(bx + 0.5, by + 0.5);
+	}
 
+	//-------------------------------------------------------------------------------------------------
+	public makeCircle(left: number, top: number, radius: number) {
+		this.ctx.moveTo(left, top);
+		this.ctx.arc(left, top, radius, 0, 2 * Math.PI, false);
+	}
 }
 
 

@@ -257,11 +257,10 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onDragMove(event: any) {
-		if (!this._waveformDragStartPosition) {
-			this.pointerMove(event);
-			return;
+		if (this._waveformDragStartPosition) {
+			this.scroll(event);
 		}
-		this.scroll(event);
+		this.pointerMove(event);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -403,7 +402,7 @@ export class DrawableComponent implements OnInit {
 		this._signalClient.drawObjectsF3 = this.drawSignalObjectsF3.bind(this);
 		this._gridClient.drawObjectsF3 = this.drawGridObjectsF3.bind(this);
 		this._beatsClient.drawObjectsF3 = this.drawBeatsRangesObjectsF3.bind(this);
-		//this._fpointClient.drawObjects = this.drawFPointObjectsF2.bind(this);
+		//this._cursorClient.drawObjects = this.drawFPointObjectsF2.bind(this);
 		this._cursorClient.drawObjectsF3 = this.drawCursorObjectsF3.bind(this);
 
 		this._dp.pushClients(this._gridClient, this._signalClient, this._beatsClient, this._cursorClient);
@@ -439,8 +438,6 @@ export class DrawableComponent implements OnInit {
 		this._waveformDragStartPosition = endpoint;
 		if (actionPoint.left === 0) return; // skip scrolling
 		this._dp.scroll(actionPoint.left);
-		//this._dp.scrollDrawObjGroupsF3();
-		//this._dp.refreshDrawings();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -452,11 +449,6 @@ export class DrawableComponent implements OnInit {
 		//}
 		this._dp.performMouseMove(event);
 	}
-
-
-
-
-
 
 	//-------------------------------------------------------------------------------------
 	private drawSignalObjectsF3(objs: SignalDrawingObject[]) {
@@ -530,7 +522,7 @@ export class DrawableComponent implements OnInit {
 		top = state.container.top + obj.lines[0].by + 0.5;
 		this._ct.ctx.lineTo(left, top);
 		this._ct.ctx.strokeStyle = this._cursorClient.lineColor;
-		this._ct.ctx.closePath();
+		//this._ct.ctx.closePath();
 		this._ct.ctx.stroke();
 
 		let testShift: number = 0;
@@ -541,8 +533,7 @@ export class DrawableComponent implements OnInit {
 			left = state.container.left + obj.points[z].left + 0.5;
 			dy = Math.floor(obj.points[z].top * state.gridCells[z].microvoltsToPixel);
 			top = dy + state.gridCells[z].container.midOy + testShift + 0.5;
-			this._ct.ctx.moveTo(left, top);
-			this._ct.ctx.arc(left, top, this._cursorClient.pointRadius, 0, 2 * Math.PI, false);
+			this._ct.makeCircle(left, top, this._cursorClient.pointRadius);
 		}
 		this._ct.ctx.closePath();
 		this._ct.ctx.fill();
@@ -552,7 +543,7 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private drawCursorObjectsF3(objs: CursorDrawingObject[]) {
-		console.log("draw cursor", objs);
+		//console.log("draw cursor", objs);
 		this._ct.saveState();
 		let state: XDrawingProxyState = this._dp.state;
 		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
@@ -566,7 +557,7 @@ export class DrawableComponent implements OnInit {
 		top = state.container.top + obj.lines[0].by + 0.5;
 		this._ct.ctx.lineTo(left, top);
 		this._ct.ctx.strokeStyle = this._cursorClient.lineColor;
-		this._ct.ctx.closePath();
+		//this._ct.ctx.closePath();
 		this._ct.ctx.stroke();
 
 		let testShift: number = 0;
@@ -577,8 +568,7 @@ export class DrawableComponent implements OnInit {
 			left = state.container.left + obj.points[z].left + 0.5;
 			dy = Math.floor(obj.points[z].top * state.gridCells[z].microvoltsToPixel);
 			top = dy + state.gridCells[z].container.midOy + testShift + 0.5;
-			this._ct.ctx.moveTo(left, top);
-			this._ct.ctx.arc(left, top, this._cursorClient.pointRadius, 0, 2 * Math.PI, false);
+			this._ct.makeCircle(left, top, this._cursorClient.pointRadius);
 		}
 		this._ct.ctx.closePath();
 		this._ct.ctx.fill();
@@ -596,8 +586,7 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.fillStyle = "pink";
 		left = this._dp.state.container.left + this._dp.state.pointerX + 0.5;
 		top = this._dp.state.container.left + this._dp.state.pointerY + 0.5;
-		this._ct.ctx.moveTo(left, top);
-		this._ct.ctx.arc(left, top, 3, 0, 2 * Math.PI, false);
+		this._ct.makeCircle(left, top, 3);
 		this._ct.ctx.closePath();
 		this._ct.ctx.fill();
 
@@ -687,12 +676,10 @@ export class DrawableComponent implements OnInit {
 				point = beatRange.points[x];
 				dx = point.left - state.minPx;
 				if (dx < 0 || point.left > state.maxPx) continue;
-
 				dy = Math.floor(point.top * cell.microvoltsToPixel);
 				left = cell.container.left + dx + 0.5;
 				top = dy + cell.container.midOy + 0.5 + shift;
-				this._ct.ctx.moveTo(left, top);
-				this._ct.ctx.arc(left, top, this._beatsClient.radius, 0, 2 * Math.PI, false);
+				this._ct.makeCircle(left, top, this._beatsClient.radius);
 				if (printText) {
 					this._ct.ctx.fillText(`${point.left}`, left, top + textSize);
 				}
@@ -761,8 +748,7 @@ export class DrawableComponent implements OnInit {
 						ay = line.ay + objs[z].container.top;
 						bx = line.bx + objs[z].container.left - state.minPx;
 						by = line.by + objs[z].container.top;
-						this._ct.ctx.moveTo(ax + 0.5, ay + 0.5);
-						this._ct.ctx.lineTo(bx + 0.5, by + 0.5);
+						this._ct.makeLine(ax, ay, bx, by);
 					}
 				}
 
@@ -775,10 +761,8 @@ export class DrawableComponent implements OnInit {
 						by = line.by + objs[z].container.top;
 						if (ax < 0 || bx < 0) continue;
 						if (ax > state.container.maxOx || bx > state.container.maxOx) break;
-						this._ct.ctx.moveTo(ax + 0.5, ay + 0.5);
-						this._ct.ctx.lineTo(bx + 0.5, by + 0.5);
+						this._ct.makeLine(ax, ay, bx, by);
 						this._ct.ctx.fillText(line.ax.toString(), ax, ay);
-
 					}
 				}
 			}
@@ -804,9 +788,7 @@ export class DrawableComponent implements OnInit {
 					ay = line.ay + objs[z].container.top;
 					bx = line.bx + objs[z].container.left - state.minPx;
 					by = line.by + objs[z].container.top;
-
-					this._ct.ctx.moveTo(ax + 0.5, ay + 0.5);
-					this._ct.ctx.lineTo(bx + 0.5, by + 0.5);
+					this._ct.makeLine(ax, ay, bx, by);
 				}
 			}
 		}

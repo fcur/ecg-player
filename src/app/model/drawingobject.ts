@@ -473,7 +473,6 @@ export class CursorDrawingObject extends XDrawingObject {
 			signalPoints = dd.data[ps.sampleRate][header.id].signal[ps.gridCells[z].lead];
 			this.points[z] = new XPoint(ps.pointerX, signalPoints[ps.skipPx + ps.pointerX].top);
 		}
-		console.log("CursorDrawingObject", "updateState");
 	}
 
 }

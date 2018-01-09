@@ -849,6 +849,7 @@ export class CursorDrawingClient extends XDrawingClient {
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
 		let obj: CursorDrawingObject = new CursorDrawingObject();
+		obj.owner = this;
 		//obj.container = new XRectangle(ps.pointerX - this.clientHalfWidth, 0, this.clientHalfWidth * 2, ps.container.height);
 		obj.container = new XRectangle(ps.minPx, 0, ps.limitPx, ps.container.height);
 
@@ -859,10 +860,17 @@ export class CursorDrawingClient extends XDrawingClient {
 		obj.points = new Array(ps.gridCells.length);
 		// TODO move to state getter
 		let header: RecordProjection = dd.getHeader(ps.skipPx + ps.pointerX, ps.sampleRate);
-		let signalPoints: XPoint[];
-		for (let z: number = 0; z < ps.gridCells.length; z++) {
-			signalPoints = dd.data[ps.sampleRate][header.id].signal[ps.gridCells[z].lead];
-			obj.points[z] = new XPoint(ps.pointerX, signalPoints[ps.skipPx + ps.pointerX].top);
+		let z: number,
+			top: number,
+			left: number,
+			signal: XPoint[];
+
+		left = ps.pointerX; // merge with 12ch grid layout
+		for (z = 0; z < ps.gridCells.length; z++) {
+			signal = dd.data[ps.sampleRate][header.id].signal[ps.gridCells[z].lead];
+			if (!Array.isArray(signal) || signal.length === 0) continue;
+			top = signal[ps.skipPx + ps.pointerX].top;
+			obj.points[z] = new XPoint(left, top);
 		}
 		//results.push(obj);
 		return [obj];
