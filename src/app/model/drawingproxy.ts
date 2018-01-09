@@ -207,7 +207,6 @@ export class XDrawingProxy {
 		let z: number,
 			y: number;
 		for (z = 0; z < this._clients.length; z++) {
-			//data = this._clientsF2[z].prepareDrawings(this.drawingData, this.state);
 			data = this._clients[z].prepareAllDrawings(this.drawingData, this.state);
 			for (y = 0; y < data.length; y++) {
 				this.doF3All.push(data[y]);

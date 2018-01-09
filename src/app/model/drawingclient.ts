@@ -55,12 +55,8 @@ export interface IDrawingClient {
 	afterDraw?: Function;
 	/** Create drawing object factory method. */
 	createDrawingObject: Function;
-	/** Prepare drawing objects. */
-	prepareDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
-	/** Client groups drawing method (required). */
+	/** Client groups drawing method(required). */
 	drawObjects: Function;
-	/** Client groups drawing method F3(required). */
-	drawObjectsF3: Function;
 	/** Prepare drawing objects. */
 	prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
 	/** Draw client drawing objects. */
@@ -96,8 +92,6 @@ export class XDrawingClient implements IDrawingClient {
 	public createDrawingObject: Function;
 	/** Client groups drawing method (required). */
 	public drawObjects: Function;
-	/** Client groups drawing method F3(required). */
-	public drawObjectsF3: Function;
 
 
 	//-------------------------------------------------------------------------------------
@@ -105,13 +99,6 @@ export class XDrawingClient implements IDrawingClient {
 		this.recordsThreshold = 0;
 		this.recordSpace = 10;
 		this.layoutSpace = 30;
-	}
-
-
-
-	//-------------------------------------------------------------------------------------
-	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[] {
-		return [];
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -158,15 +145,6 @@ export class AnsDrawingClient extends XDrawingClient {
 		let result: AnsDrawingObject = new AnsDrawingObject();
 
 		return result;
-	}
-
-	//-------------------------------------------------------------------------------------
-	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): AnsDrawingObject[] {
-		console.info("AnsDrawingClient.prepareDrawings", "not implemented");
-		let ansDrawObj: AnsDrawingObject[] = new Array();
-		ansDrawObj.push(new AnsDrawingObject());
-		ansDrawObj[0].owner = this;
-		return ansDrawObj;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -233,46 +211,6 @@ export class BeatsDrawingClient extends XDrawingClient {
 		let result: BeatsRangeDrawingObject = new BeatsRangeDrawingObject();
 
 		return result;
-	}
-
-	//-------------------------------------------------------------------------------------
-	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): BeatsRangeDrawingObject[] {
-		// TODO: handle space between records
-		if (!data.headers.hasOwnProperty(state.sampleRate) || !data.data.hasOwnProperty(state.sampleRate) || !data.data[state.sampleRate]) return [];
-
-		let z: number, y: number, x: number;
-		let start: number, limit: number, end: number, cellRecordStart: number;
-		let results: BeatsRangeDrawingObject[] = new Array();
-		let headers: RecordProjection[] = data.getHeaders(state.skipPx, state.limitPx, state.sampleRate);
-		let beats: { [lead: number]: XPoint[] }, beatsPoints: XPoint[], curPoint: XPoint;
-		for (z = 0; z < state.gridCells.length; z++) {
-			// DrawingObject for each XDrawingCell
-			results[z] = new BeatsRangeDrawingObject();
-			results[z].owner = this;
-			results[z].cellIndex = z;
-			results[z].index = z;
-			results[z].container = state.gridCells[z].container.clone;
-			results[z].container.resetStart();
-			results[z].points = new Array();
-			for (y = 0, cellRecordStart = 0; y < headers.length; y++) {
-				beats = data.data[state.sampleRate][headers[y].id].beats;
-				start = state.minPx - headers[y].startPx; // from this position (pixels)
-				end = Math.min(headers[y].endPx, state.maxPx); // until this position (pixels)
-				limit = end - start;
-				beatsPoints = beats[state.gridCells[z].lead];
-				for (x = 0; x < beatsPoints.length; x++) {
-					if (beatsPoints[x].left < start) continue;
-					if (beatsPoints[x].left > end) break;
-					// calc projection on state range in pixels
-					curPoint = beatsPoints[x].clone;
-					curPoint.left = curPoint.left - start;
-					results[z].points.push(curPoint);
-					//results[z].points
-				}
-				cellRecordStart += limit;
-			}
-		}
-		return results;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -402,49 +340,6 @@ export class GridCellDrawingClient extends XDrawingClient {
 		let result: GridCellDrawingObject = new GridCellDrawingObject();
 
 		return result;
-	}
-
-
-	//-------------------------------------------------------------------------------------
-	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): GridCellDrawingObject[] {
-		let z: number,
-			y: number,
-			x: number,
-			container: XRectangle;
-		// TODO: prepare drawings for all headers
-		// cell length = header.length
-		let results: GridCellDrawingObject[] = new Array(state.gridCells.length);
-
-		let borderPoints: XPoint[];
-		let axisPoints: XPoint[];
-		for (z = 0; z < state.gridCells.length; z++) {
-			results[z] = new GridCellDrawingObject();
-			results[z].owner = this;
-			results[z].cellIndex = z;
-			results[z].index = z;
-			results[z].container = state.gridCells[z].container.clone;
-			results[z].left = state.skipPx;
-			results[z].lead = state.gridCells[z].lead;
-			results[z].leadLabel = state.gridCells[z].leadLabel;
-			container = state.gridCells[z].container;
-			// TODO: return container borders as lines
-			// border
-			borderPoints = [
-				new XPoint(0, 0),
-				new XPoint(container.width, 0),
-				new XPoint(container.width, container.height),
-				new XPoint(0, container.height),
-				new XPoint(0, 0)
-			];
-			// OX axis
-			axisPoints = [
-				new XPoint(0, container.midOy - container.minOy),
-				new XPoint(container.width, container.midOy - container.minOy)
-			];
-			results[z].polylines = [new XPolyline(borderPoints), new XPolyline(axisPoints)];
-			//results[z].container.resetStart();
-		}
-		return results;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -609,48 +504,6 @@ export class SignalDrawingClient extends XDrawingClient {
 		return result;
 	}
 
-
-	//-------------------------------------------------------------------------------------
-	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): SignalDrawingObject[] {
-		// TODO: handle space between records
-		if (!data.headers.hasOwnProperty(state.sampleRate) || !data.data.hasOwnProperty(state.sampleRate) || !data.data[state.sampleRate]) return [];
-
-		let signal: { [lead: number]: XPoint[] }, signalPoints: XPoint[], points: XPoint[];
-		let start: number, limit: number, end: number, cellRecordStart: number;
-		let z: number, y: number, x: number;
-
-		let results: SignalDrawingObject[] = new Array(state.gridCells.length);
-		let headers: RecordProjection[] = data.getHeaders(state.skipPx, state.limitPx, state.sampleRate);
-
-		for (z = 0; z < state.gridCells.length; z++) {
-			// DrawingObject for each XDrawingCell
-			results[z] = new SignalDrawingObject();
-			results[z].owner = this;
-			results[z].cellIndex = z;
-			results[z].index = z;
-			results[z].polylines = new Array();
-			results[z].container = state.gridCells[z].container.clone;
-			results[z].container.resetStart();
-
-			for (y = 0, cellRecordStart = 0; y < headers.length; y++) {
-
-				signal = data.data[state.sampleRate][headers[y].id].signal;
-				start = state.minPx - headers[y].startPx; // from this position
-				end = Math.min(headers[y].endPx, state.maxPx); // until this position
-				limit = end - start;
-				signalPoints = signal[state.gridCells[z].lead];
-				points = new Array(limit);
-				for (x = 0; x < limit; x++) {
-					points[x] = signalPoints[x + start].clone;
-					points[x].left = x;
-				}
-				results[z].polylines.push(new XPolyline(points));
-				cellRecordStart += limit;
-			}
-		}
-		return results;
-	}
-
 	//-------------------------------------------------------------------------------------
 	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): SignalDrawingObject[] {
 		// TODO: add drawings merge method (example: signal for other leads)
@@ -740,14 +593,6 @@ export class ClickablePointDrawingClient extends XDrawingClient {
 		let result: ClPointDrawingObject = new ClPointDrawingObject();
 		return result;
 	}
-
-	//-------------------------------------------------------------------------------------
-	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): ClPointDrawingObject[] {
-		// TODO: handle space between records
-		let results: ClPointDrawingObject[] = new Array();
-		let headers: RecordProjection[] = data.getHeaders(state.skipPx, state.limitPx, state.sampleRate);
-		return results;
-	}
 }
 
 
@@ -784,15 +629,6 @@ export class CellDrawingClient extends XDrawingClient {
 		console.info("CellDrawingClient.createCellDrawingObject", "not implemented");
 		let result: CellDrawingObject = new CellDrawingObject();
 		return result;
-	}
-
-
-
-	//-------------------------------------------------------------------------------------
-	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): CellDrawingObject[] {
-		let results: CellDrawingObject[] = new Array();
-
-		return results;
 	}
 
 }
@@ -845,7 +681,7 @@ export class CursorDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareDrawings(dd: DrawingData, ps: XDrawingProxyState): CursorDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): CursorDrawingObject[] {
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
 		let obj: CursorDrawingObject = new CursorDrawingObject();
@@ -872,21 +708,9 @@ export class CursorDrawingClient extends XDrawingClient {
 			top = signal[ps.skipPx + ps.pointerX].top;
 			obj.points[z] = new XPoint(left, top);
 		}
-		//results.push(obj);
 		return [obj];
 	}
-
-
-	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): CursorDrawingObject[] {
-		return this.prepareDrawings(dd, ps);
-		//console.info("FPointDrawingClient.prepareAllDrawings", "not implemented");
-	}
 }
-
-
-
-
 
 // -------------------------------------------------------------------------------------------------
 // Wavepoint drawing client
@@ -898,13 +722,6 @@ export class WavepointClient extends XDrawingClient {
 	constructor() {
 		super();
 	}
-
-
-	//-------------------------------------------------------------------------------------
-	public prepareDrawings(data: DrawingData, state: XDrawingProxyState): WavepointDrawingObject[] {
-		return [];
-	}
-
 
 	//-------------------------------------------------------------------------------------
 	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): WavepointDrawingObject[] {

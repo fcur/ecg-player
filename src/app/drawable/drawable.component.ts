@@ -356,11 +356,11 @@ export class DrawableComponent implements OnInit {
 	private renderVisibleGroupF3() {
 		let z: number, y: number;
 		for (z = 0; z < this._dp.drawingClients.length; z++) {
-			if (!this._dp.drawingClients[z].drawObjectsF3 ||
+			if (!this._dp.drawingClients[z].drawObjects ||
 				!Array.isArray(this._dp.doF3CGroups[z]) ||
 				this._dp.doF3CGroups[z].length === 0) continue;
 			//console.log(`drawObjectsF3 for  ${this._dp.drawingClients[z].constructor.name}`);
-			this._dp.drawingClients[z].drawObjectsF3(this._dp.doF3CGroups[z]);
+			this._dp.drawingClients[z].drawObjects(this._dp.doF3CGroups[z]);
 		}
 
 		for (z = 0; z < this._dp.doF3Hud.length; z++) {
@@ -375,19 +375,6 @@ export class DrawableComponent implements OnInit {
 	private onReceiveDrawingObjects(p: IDrawingObject[][]) {
 		this._ct.clear();
 		this.renderVisibleGroupF3();
-		// z: client index
-		//for (let z: number = 0; z < this._dp.drawingClients.length; z++) {
-		//	if (this._dp.drawingClients[z].drawObjects && Array.isArray(p[z])) {
-		//		if (p[z].length === 0) continue;
-		//		this._dp.drawingClients[z].drawObjects(p[z]);
-		//	}
-		//	else if (this._dp.drawingClients[z].draw) {
-		//		// TODO remove single object drawing method
-		//		this._dp.drawingClients[z].draw(p[z][0]);
-		//	}
-		//}
-		//p = null; // release refferences
-		//this._dp.objectsF2 = null;
 		this.drawCursotPosition();
 	}
 
@@ -399,11 +386,10 @@ export class DrawableComponent implements OnInit {
 		this._beatsClient = new BeatsDrawingClient();
 		this._cursorClient = new CursorDrawingClient();
 
-		this._signalClient.drawObjectsF3 = this.drawSignalObjectsF3.bind(this);
-		this._gridClient.drawObjectsF3 = this.drawGridObjectsF3.bind(this);
-		this._beatsClient.drawObjectsF3 = this.drawBeatsRangesObjectsF3.bind(this);
-		//this._cursorClient.drawObjects = this.drawFPointObjectsF2.bind(this);
-		this._cursorClient.drawObjectsF3 = this.drawCursorObjectsF3.bind(this);
+		this._signalClient.drawObjects = this.drawSignalObjects.bind(this);
+		this._gridClient.drawObjects = this.drawGridObjects.bind(this);
+		this._beatsClient.drawObjects = this.drawBeatsRangesObjects.bind(this);
+		this._cursorClient.drawObjects = this.drawCursorObjects.bind(this);
 
 		this._dp.pushClients(this._gridClient, this._signalClient, this._beatsClient, this._cursorClient);
 	}
@@ -451,7 +437,7 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private drawSignalObjectsF3(objs: SignalDrawingObject[]) {
+	private drawSignalObjects(objs: SignalDrawingObject[]) {
 		let shift: number = 0; // #DEBUG_ONLY
 		let state: XDrawingProxyState = this._dp.state;
 		// z - drawing object index
@@ -507,42 +493,11 @@ export class DrawableComponent implements OnInit {
 
 
 
-	//-------------------------------------------------------------------------------------
-	private drawFPointObjectsF2(objs: CursorDrawingObject[]) {
-		this._ct.saveState();
-		let state: XDrawingProxyState = this._dp.state;
-		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
-		let obj: CursorDrawingObject = objs[0];
-		this._ct.ctx.globalAlpha = this._cursorClient.opacity;
-		// pointer line
-		this._ct.ctx.beginPath();
-		left = state.container.left + obj.lines[0].ax + 0.5;
-		top = state.container.top + obj.lines[0].ay + 0.5;
-		this._ct.ctx.moveTo(left, top);
-		top = state.container.top + obj.lines[0].by + 0.5;
-		this._ct.ctx.lineTo(left, top);
-		this._ct.ctx.strokeStyle = this._cursorClient.lineColor;
-		//this._ct.ctx.closePath();
-		this._ct.ctx.stroke();
 
-		let testShift: number = 0;
-		this._ct.ctx.beginPath();
-		this._ct.ctx.fillStyle = this._cursorClient.pointColor;
-		for (let z: number = 0; z < state.gridCells.length; z++) {
-			// cell index = point index
-			left = state.container.left + obj.points[z].left + 0.5;
-			dy = Math.floor(obj.points[z].top * state.gridCells[z].microvoltsToPixel);
-			top = dy + state.gridCells[z].container.midOy + testShift + 0.5;
-			this._ct.makeCircle(left, top, this._cursorClient.pointRadius);
-		}
-		this._ct.ctx.closePath();
-		this._ct.ctx.fill();
-		this._ct.restoreState();
-	}
 
 
 	//-------------------------------------------------------------------------------------
-	private drawCursorObjectsF3(objs: CursorDrawingObject[]) {
+	private drawCursorObjects(objs: CursorDrawingObject[]) {
 		//console.log("draw cursor", objs);
 		this._ct.saveState();
 		let state: XDrawingProxyState = this._dp.state;
@@ -601,11 +556,8 @@ export class DrawableComponent implements OnInit {
 		this._ct.restoreState();
 	}
 
-
-
-
 	//-------------------------------------------------------------------------------------
-	private drawBeatsRangesObjectsF3(objs: BeatsRangeDrawingObject[]) {
+	private drawBeatsRangesObjects(objs: BeatsRangeDrawingObject[]) {
 		this._ct.saveState();
 		// draw beat ranges: drawObj.container for all channels
 		// draw beat peaks: drawObj.points for each channel
@@ -700,7 +652,7 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private drawGridObjectsF3(objs: GridCellDrawingObject[]) {
+	private drawGridObjects(objs: GridCellDrawingObject[]) {
 
 		let z: number,
 			y: number,
