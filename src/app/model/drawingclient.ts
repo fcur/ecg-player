@@ -644,12 +644,13 @@ export class CursorDrawingClient extends XDrawingClient {
 	pointColor: string;
 	pointRadius: number;
 	clientHalfWidth: number;
-
+	scale: number;
 
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
+		this.scale = 1;
 		this.clientHalfWidth = 4;
 		this.pointColor = "red";
 		this.lineColor = "#ccc";
@@ -727,4 +728,30 @@ export class WavepointClient extends XDrawingClient {
 	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): WavepointDrawingObject[] {
 		return [];
 	}
+}
+
+
+
+// -------------------------------------------------------------------------------------------------
+// Target rectangle client
+// -------------------------------------------------------------------------------------------------
+export class TargetRectangleClient {
+
+	public figure: XRectangle;
+
+	public left: number;
+	public top: number;
+	public width: number;
+	public height: number;
+
+	//-------------------------------------------------------------------------------------
+	constructor() {
+		this.left = 200;
+		this.top = 123;
+		this.width = 300;
+		this.height = 224;
+		this.figure = new XRectangle(this.left, this.top, this.width, this.height);
+
+	}
+
 }

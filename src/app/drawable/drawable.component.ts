@@ -16,9 +16,9 @@ import {
 	ClickablePointDrawingClient, CursorDrawingClient,
 	XDrawingClient, XDrawingMode, IDrawingClient,
 	SignalDrawingClient, CellDrawingClient,
+	GridCellDrawingClient, WavepointClient,
 	AnsDrawingClient, BeatsDrawingClient,
-	GridCellDrawingClient,
-	WavepointClient
+	TargetRectangleClient
 } from "../model/drawingclient";
 import {
 	BeatsRangeDrawingObject, IDrawingObject, ClPointDrawingObject,
@@ -50,6 +50,7 @@ export class DrawableComponent implements OnInit {
 	private _gridClient: GridCellDrawingClient;
 	private _beatsClient: BeatsDrawingClient;
 	private _cursorClient: CursorDrawingClient;
+	private _targRectClient: TargetRectangleClient;
 	private _zoomIntensity: number;
 	private _fileReader: FileReader;
 	private _hideFileDrop: boolean;
@@ -194,7 +195,7 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:wheel", ["$event"]) onMouseWheel(event: WheelEvent) {
 		event.preventDefault();
-		this.onWheelScroll(event);
+		//this.onWheelScroll(event);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -359,9 +360,14 @@ export class DrawableComponent implements OnInit {
 		// Normalize wheel to +1 or -1
 		let wheel: number = event.wheelDelta / 120;
 		// Compute zoom factor
-		let zoom: number = Math.exp(wheel * this._zoomIntensity);
+		let zoom: number = Math.exp(wheel * 2 * this._zoomIntensity);
+		this._cursorClient.scale *= zoom;
 
-		console.info("zoom:", zoom, wheel);
+		//console.info("zoom:", zoom, wheel);
+
+		this._ct.clear();
+		this.renderVisibleGroups();
+		this.drawCursotPosition();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -404,6 +410,7 @@ export class DrawableComponent implements OnInit {
 		this._gridClient = new GridCellDrawingClient();
 		this._beatsClient = new BeatsDrawingClient();
 		this._cursorClient = new CursorDrawingClient();
+		this._targRectClient = new TargetRectangleClient();
 
 		this._signalClient.drawObjects = this.drawSignalObjects.bind(this);
 		this._gridClient.drawObjects = this.drawGridObjects.bind(this);
@@ -546,17 +553,19 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private drawCursotPosition() {
+	private drawCursotPosition(baseRadius: number = 3) {
 		let left: number,
 			top: number,
-			text: string;
+			text: string,
+			radius: number;
+		radius = this._cursorClient.scale * baseRadius;
 		let textSize: number = 12;
 		this._ct.saveState();
 		this._ct.ctx.beginPath();
 		this._ct.ctx.fillStyle = "pink";
 		left = this._dp.state.container.left + this._dp.state.pointerX + 0.5;
 		top = this._dp.state.container.left + this._dp.state.pointerY + 0.5;
-		this._ct.makeCircle(left, top, 3);
+		this._ct.makeCircle(left, top, radius);
 		this._ct.ctx.closePath();
 		this._ct.ctx.fill();
 
@@ -569,7 +578,23 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.fillText(text, left, top);
 
 		this._ct.restoreState();
+		//this.drawTargeRectangle();
 	}
+
+	//-------------------------------------------------------------------------------------
+	private drawTargeRectangle() {
+		//this._targRectClient
+
+		this._ct.saveState();
+		this._ct.ctx.strokeRect(
+			this._targRectClient.figure.left,
+			this._targRectClient.figure.top,
+			this._targRectClient.figure.width,
+			this._targRectClient.figure.height,
+		);
+		this._ct.restoreState();
+	}
+
 
 	//-------------------------------------------------------------------------------------
 	private drawBeatsRangesObjects(objs: BeatsRangeDrawingObject[]) {
