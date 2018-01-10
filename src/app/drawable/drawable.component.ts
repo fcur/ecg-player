@@ -372,7 +372,11 @@ export class DrawableComponent implements OnInit {
 		this.renderVisibleGroups();
 		this.drawCursotPosition();
 
+		
+	}
 
+	//-------------------------------------------------------------------------------------
+	private matrixTest() {
 		let a: number[][] = [
 			[1, 2, 3],
 			[4, 5, 6],
@@ -383,19 +387,38 @@ export class DrawableComponent implements OnInit {
 			[13, 14, 15],
 			[16, 17, 18]
 		];
-		let c: number[][] = XMatrixTool.Multiply(a, b);
+		let c: number[][] = XMatrixTool.MatrixMultiply(a, b);
 
-		let matr1: number[][] = this._mt.translate(0, 0).rotate(0).transform;
+		let matr1: number[][] = this._mt.translate(0, 0).rotate(0).matrix;
 		this._mt.reset();
-		let matr11: number[][] = this._mt.transform;
-		let matr2: number[][] = this._mt.scale(2, 3).translate(-20, 43).transform;
-		let matr21: number[][] = this._mt.transform;
-		let matr22: number[][] = this._mt.scale(2, 3).translate(-20, 43).transform;
-		let matr212: number[][] = this._mt.transform;
+		let matr11: number[][] = this._mt.matrix;
+		let matr2: number[][] = this._mt.scale(2, 3).translate(-20, 43).matrix;
+		let matr21: number[][] = this._mt.matrix;
+		let matr22: number[][] = this._mt.scale(2, 3).translate(-20, 43).matrix;
+		let matr212: number[][] = this._mt.matrix;
 		this._mt.reset();
-		let matr3: number[][] = this._mt.scale(1, 1).translate(0, 0).rotate(0).transform;
+		let matr3: number[][] = this._mt.scale(1, 1).translate(0, 0).rotate(0).matrix;
 		this._mt.reset();
-		console.log(matr1, matr2, matr3);
+
+		let left: number = 40,
+			top: number = 158,
+			left2: number,
+			top2: number,
+			left3: number,
+			top3: number,
+			multResult1: number[][],
+			multResult2: number[][],
+			matr: number[][] = this._mt.scale(2, 2).matrix;
+
+		multResult1 = XMatrixTool.PointMultiply(left, top, matr);
+		left2 = multResult1[0][0];
+		top2 = multResult1[1][0];
+		this._mt.reset();
+		this._mt.translate(left, top);
+		multResult2 = XMatrixTool.PointMultiply(left, top, matr);
+		left3 = multResult2[0][0];
+		top3 = multResult2[1][0];
+		console.info(`input {left=${left}, top=${top}}\n scale 2,2 {left=${left2}, top=${top2}}\n translate ${left},${top} {left=${left3}, top=${top3}}\n`);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -612,14 +635,29 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private drawTargeRectangle() {
 		//this._targRectClient
+		let l: number,
+			t: number,
+			w: number,
+			h: number,
+			ax: number,
+			ay: number,
+			bx: number,
+			by: number;
+
+		l = this._targRectClient.figure.left;
+		t = this._targRectClient.figure.top;
+		w = this._targRectClient.figure.width;
+		h = this._targRectClient.figure.height;
+
+		ax = this._targRectClient.figure.minOx;
+		ay = this._targRectClient.figure.minOy;
+		bx = this._targRectClient.figure.maxOx;
+		by = this._targRectClient.figure.maxOy;
+
+		// TODO: add affine transform tests for rectangle
 
 		this._ct.saveState();
-		this._ct.ctx.strokeRect(
-			this._targRectClient.figure.left,
-			this._targRectClient.figure.top,
-			this._targRectClient.figure.width,
-			this._targRectClient.figure.height,
-		);
+		this._ct.ctx.strokeRect(l,t,w,h);
 		this._ct.restoreState();
 	}
 
@@ -854,36 +892,28 @@ export class DrawableComponent implements OnInit {
 
 
 	//-------------------------------------------------------------------------------------
-	private calcScaling(left: number, top: number): number[] {
-		//left: number, top: number, zoomX: number = 1, zoomY: number = 1
-		let scaleOx: number,
-			scaleOy: number,
-			originOx: number,
-			originOy: number;
+	//private calcScaling(left: number, top: number): number[] {
+	//	//left: number, top: number, zoomX: number = 1, zoomY: number = 1
+	//	let scaleOx: number,
+	//		scaleOy: number,
+	//		originOx: number,
+	//		originOy: number;
 
-		return [
+	//	return [
 
-		]
+	//	]
 
-		// TODO: replace with matrix mul
-		//return [left * zoomX, top * zoomY];
-	}
-
-	//-------------------------------------------------------------------------------------
-	private calcPointScaling(point: XPoint, zx: number = 1, zy: number = 1): number[] {
-		return this.calcScaling(point.left, point.top);
-	}
-
+	//	// TODO: replace with matrix mul
+	//	//return [left * zoomX, top * zoomY];
+	//}
 
 	//-------------------------------------------------------------------------------------
-	private multipVactorMatrix(vector: number[], matrix: number[][]): number[] {
-		if (!Array.isArray(matrix) || !Array.isArray(vector) || vector.length != 3) return [];
+	//private calcPointScaling(point: XPoint, zx: number = 1, zy: number = 1): number[] {
+	//	return this.calcScaling(point.left, point.top);
+	//}
 
-		return [
 
-		]
 
-	}
 
 
 

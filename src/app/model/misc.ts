@@ -409,7 +409,7 @@ export class XMatrixTool {
 	private _transformMatrix2D: number[][];
 
 
-	public get transform(): number[][] {
+	public get matrix(): number[][] {
 
 		if (this._refreshMatrix) this.refresh();
 
@@ -419,17 +419,17 @@ export class XMatrixTool {
 			[0, 0, 1]
 		];
 		if (this.tx != 0 || this.ty != 0)
-			this._transformMatrix2D = XMatrixTool.Multiply(this._transformMatrix2D, this._translationMatrix2D);
+			this._transformMatrix2D = XMatrixTool.MatrixMultiply(this._transformMatrix2D, this._translationMatrix2D);
 
 		if (this.sx != 0 || this.sy != 0)
-			this._transformMatrix2D = XMatrixTool.Multiply(this._transformMatrix2D, this._scaleMatrix2D);
+			this._transformMatrix2D = XMatrixTool.MatrixMultiply(this._transformMatrix2D, this._scaleMatrix2D);
 
 		if (this.rotationPoint && this.angle != 0) {
 			// translate to rotationPoint{left, top}
 			// rotate on a DEG angle
 			// translate to  rotationPoint{-left, -top}
 		} else if (this.angle != 0) {
-			this._transformMatrix2D = XMatrixTool.Multiply(this._transformMatrix2D, this._scaleMatrix2D);
+			this._transformMatrix2D = XMatrixTool.MatrixMultiply(this._transformMatrix2D, this._scaleMatrix2D);
 		}
 
 		return this._transformMatrix2D;
@@ -508,7 +508,7 @@ export class XMatrixTool {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	static Multiply(a: number[][], b: number[][]): number[][] {
+	static MatrixMultiply(a: number[][], b: number[][]): number[][] {
 		if (!Array.isArray(a) ||
 			!Array.isArray(b) ||
 			b.length === 0 ||
@@ -536,6 +536,14 @@ export class XMatrixTool {
 		return c;
 	}
 
+	//-------------------------------------------------------------------------------------------------
+	static PointMultiply(left: number, top: number, matrix: number[][]): number[][] {
+		return XMatrixTool.MatrixMultiply([[left], [top], [0]], matrix);
+	}
 
+	//-------------------------------------------------------------------------------------------------
+	static XPointMultiply(point: XPoint, matrix: number[][]): number[][] {
+		return XMatrixTool.PointMultiply(point.left, point.top, matrix);
+	}
 
 }
