@@ -6,7 +6,8 @@ import { XDrawingProxy } from "../model/drawingproxy"
 import { DataService } from "../service/data.service"
 import {
 	XDrawingCell, XDrawingChangeSender, XDrawingGridMode,
-	XDrawingChange, XDrawingProxyState, XCanvasTool
+	XDrawingChange, XDrawingProxyState, XCanvasTool,
+	XMatrixTool
 } from "../model/misc";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState, XLabel,
@@ -56,6 +57,7 @@ export class DrawableComponent implements OnInit {
 	private _hideFileDrop: boolean;
 	/** Canvas tool. */
 	private _ct: XCanvasTool;
+	private _mt: XMatrixTool;
 	private _loadDataSubs: Subscription;
 	private _waveformDragStartPosition: XPoint;
 	private _pinBeatsToSignal: boolean;
@@ -195,7 +197,7 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:wheel", ["$event"]) onMouseWheel(event: WheelEvent) {
 		event.preventDefault();
-		//this.onWheelScroll(event);
+		this.onWheelScroll(event);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -211,6 +213,7 @@ export class DrawableComponent implements OnInit {
 		this._lastEmitTime = 0;
 		this._zoomIntensity = 0.2;
 		this._dp = new XDrawingProxy();
+		this._mt = new XMatrixTool();
 		//this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
 		this._dp.onPrepareDrawings.subscribe((v: IDrawingObject[][]) => this.onReceiveDrawingObjects(v));
 		this._fileReader = new FileReader();
@@ -368,6 +371,31 @@ export class DrawableComponent implements OnInit {
 		this._ct.clear();
 		this.renderVisibleGroups();
 		this.drawCursotPosition();
+
+
+		let a: number[][] = [
+			[1, 2, 3],
+			[4, 5, 6],
+			[7, 8, 9]
+		];
+		let b: number[][] = [
+			[10, 11, 12],
+			[13, 14, 15],
+			[16, 17, 18]
+		];
+		let c: number[][] = XMatrixTool.Multiply(a, b);
+
+		let matr1: number[][] = this._mt.translate(0, 0).rotate(0).transform;
+		this._mt.reset();
+		let matr11: number[][] = this._mt.transform;
+		let matr2: number[][] = this._mt.scale(2, 3).translate(-20, 43).transform;
+		let matr21: number[][] = this._mt.transform;
+		let matr22: number[][] = this._mt.scale(2, 3).translate(-20, 43).transform;
+		let matr212: number[][] = this._mt.transform;
+		this._mt.reset();
+		let matr3: number[][] = this._mt.scale(1, 1).translate(0, 0).rotate(0).transform;
+		this._mt.reset();
+		console.log(matr1, matr2, matr3);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -578,7 +606,7 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.fillText(text, left, top);
 
 		this._ct.restoreState();
-		//this.drawTargeRectangle();
+		this.drawTargeRectangle();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -826,15 +854,37 @@ export class DrawableComponent implements OnInit {
 
 
 	//-------------------------------------------------------------------------------------
-	private calcScaling(left: number, top: number, zoomX: number = 1, zoomY: number = 1): number[] {
+	private calcScaling(left: number, top: number): number[] {
+		//left: number, top: number, zoomX: number = 1, zoomY: number = 1
+		let scaleOx: number,
+			scaleOy: number,
+			originOx: number,
+			originOy: number;
+
+		return [
+
+		]
+
 		// TODO: replace with matrix mul
-		return [left * zoomX, top * zoomY];
+		//return [left * zoomX, top * zoomY];
 	}
 
 	//-------------------------------------------------------------------------------------
 	private calcPointScaling(point: XPoint, zx: number = 1, zy: number = 1): number[] {
-		return this.calcScaling(point.left, point.top, zx, zy);
+		return this.calcScaling(point.left, point.top);
 	}
+
+
+	//-------------------------------------------------------------------------------------
+	private multipVactorMatrix(vector: number[], matrix: number[][]): number[] {
+		if (!Array.isArray(matrix) || !Array.isArray(vector) || vector.length != 3) return [];
+
+		return [
+
+		]
+
+	}
+
 
 
 

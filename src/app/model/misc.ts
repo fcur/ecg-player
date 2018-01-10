@@ -385,4 +385,157 @@ export class XCanvasTool {
 	}
 }
 
+//-------------------------------------------------------------------------------------------------
+// Matrix tool
+//-------------------------------------------------------------------------------------------------
+export class XMatrixTool {
+	/** Rotation angle. */
+	public angle: number;
+	/** Rotate about this point. */
+	public rotationPoint: XPoint;
+	/** Translate OX. */
+	private tx: number;
+	/** Translate OY. */
+	private ty: number;
+	/** Scale OX. */
+	public sx: number;
+	/** Scale OY. */
+	public sy: number;
 
+	private _refreshMatrix: boolean;
+	private _rotationMatrix2D: number[][];
+	private _scaleMatrix2D: number[][];
+	private _translationMatrix2D: number[][];
+	private _transformMatrix2D: number[][];
+
+
+	public get transform(): number[][] {
+
+		if (this._refreshMatrix) this.refresh();
+
+		this._transformMatrix2D = [
+			[1, 0, 0],
+			[0, 1, 0],
+			[0, 0, 1]
+		];
+		if (this.tx != 0 || this.ty != 0)
+			this._transformMatrix2D = XMatrixTool.Multiply(this._transformMatrix2D, this._translationMatrix2D);
+
+		if (this.sx != 0 || this.sy != 0)
+			this._transformMatrix2D = XMatrixTool.Multiply(this._transformMatrix2D, this._scaleMatrix2D);
+
+		if (this.rotationPoint && this.angle != 0) {
+			// translate to rotationPoint{left, top}
+			// rotate on a DEG angle
+			// translate to  rotationPoint{-left, -top}
+		} else if (this.angle != 0) {
+			this._transformMatrix2D = XMatrixTool.Multiply(this._transformMatrix2D, this._scaleMatrix2D);
+		}
+
+		return this._transformMatrix2D;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	constructor() {
+		this.reset();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public reset() {
+		this.tx = 0;
+		this.ty = 0;
+		this.sx = 1;
+		this.sy = 1;
+		this.angle = 0;
+
+		this.translate(0, 0);
+		this.scale(1, 1);
+		this.rotate(0);
+		this.refresh();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public refresh() {
+		this._refreshMatrix = true;
+		this._translationMatrix2D = [
+			[1, 0, this.tx],
+			[0, 1, this.ty],
+			[0, 0, 1]
+		];
+
+		this._scaleMatrix2D = [
+			[this.sx, 0, 0],
+			[0, this.sy, 0],
+			[0, 0, 1]
+		];
+
+		let a: number = this.angle * Math.PI / 180;
+		let cos: number = Math.cos(a),
+			sin = Math.sin(a);
+
+		this._rotationMatrix2D = [
+			[cos, -sin, 0],
+			[sin, cos, 0],
+			[0, 0, 1]
+		];
+	}
+
+
+	//-------------------------------------------------------------------------------------------------
+	public translate(left: number, top: number): XMatrixTool {
+		//this._refreshMatrix = this._refreshMatrix || (this.tx != left || this.ty != top);
+		this._refreshMatrix = true;
+		this.tx += left;
+		this.ty += top;
+		return this;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public scale(x: number, y: number): XMatrixTool {
+		//this._refreshMatrix = this._refreshMatrix || (this.sx != x || this.sy != y);
+		this._refreshMatrix = true;
+		this.sx = x;
+		this.sy = y;
+		return this;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public rotate(angle: number): XMatrixTool {
+		//this._refreshMatrix = this._refreshMatrix || (this.angle != angle);
+		this._refreshMatrix = true;
+		this.angle += angle;
+		return this;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	static Multiply(a: number[][], b: number[][]): number[][] {
+		if (!Array.isArray(a) ||
+			!Array.isArray(b) ||
+			b.length === 0 ||
+			a.length != b[0].length)
+			return [];
+
+		let aRowsCnt: number = a.length,
+			aColsCnt: number = a[0].length,
+			bRowsCnt: number = b.length,
+			bColsCnt: number = b[0].length,
+			c: number[][] = new Array(aRowsCnt),
+			z1: number,
+			z2: number,
+			z3: number;
+
+		for (z1 = 0; z1 < aRowsCnt; ++z1) {
+			c[z1] = new Array(bColsCnt);
+			for (z2 = 0; z2 < bColsCnt; ++z2) {
+				c[z1][z2] = 0;
+				for (z3 = 0; z3 < aColsCnt; ++z3) {
+					c[z1][z2] += a[z1][z3] * b[z3][z2];
+				}
+			}
+		}
+		return c;
+	}
+
+
+
+}
