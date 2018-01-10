@@ -1,6 +1,6 @@
 import {
 	Component, OnInit, ElementRef, HostListener,
-	ViewChild
+	ViewChild, Input
 } from '@angular/core';
 import { XDrawingProxy } from "../model/drawingproxy"
 import { DataService } from "../service/data.service"
@@ -13,21 +13,23 @@ import {
 	XLine, XPeak, XPoint, XPolyline, XRectangle
 } from "../model/geometry";
 import {
-	ClickablePointDrawingClient, FPointDrawingClient,
+	ClickablePointDrawingClient, CursorDrawingClient,
 	XDrawingClient, XDrawingMode, IDrawingClient,
 	SignalDrawingClient, CellDrawingClient,
+	GridCellDrawingClient, WavepointClient,
 	AnsDrawingClient, BeatsDrawingClient,
-	GridCellDrawingClient
+	TargetRectangleClient
 } from "../model/drawingclient";
 import {
-	CellDrawingObject, SignalDrawingObject, FPointDrawingObject,
 	BeatsRangeDrawingObject, IDrawingObject, ClPointDrawingObject,
-	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	GridCellDrawingObject
+	GridCellDrawingObject, CursorDrawingObject, PeakDrawingObject,
+	XDrawingObjectType, AnsDrawingObject, WaveDrawingObject,
+	CellDrawingObject, SignalDrawingObject, XDrawingObject,
+	WavepointDrawingObject
 } from "../model/drawingobject";
 import {
-	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType,
-	EcgAnnotation, EcgAnnotationCode, EcgLeadCode,
+	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType, EcgParser,
+	EcgAnnotation, EcgAnnotationCode, EcgLeadCode
 } from "../model/ecgdata";
 import { Subscription, BehaviorSubject } from "rxjs";
 
@@ -44,30 +46,29 @@ import { Subscription, BehaviorSubject } from "rxjs";
 export class DrawableComponent implements OnInit {
 
 	private _dp: XDrawingProxy;
-	//private _ansClient: XDrawingClient;
-	//private _pqrstClient: XDrawingClient;
-	//private _signalClient: XDrawingClient;
-	//private _beatsClient: XDrawingClient;
-	//private _floatingObjectsClient: XDrawingClient;
-	//private _floatingPeaksClient: XDrawingClient;
-	//private _gridClient: XDrawingClient;
-	// feature 2 clients
 	private _signalClient: SignalDrawingClient;
 	private _gridClient: GridCellDrawingClient;
 	private _beatsClient: BeatsDrawingClient;
-	private _fpointClient: FPointDrawingClient;
-
+	private _cursorClient: CursorDrawingClient;
+	private _targRectClient: TargetRectangleClient;
+	private _zoomIntensity: number;
 	private _fileReader: FileReader;
 	private _hideFileDrop: boolean;
-	/**Canvas tool. */
+	/** Canvas tool. */
 	private _ct: XCanvasTool;
 	private _loadDataSubs: Subscription;
 	private _waveformDragStartPosition: XPoint;
 	private _pinBeatsToSignal: boolean;
-
+	private _clipCanvas: boolean;
 	private _threshold: number;
 	private _lastEmitTime: number;
 	private _drawingScrollSubs: Subscription;
+
+	//----------------------------------------------------------------------------------------------
+	@Input("clip-canvas")
+	set clipCanvas(value: boolean) {
+		this._clipCanvas = value;
+	}
 
 	//-------------------------------------------------------------------------------------
 	@ViewChild("waveformCanvas")
@@ -192,15 +193,23 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
+	@HostListener("window:wheel", ["$event"]) onMouseWheel(event: WheelEvent) {
+		event.preventDefault();
+		//this.onWheelScroll(event);
+	}
+
+	//-------------------------------------------------------------------------------------
 	constructor(private _el: ElementRef, private _ds: DataService) {
 		//console.info("DrawableComponent constructor");
 		this._hideFileDrop = false;
+		this._clipCanvas = false;
 		this._pinBeatsToSignal = true;
 		this._loadDataSubs = null;
 		this._drawingScrollSubs = null;
 		this._waveformDragStartPosition = null;
 		this._threshold = 100;
 		this._lastEmitTime = 0;
+		this._zoomIntensity = 0.2;
 		this._dp = new XDrawingProxy();
 		//this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
 		this._dp.onPrepareDrawings.subscribe((v: IDrawingObject[][]) => this.onReceiveDrawingObjects(v));
@@ -256,11 +265,10 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onDragMove(event: any) {
-		if (!this._waveformDragStartPosition) {
-			this.pointerMove(event);
-			return;
+		if (this._waveformDragStartPosition) {
+			this.scroll(event);
 		}
-		this.scroll(event);
+		this.pointerMove(event);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -324,8 +332,9 @@ export class DrawableComponent implements OnInit {
 		this._dp.refreshDrawings();
 	}
 
+
 	//-------------------------------------------------------------------------------------
-	public onLoadFile(event: ProgressEvent) {
+	private onLoadFile(event: ProgressEvent) {
 		this._ds.parseJsonFile(JSON.parse(this._fileReader.result));
 	}
 
@@ -334,16 +343,32 @@ export class DrawableComponent implements OnInit {
 	//  //console.info("onProxyStateChanges:", change);
 	//  // refresh drawings
 	//  this._ct.clear();
-	//  //this._ct.ctx.save();
+	//  //this._ct.saveState();
 	//  //let state: XDrawingProxyState = this._dp.state;
 	//  //this._ct.ctx.rect(state.container.left, state.container.top, state.container.width, state.container.height);
 	//  //this._ct.ctx.stroke();
-	//  //this._ct.ctx.restore();
+	//  //this._ct.restoreState();
 	//  for (let z: number = 0; z < change.objects.length; z++) {
 	//    if (!change.objects[z].owner.draw) continue;
 	//    change.objects[z].owner.draw(change.objects[z]);
 	//  }
 	//}
+
+
+	//-------------------------------------------------------------------------------------
+	private onWheelScroll(event: WheelEvent) {
+		// Normalize wheel to +1 or -1
+		let wheel: number = event.wheelDelta / 120;
+		// Compute zoom factor
+		let zoom: number = Math.exp(wheel * 2 * this._zoomIntensity);
+		this._cursorClient.scale *= zoom;
+
+		//console.info("zoom:", zoom, wheel);
+
+		this._ct.clear();
+		this.renderVisibleGroups();
+		this.drawCursotPosition();
+	}
 
 	//-------------------------------------------------------------------------------------
 	private onScrollDrawings(val: number) {
@@ -353,15 +378,20 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private renderVisibleGroupF3() {
+	private renderVisibleGroups() {
 		let z: number, y: number;
 		for (z = 0; z < this._dp.drawingClients.length; z++) {
-			if (!this._dp.drawingClients[z].drawObjectsF3 ||
-				!Array.isArray(this._dp.doF3CGroups[z]) ||
-				this._dp.doF3CGroups[z].length === 0) continue;
+			if (!this._dp.drawingClients[z].drawObjects ||
+				!Array.isArray(this._dp.doCGroups[z]) ||
+				this._dp.doCGroups[z].length === 0) continue;
 			//console.log(`drawObjectsF3 for  ${this._dp.drawingClients[z].constructor.name}`);
-			this._dp.drawingClients[z].drawObjectsF3(this._dp.doF3CGroups[z]);
+			this._dp.drawingClients[z].drawObjects(this._dp.doCGroups[z]);
 		}
+
+		for (z = 0; z < this._dp.doHud.length; z++) {
+			console.log("draw hud:", z);
+		}
+
 		this.printState();
 	}
 
@@ -369,39 +399,25 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private onReceiveDrawingObjects(p: IDrawingObject[][]) {
 		this._ct.clear();
-		// z: client index
-		for (let z: number = 0; z < this._dp.drawingClients.length; z++) {
-			if (this._dp.drawingClients[z].drawObjects && Array.isArray(p[z])) {
-				if (p[z].length === 0) continue;
-				this._dp.drawingClients[z].drawObjects(p[z]);
-			}
-			else if (this._dp.drawingClients[z].draw) {
-				// TODO remove single object drawing method
-				this._dp.drawingClients[z].draw(p[z][0]);
-			}
-		}
-		p = null; // release refferences
-		this._dp.objectsF2 = null;
-
-		this.renderVisibleGroupF3();
+		this.renderVisibleGroups();
+		this.drawCursotPosition();
 	}
 
 	//-------------------------------------------------------------------------------------
 	private prepareClients() {
 		// prepare clients
 		this._signalClient = new SignalDrawingClient();
-		//this._signalClient.drawObjects = this.drawSignalObjectsF2.bind(this);
-		this._signalClient.drawObjectsF3 = this.drawSignalObjectsF3.bind(this);
 		this._gridClient = new GridCellDrawingClient();
-		this._gridClient.drawObjects = this.drawGridObjectsF2.bind(this);
-		this._gridClient.drawObjectsF3 = this.drawGridObjectsF3.bind(this);
-
 		this._beatsClient = new BeatsDrawingClient();
-		this._beatsClient.drawObjects = this.drawBeatsObjectsF2.bind(this);
-		this._beatsClient.drawObjectsF3 = this.drawBeatsRangesObjectsF3.bind(this);
-		this._fpointClient = new FPointDrawingClient();
-		this._fpointClient.drawObjects = this.drawFPointObjectsF2.bind(this);
-		this._dp.pushClients(this._gridClient, this._signalClient, this._beatsClient, this._fpointClient);
+		this._cursorClient = new CursorDrawingClient();
+		this._targRectClient = new TargetRectangleClient();
+
+		this._signalClient.drawObjects = this.drawSignalObjects.bind(this);
+		this._gridClient.drawObjects = this.drawGridObjects.bind(this);
+		this._beatsClient.drawObjects = this.drawBeatsRangesObjects.bind(this);
+		this._cursorClient.drawObjects = this.drawCursorObjects.bind(this);
+
+		this._dp.pushClients(this._gridClient, this._signalClient, this._beatsClient, this._cursorClient);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -428,14 +444,12 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private scroll(event: any) {
-		this._dp.preparePointer(event);
+		this._dp.prepareCursor(event);
 		let endpoint: XPoint = this.getEventPosition(event);
 		let actionPoint: XPoint = this._waveformDragStartPosition.subtract(endpoint);
 		this._waveformDragStartPosition = endpoint;
 		if (actionPoint.left === 0) return; // skip scrolling
 		this._dp.scroll(actionPoint.left);
-		//this._dp.scrollDrawObjGroupsF3();
-		//this._dp.refreshDrawings();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -448,88 +462,8 @@ export class DrawableComponent implements OnInit {
 		this._dp.performMouseMove(event);
 	}
 
-
 	//-------------------------------------------------------------------------------------
-	private drawGridObjectsF2(objs: GridCellDrawingObject[]) {
-		//console.log("drawGridObjectsF2");
-		let state: XDrawingProxyState = this._dp.state;
-		let textSize: number = 15;
-		let z: number,
-			y: number,
-			x: number,
-			top: number,
-			left: number,
-			point: XPoint;
-		this._ct.ctx.save();
-		this._ct.ctx.fillStyle = this._gridClient.color;
-		this._ct.ctx.textBaseline = "middle";
-		this._ct.ctx.textAlign = "center";
-		this._ct.ctx.font = `${textSize}px Roboto`;
-
-		// print borders
-		this._ct.ctx.beginPath();
-		for (z = 0; z < objs.length; z++) {
-			// print lead
-			left = objs[z].container.midOx;
-			top = objs[z].container.top + textSize / 2 + 1;
-			this._ct.ctx.fillText(objs[z].leadLabel, left, top);
-
-			for (y = 0; y < objs[z].polylines.length; y++) {
-				x = 0;
-				point = objs[z].polylines[y].points[x++];
-				left = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left + 0.5;
-				top = point.top + objs[z].container.top + 0.5;
-				this._ct.ctx.moveTo(left, top);
-				for (; x < objs[z].polylines[y].points.length; x++) {
-					point = objs[z].polylines[y].points[x];
-					left = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left + 0.5;
-					top = point.top + objs[z].container.top + 0.5;
-					this._ct.ctx.lineTo(left, top);
-				}
-			}
-		}
-		this._ct.ctx.strokeStyle = this._gridClient.color;
-		this._ct.ctx.globalAlpha = this._gridClient.opacity;
-		this._ct.ctx.lineJoin = this._gridClient.lineJoin;
-		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
-		this._ct.ctx.restore();
-	}
-
-	//-------------------------------------------------------------------------------------
-	private drawSignalObjectsF2(objs: SignalDrawingObject[]) {
-		let state: XDrawingProxyState = this._dp.state;
-		// cell index = drawing object index
-		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
-		this._ct.ctx.beginPath();
-		let points: XPoint[];
-		let shift: number = 0;
-		for (z = 0; z < state.gridCells.length; z++) {
-			// TODO: handle multy polylines
-			points = objs[z].polylines[0].points;
-			y = 0;
-			left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
-			dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel); // microvolts to pixels
-			top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
-			this._ct.ctx.moveTo(left, top);
-			for (y++; y < points.length; y++) {
-				left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
-				dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel);
-				top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
-				this._ct.ctx.lineTo(left, top);
-			}
-		}
-		this._ct.ctx.lineWidth = 1;
-		this._ct.ctx.strokeStyle = this._signalClient.color;
-		this._ct.ctx.globalAlpha = this._signalClient.opacity;
-		this._ct.ctx.lineJoin = this._signalClient.lineJoin;
-		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
-		this._ct.ctx.restore();
-	}
-
-	//-------------------------------------------------------------------------------------
-	private drawSignalObjectsF3(objs: SignalDrawingObject[]) {
+	private drawSignalObjects(objs: SignalDrawingObject[]) {
 		let shift: number = 0; // #DEBUG_ONLY
 		let state: XDrawingProxyState = this._dp.state;
 		// z - drawing object index
@@ -546,7 +480,7 @@ export class DrawableComponent implements OnInit {
 			left: number,
 			points: XPoint[];
 
-		this._ct.ctx.save();
+		this._ct.saveState();
 		// lead code index = grid cell index
 		this._ct.ctx.beginPath();
 		for (z = 0; z < objs.length; z++) {
@@ -579,129 +513,279 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.globalAlpha = this._signalClient.opacity;
 		this._ct.ctx.lineJoin = this._signalClient.lineJoin;
 		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
-		this._ct.ctx.restore();
+		//this._ct.ctx.closePath();
+		this._ct.restoreState();
 	}
 
-	//-------------------------------------------------------------------------------------
-	private drawBeatsObjectsF2(objs: BeatsRangeDrawingObject[]) {
-		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
-		let state: XDrawingProxyState = this._dp.state;
-		// cell index = drawing object index
-		this._ct.ctx.save();
-		this._ct.ctx.beginPath();
-		let points: XPoint[];
-		let shift: number = 0;
-		for (z = 0; z < state.gridCells.length; z++) {
-			points = objs[z].points;
-			for (y = 0; y < points.length; y++) {
-				left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
-				dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel); // microvolts to pixels
-				top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
-				this._ct.ctx.moveTo(left + 0.5, top + 0.5);
-				this._ct.ctx.arc(left + 0.5, top + 0.5, this._beatsClient.radius, 0, 2 * Math.PI, false);
-			}
-		}
-		this._ct.ctx.fillStyle = this._beatsClient.color;
-		this._ct.ctx.globalAlpha = this._beatsClient.opacity;
-		this._ct.ctx.fill();
-		this._ct.ctx.closePath();
-		this._ct.ctx.restore();
-	}
 
 	//-------------------------------------------------------------------------------------
-	private drawFPointObjectsF2(objs: FPointDrawingObject[]) {
-		this._ct.ctx.save();
+	private drawCursorObjects(objs: CursorDrawingObject[]) {
+		//console.log("draw cursor", objs);
+		this._ct.saveState();
 		let state: XDrawingProxyState = this._dp.state;
 		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
-		let obj: FPointDrawingObject = objs[0];
-		this._ct.ctx.globalAlpha = this._fpointClient.opacity;
+		let obj: CursorDrawingObject = objs[0];
+		this._ct.ctx.globalAlpha = this._cursorClient.opacity;
 		// pointer line
 		this._ct.ctx.beginPath();
-		left = state.container.left + obj.lines[0].ax;
-		top = state.container.top + obj.lines[0].ay;
-		this._ct.ctx.moveTo(left + 0.5, top + 0.5);
-		top = state.container.top + obj.lines[0].by;
-		this._ct.ctx.lineTo(left + 0.5, top + 0.5);
-		this._ct.ctx.strokeStyle = this._fpointClient.lineColor;
+		left = state.container.left + obj.lines[0].ax + 0.5;
+		top = state.container.top + obj.lines[0].ay + 0.5;
+		this._ct.ctx.moveTo(left, top);
+		top = state.container.top + obj.lines[0].by + 0.5;
+		this._ct.ctx.lineTo(left, top);
+		this._ct.ctx.strokeStyle = this._cursorClient.lineColor;
+		//this._ct.ctx.closePath();
 		this._ct.ctx.stroke();
-		this._ct.ctx.closePath();
 
 		let testShift: number = 0;
 		this._ct.ctx.beginPath();
-		this._ct.ctx.fillStyle = this._fpointClient.pointColor;
+		this._ct.ctx.fillStyle = this._cursorClient.pointColor;
 		for (let z: number = 0; z < state.gridCells.length; z++) {
 			// cell index = point index
 			left = state.container.left + obj.points[z].left + 0.5;
 			dy = Math.floor(obj.points[z].top * state.gridCells[z].microvoltsToPixel);
 			top = dy + state.gridCells[z].container.midOy + testShift + 0.5;
-			this._ct.ctx.moveTo(left + 0.5, top + 0.5);
-			this._ct.ctx.arc(left + 0.5, top + 0.5, this._fpointClient.pointRadius, 0, 2 * Math.PI, false);
+			this._ct.makeCircle(left, top, this._cursorClient.pointRadius);
 		}
-		this._ct.ctx.fill();
 		this._ct.ctx.closePath();
-
-		this._ct.ctx.restore();
-	}
-
-
-
-
-	//-------------------------------------------------------------------------------------
-	private drawBeatsRangesObjectsF3(objs: BeatsRangeDrawingObject[]) {
-		//console.log("drawBeatsRangesObjectsF3", objs.length);
-		//let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
-		//let state: XDrawingProxyState = this._dp.state;
-		//// cell index = drawing object index
-		//this._ct.ctx.save();
-		//this._ct.ctx.beginPath();
-		//let points: XPoint[];
-		//let shift: number = 0;
-		//for (z = 0; z < state.gridCells.length; z++) {
-		//	points = objs[z].points;
-		//	for (y = 0; y < points.length; y++) {
-		//		left = points[y].left + 0.5 - objs[z].container.left + state.gridCells[z].container.left;
-		//		dy = Math.round(points[y].top * state.gridCells[z].microvoltsToPixel); // microvolts to pixels
-		//		top = dy + 0.5 + objs[z].container.top + state.gridCells[z].container.midOy + shift;
-		//		this._ct.ctx.moveTo(left + 0.5, top + 0.5);
-		//		this._ct.ctx.arc(left + 0.5, top + 0.5, this._beatsF2Client.radius, 0, 2 * Math.PI, false);
-		//	}
-		//}
-		//this._ct.ctx.fillStyle = this._beatsF2Client.color;
-		//this._ct.ctx.globalAlpha = this._beatsF2Client.opacity;
-		//this._ct.ctx.fill();
-		//this._ct.ctx.closePath();
-		//this._ct.ctx.restore();
+		this._ct.ctx.fill();
+		this._ct.restoreState();
 	}
 
 	//-------------------------------------------------------------------------------------
-	private drawGridObjectsF3(objs: GridCellDrawingObject[]) {
-		//console.log("drawGridObjectsF3", objs.length);
-		//let state: XDrawingProxyState = this._dp.state;
-		//let z: number = 0, y: number = 0, x: number = 0, point: XPoint, l: number, t: number;
-		//this._ct.ctx.save();
-		//this._ct.ctx.beginPath();
-		//for (z = 0; z < objs.length; z++) {
-		//	for (y = 0; y < objs[z].polylines.length; y++) {
-		//		x = 0;
-		//		point = objs[z].polylines[y].points[x++];
-		//		l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
-		//		t = point.top;
-		//		this._ct.ctx.moveTo(l + 0.5, t + 0.5);
-		//		for (; x < objs[z].polylines[y].points.length; x++) {
-		//			point = objs[z].polylines[y].points[x];
-		//			l = point.left + objs[z].container.left + this._dp.state.skipPx - objs[z].left;
-		//			t = point.top;
-		//			this._ct.ctx.lineTo(l + 0.5, t + 0.5);
-		//		}
-		//	}
-		//}
-		//this._ct.ctx.strokeStyle = this._gridF2Client.color;
-		//this._ct.ctx.globalAlpha = this._gridF2Client.opacity;
-		//this._ct.ctx.lineJoin = this._gridF2Client.lineJoin;
-		//this._ct.ctx.stroke();
-		//this._ct.ctx.closePath();
-		//this._ct.ctx.restore();
+	private drawCursotPosition(baseRadius: number = 3) {
+		let left: number,
+			top: number,
+			text: string,
+			radius: number;
+		radius = this._cursorClient.scale * baseRadius;
+		let textSize: number = 12;
+		this._ct.saveState();
+		this._ct.ctx.beginPath();
+		this._ct.ctx.fillStyle = "pink";
+		left = this._dp.state.container.left + this._dp.state.pointerX + 0.5;
+		top = this._dp.state.container.left + this._dp.state.pointerY + 0.5;
+		this._ct.makeCircle(left, top, radius);
+		this._ct.ctx.closePath();
+		this._ct.ctx.fill();
+
+		this._ct.ctx.fillStyle = "#111";
+		this._ct.ctx.font = `${textSize}px Roboto`;
+		this._ct.ctx.textBaseline = "bottom";
+		this._ct.ctx.textAlign = "left";
+
+		text = `${this._dp.state.pointerX},${this._dp.state.pointerY}`;
+		this._ct.ctx.fillText(text, left, top);
+
+		this._ct.restoreState();
+		//this.drawTargeRectangle();
+	}
+
+	//-------------------------------------------------------------------------------------
+	private drawTargeRectangle() {
+		//this._targRectClient
+
+		this._ct.saveState();
+		this._ct.ctx.strokeRect(
+			this._targRectClient.figure.left,
+			this._targRectClient.figure.top,
+			this._targRectClient.figure.width,
+			this._targRectClient.figure.height,
+		);
+		this._ct.restoreState();
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	private drawBeatsRangesObjects(objs: BeatsRangeDrawingObject[]) {
+		this._ct.saveState();
+		// draw beat ranges: drawObj.container for all channels
+		// draw beat peaks: drawObj.points for each channel
+		let z: number,
+			y: number,
+			x: number,
+			w: number,
+			dx: number,
+			dy: number,
+			top: number,
+			left: number,
+			point: XPoint,
+			cell: XDrawingCell,
+			beatRange: BeatsRangeDrawingObject;
+
+		let shift: number = 0;
+		let textSize: number = 10;
+		let state: XDrawingProxyState = this._dp.state;
+		let printText: boolean;
+
+
+		// fill beat background
+		this._ct.ctx.font = `${textSize}px Roboto`;
+		this._ct.ctx.textBaseline = "middle";
+		this._ct.ctx.textAlign = "center";
+		this._ct.ctx.globalAlpha = 0.05;
+		for (y = 0; y < objs.length; y++) {
+			beatRange = objs[y];
+
+			if (beatRange.container.minOx - state.minPx < 0 ||
+				beatRange.container.maxOx - state.maxPx > 0) {
+				continue;
+			}
+			for (x = 0; x < beatRange.leadCodes.length; x++) {
+				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
+				if (w < 0) continue;
+				cell = state.gridCells[w];
+				this._ct.ctx.fillStyle = beatRange.index % 2 == 0 ?
+					this._beatsClient.backgroundColor1 :
+					this._beatsClient.backgroundColor2;
+
+				dx = beatRange.container.minOx - state.minPx;
+				left = cell.container.left + dx;
+				//this._ct.ctx.fillRect(
+				//	left,
+				//	cell.container.top,
+				//	beatRange.container.width,
+				//	cell.container.height
+				//);
+			}
+		}
+
+		// draw beats
+		this._ct.ctx.beginPath();
+		this._ct.ctx.globalAlpha = 1;
+		this._ct.ctx.fillStyle = "#111";
+		for (y = 0; y < objs.length; y++) {
+			beatRange = objs[y];
+
+			printText = !(beatRange.container.minOx - state.minPx < 0 ||
+				beatRange.container.maxOx - state.maxPx > 0);
+
+			for (x = 0; x < beatRange.leadCodes.length; x++) {
+				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
+				if (w < 0) continue;
+				cell = state.gridCells[w];
+
+				point = beatRange.points[x];
+				dx = point.left - state.minPx;
+				if (dx < 0 || point.left > state.maxPx) continue;
+				dy = Math.floor(point.top * cell.microvoltsToPixel);
+				left = cell.container.left + dx + 0.5;
+				top = dy + cell.container.midOy + 0.5 + shift;
+				this._ct.makeCircle(left, top, this._beatsClient.radius);
+				if (printText) {
+					this._ct.ctx.fillText(`${point.left}`, left, top + textSize);
+				}
+			}
+
+			if (point && printText) {
+				// print beat range info
+				top = state.container.maxOy - textSize;
+				this._ct.ctx.fillText(`${beatRange.container.minOx}-${beatRange.container.maxOx}`, left, top);
+			}
+
+		}
+		this._ct.ctx.fillStyle = this._beatsClient.color;
+		this._ct.ctx.globalAlpha = this._beatsClient.opacity;
+		this._ct.ctx.closePath();
+		this._ct.ctx.fill();
+		this._ct.restoreState();
+	}
+
+	//-------------------------------------------------------------------------------------
+	private drawGridObjects(objs: GridCellDrawingObject[]) {
+
+		let z: number,
+			y: number,
+			x: number,
+			w: number,
+			ax: number,
+			ay: number,
+			bx: number,
+			by: number,
+			line: XLine,
+			cellIndex: number,
+			renderCell: boolean,
+			leadCode: EcgLeadCode,
+			state: XDrawingProxyState;
+
+		state = this._dp.state;
+
+		this._ct.saveState();
+		if (this._clipCanvas) {
+			this._ct.clipRect(state.container);
+		}
+
+		this._ct.ctx.lineJoin = this._gridClient.lineJoin;
+		this._ct.ctx.textBaseline = "top";
+		this._ct.ctx.textAlign = "left";
+
+		// draw borders
+
+		this._ct.ctx.beginPath();
+		this._ct.ctx.globalAlpha = this._gridClient.borderOpacity;
+		this._ct.ctx.strokeStyle = this._gridClient.borderColor;
+
+		for (z = 0; z < objs.length; z++) {
+			for (y = 0; y < objs[z].leadCodes.length; y++) {
+				leadCode = objs[z].leadCodes[y];
+				cellIndex = state.leadsCodes.indexOf(leadCode);
+				if (cellIndex < 0) continue;
+				renderCell = state.gridCells[cellIndex].container.state != XDrawingPrimitiveState.Hidden;
+				if (!renderCell) continue;
+
+				for (x = 0; x < objs[z].horizontal.length; x++) {
+					for (w = 0; w < objs[z].horizontal[x].length; w++) {
+						line = objs[z].horizontal[x][w];
+						ax = line.ax + objs[z].container.left - state.minPx;
+						ay = line.ay + objs[z].container.top;
+						bx = line.bx + objs[z].container.left - state.minPx;
+						by = line.by + objs[z].container.top;
+						this._ct.makeLine(ax, ay, bx, by);
+					}
+				}
+
+				for (x = 0; x < objs[z].vertical.length; x++) {
+					for (w = 0; w < objs[z].vertical[x].length; w++) {
+						line = objs[z].vertical[x][w];
+						ax = line.ax + objs[z].container.left - state.minPx;
+						ay = line.ay + objs[z].container.top;
+						bx = line.bx + objs[z].container.left - state.minPx;
+						by = line.by + objs[z].container.top;
+						if (ax < 0 || bx < 0) continue;
+						if (ax > state.container.maxOx || bx > state.container.maxOx) break;
+						this._ct.makeLine(ax, ay, bx, by);
+						this._ct.ctx.fillText(line.ax.toString(), ax, ay);
+					}
+				}
+			}
+		}
+		this._ct.ctx.stroke();
+
+		// draw axis
+		this._ct.ctx.beginPath();
+		this._ct.ctx.globalAlpha = this._gridClient.axisOpacity;
+		this._ct.ctx.strokeStyle = this._gridClient.axisColor;
+
+		for (z = 0; z < objs.length; z++) {
+			for (y = 0; y < objs[z].leadCodes.length; y++) {
+				leadCode = objs[z].leadCodes[y];
+				cellIndex = state.leadsCodes.indexOf(leadCode);
+				if (cellIndex < 0) continue;
+				renderCell = state.gridCells[cellIndex].container.state != XDrawingPrimitiveState.Hidden;
+				if (!renderCell) continue;
+
+				for (x = 0; x < objs[z].ox.length; x++) {
+					line = objs[z].ox[x];
+					ax = line.ax + objs[z].container.left - state.minPx;
+					ay = line.ay + objs[z].container.top;
+					bx = line.bx + objs[z].container.left - state.minPx;
+					by = line.by + objs[z].container.top;
+					this._ct.makeLine(ax, ay, bx, by);
+				}
+			}
+		}
+		this._ct.ctx.stroke();
+		this._ct.restoreState();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -711,8 +795,8 @@ export class DrawableComponent implements OnInit {
 			left: number,
 			top: number,
 			textWidth: number;
-		this._ct.ctx.save();
-		this._ct.ctx.fillStyle = "#ccc";
+		this._ct.saveState();
+		this._ct.ctx.fillStyle = "#111";
 		this._ct.ctx.font = `${textSize}px Roboto`;
 		this._ct.ctx.textBaseline = "middle";
 		this._ct.ctx.textAlign = "center";
@@ -731,17 +815,26 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.fillText(text, left, top);
 
 		// size
-		text = `${Math.floor(this._ct.width)}X${Math.floor(this._ct.height)}, W=${this._dp.state.limitPx}, H=${this._dp.state.signalScale}`;
+		text = `${Math.floor(this._ct.width)}X${Math.floor(this._ct.height)}  W=${this._dp.state.limitPx}  H=${this._dp.state.signalScale}`;
 		textWidth = this._ct.ctx.measureText(text).width;
 		left = this._ct.width / 2;
 		top = this._ct.height - textSize;
 		this._ct.ctx.fillText(text, left, top);
 
-		this._ct.ctx.restore();
+		this._ct.restoreState();
 	}
 
 
+	//-------------------------------------------------------------------------------------
+	private calcScaling(left: number, top: number, zoomX: number = 1, zoomY: number = 1): number[] {
+		// TODO: replace with matrix mul
+		return [left * zoomX, top * zoomY];
+	}
 
+	//-------------------------------------------------------------------------------------
+	private calcPointScaling(point: XPoint, zx: number = 1, zy: number = 1): number[] {
+		return this.calcScaling(point.left, point.top, zx, zy);
+	}
 
 
 

@@ -1,14 +1,19 @@
 import {
 	EcgLeadCode, EcgWavePoint, EcgAnnotation, EcgAnnotationCode,
-	EcgRecord, EcgSignal, EcgWavePointType
+	EcgRecord, EcgSignal, EcgWavePointType, EcgParser
 } from "./ecgdata";
 import {
-	XDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	BeatsRangeDrawingObject, IDrawingObject
+	SignalDrawingObject, WaveDrawingObject, WavepointDrawingObject,
+	CursorDrawingObject, GridCellDrawingObject, PeakDrawingObject,
+	XDrawingObjectType, AnsDrawingObject, BeatsRangeDrawingObject,
+	CellDrawingObject, ClPointDrawingObject, XDrawingObject,
+	IDrawingObject
 } from "./drawingobject";
 import {
-	XDrawingClient, XDrawingMode, AnsDrawingClient,
-	BeatsDrawingClient, IDrawingClient
+	BeatsDrawingClient, IDrawingClient, ClickablePointDrawingClient,
+	CursorDrawingClient, GridCellDrawingClient, XDrawingClient,
+	XDrawingMode, AnsDrawingClient, SignalDrawingClient,
+	WavepointClient, CellDrawingClient
 } from "./drawingclient";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState,
@@ -164,8 +169,8 @@ export class XDrawingProxyState {
 	public gridMode: XDrawingGridMode;
 	/** Cursor pointer X. */
 	public pointerX: number;
+	/** Cursor pointer Y. */
 	public pointerY: number;
-
 
 	public leadsCodes: EcgLeadCode[];
 
@@ -345,4 +350,39 @@ export class XCanvasTool {
 		this.ctx.fillText(text, this.width / 2, this.height / 2);
 		this.ctx.restore();
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	public clip(l: number, t: number, w: number, h: number) {
+		this.ctx.rect(l, t, w, h);
+		this.ctx.clip();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public clipRect(rect: XRectangle) {
+		this.clip(rect.left, rect.top, rect.width, rect.height);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public saveState() {
+		this.ctx.save();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public restoreState() {
+		this.ctx.restore();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public makeLine(ax: number, ay: number, bx: number, by: number) {
+		this.ctx.moveTo(ax + 0.5, ay + 0.5);
+		this.ctx.lineTo(bx + 0.5, by + 0.5);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public makeCircle(left: number, top: number, radius: number) {
+		this.ctx.moveTo(left, top);
+		this.ctx.arc(left, top, radius, 0, 2 * Math.PI, false);
+	}
 }
+
+

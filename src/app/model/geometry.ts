@@ -51,8 +51,12 @@ export class XRectangle extends XDrawingPrimitive {
 	public get top(): number { return this._t; }
 	/** Rectangle width in pixels. */
 	public get width(): number { return this._w; }
+	/** Rectangle half width in pixels. */
+	public get hWidth(): number { return Math.floor(this._w); }
 	/** Rectangle height in pixels.  */
 	public get height(): number { return this._h; }
+	/** Rectangle height in pixels.  */
+	public get hHeight(): number { return Math.floor(this._h/2); }
 	/** Returns copy of object. */
 	public get clone(): XRectangle { return new XRectangle(this._l, this._t, this._w, this._h); }
 

@@ -7,13 +7,16 @@ import {
 } from "./geometry";
 import {
 	EcgAnnotation, EcgAnnotationCode, EcgLeadCode, EcgRecord,
-	EcgSignal, EcgWavePoint, EcgWavePointType
+	EcgSignal, EcgWavePoint, EcgWavePointType, EcgParser
 } from "./ecgdata";
-
+import {
+	DrawingData, RecordDrawingData,
+	RecordProjection
+} from "./drawingdata";
 import {
 	XCanvasTool, XDrawingCell, XDrawingChange,
 	XDrawingChangeSender, XDrawingGridMode,
-	XDrawingProxyState
+	XDrawingProxyState, XDrawingCoordinates
 } from "./misc";
 
 // -------------------------------------------------------------------------------------------------
@@ -46,9 +49,15 @@ export interface IDrawingObject {
 	/** Drawing object assigned cell index. -1: fill cells container */
 	cellIndex: number;
 	/** Draw object on canvas. */
-	render(ctx: CanvasRenderingContext2D)
+	render(ctx: CanvasRenderingContext2D);
 	/** Visiblity of drawing object. */
 	hidden: boolean;
+	/** Animation progress state (0..100).*/
+	progress: number;
+	/** Head-up display / part of user innterface. */
+	hud: boolean;
+	/** Update drawing object proxy state. */
+	updateState(dd: DrawingData, pd: XDrawingProxyState);
 }
 
 
@@ -62,17 +71,20 @@ export interface IDrawingObject {
 export class XDrawingObject implements IDrawingObject {
 	/** REDUNDANT Object index. */
 	public index: number;
+	/** REDUNDANT Drawing object assigned cell index. */
+	public cellIndex: number;
 	/** Object owner. */
 	public owner: XDrawingClient;
 	/** Object type. */
 	public type: XDrawingObjectType;
 	/** Container of drawing object (required). */
 	public container: XRectangle;
-	/** REDUNDANT Drawing object assigned cell index. */
-	public cellIndex: number;
 	/** Visiblity of drawing object. */
 	public hidden: boolean;
-
+	/** Animation progress state (0..100).*/
+	public progress: number;
+	/** Head-up display / part of user innterface. */
+	public hud: boolean;
 
 	//-------------------------------------------------------------------------------------
 	//public get isFloating(): boolean {
@@ -85,12 +97,17 @@ export class XDrawingObject implements IDrawingObject {
 		this.index = -1; // do not use index
 		this.cellIndex = -1; // do not use cell index fill full container
 		this.hidden = true;
+		this.progress = 100;
+		this.hud = false;
 	}
 
 	//-------------------------------------------------------------------------------------
 	public render(ctx: CanvasRenderingContext2D) {
 
 	}
+
+	//-------------------------------------------------------------------------------------
+	public updateState(dd: DrawingData, pd: XDrawingProxyState) { }
 
 	//-------------------------------------------------------------------------------------
 	// TODO remove
@@ -426,11 +443,38 @@ export class CellDrawingObject extends XDrawingObject {
 // -------------------------------------------------------------------------------------------------
 // Floating point drawing object
 // -------------------------------------------------------------------------------------------------
-export class FPointDrawingObject extends XDrawingObject {
+export class CursorDrawingObject extends XDrawingObject {
 	/** Drawing object lines. */
 	public lines: XLine[];
 	/**Drawing object points. */
 	public points: XPoint[];
+
+
+	//-------------------------------------------------------------------------------------
+	constructor() {
+		super();
+		this.hud = true; // important!
+	}
+
+	//-------------------------------------------------------------------------------------
+	public updateState(dd: DrawingData, ps: XDrawingProxyState) {
+		this.container.rebuild(ps.minPx, 0, ps.limitPx, ps.container.height);
+		let lineHeight: number = ps.gridCells[ps.gridCells.length - 1].container.maxOy -
+			ps.gridCells[0].container.minOy;
+
+		this.lines = [new XLine(new XPoint(ps.pointerX, 0), new XPoint(ps.pointerX, lineHeight))];
+		this.points = new Array(ps.gridCells.length);
+
+
+		// TODO move to state getter
+		let header: RecordProjection = dd.getHeader(ps.skipPx + ps.pointerX, ps.sampleRate);
+		let signalPoints: XPoint[];
+		for (let z: number = 0; z < ps.gridCells.length; z++) {
+			signalPoints = dd.data[ps.sampleRate][header.id].signal[ps.gridCells[z].lead];
+			this.points[z] = new XPoint(ps.pointerX, signalPoints[ps.skipPx + ps.pointerX].top);
+		}
+	}
+
 }
 
 // -------------------------------------------------------------------------------------------------
@@ -445,6 +489,50 @@ export class GridCellDrawingObject extends XDrawingObject {
 	public lead: EcgLeadCode;
 	/** Cell assigned lead text. */
 	public leadLabel: string;
+
+
+	/** Drawing object polylines.*/
+	public polylinesF3: XPolyline[];
+	/** Cell assigned lead text. */
+	//public leadsLabelsF3: string[];
+
+	/** Cell assigned lead code. */
+	public leadCodes: EcgLeadCode[];
+	/** Cells axis. */
+	public ox: XLine[];
+	/** Cells horizontal lines. */
+	public horizontal: XLine[][];
+	/** Cells vertical lines. */
+	public vertical: XLine[][];
+
+	//-------------------------------------------------------------------------------------
+	public prepareLeads(leads: EcgLeadCode[]) {
+		if (!Array.isArray(leads)) return;
+		this.polylinesF3 = new Array(leads.length);
+		this.leadCodes = leads;
+	}
 }
 
 
+// -------------------------------------------------------------------------------------------------
+// Wavepoint base drawing object
+// -------------------------------------------------------------------------------------------------
+export class WavepointDrawingObject extends XDrawingObject {
+
+
+}
+
+// -------------------------------------------------------------------------------------------------
+// Wavepoint wave drawing object
+// -------------------------------------------------------------------------------------------------
+export class WaveDrawingObject extends WavepointDrawingObject {
+
+}
+
+
+// -------------------------------------------------------------------------------------------------
+// Wavepoint peak drawing object
+// -------------------------------------------------------------------------------------------------
+export class PeakDrawingObject extends WavepointDrawingObject {
+
+}
