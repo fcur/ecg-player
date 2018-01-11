@@ -319,8 +319,8 @@ export class XDrawingProxy {
 		let proxyY: number = event.clientY - this.state.screen.top;
 		if (proxyX < 0 || proxyX > this.state.container.width ||
 			proxyY < 0 || proxyY > this.state.container.height) return;
-		this.state.pointerX = proxyX;
-		this.state.pointerY = proxyY;
+		this.state.savePointerPosition(proxyX, proxyY);
+		this.state.saveClientPosition(event.clientX, event.clientY);
 	}
 
 }

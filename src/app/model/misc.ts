@@ -146,6 +146,7 @@ export class XDrawingProxyState {
 	public container: XRectangle;
 
 	public screen: XRectangle;
+	public canvas: XRectangle;
 
 	/** Pixels in millimeter MUL coefficient. */
 	public apxmm: number;
@@ -171,6 +172,10 @@ export class XDrawingProxyState {
 	public pointerX: number;
 	/** Cursor pointer Y. */
 	public pointerY: number;
+	public clientX: number;
+	public clientY: number;
+	public mouseX: number;
+	public mouseY: number;
 
 	public leadsCodes: EcgLeadCode[];
 
@@ -180,7 +185,6 @@ export class XDrawingProxyState {
 
 	// TODO: add surface dimentions getter
 
-
 	//-------------------------------------------------------------------------------------------------
 	public get onLeftEdge(): boolean {
 		return this._skipPx === 0;
@@ -189,6 +193,21 @@ export class XDrawingProxyState {
 	//-------------------------------------------------------------------------------------------------
 	public get onRightEdge(): boolean {
 		return false;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public saveClientPosition(x: number, y: number) {
+		this.clientX = x;
+		this.clientY = y;
+
+		this.mouseX = x - this.canvas.left;
+		this.mouseY = y - this.canvas.top;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public savePointerPosition(x: number, y: number) {
+		this.pointerX = x;
+		this.pointerY = y;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -379,6 +398,27 @@ export class XCanvasTool {
 	}
 
 	//-------------------------------------------------------------------------------------------------
+	public makeLine2Points(a: XPoint, b: XPoint) {
+		this.ctx.moveTo(a.left + 0.5, a.top + 0.5);
+		this.ctx.lineTo(b.left + 0.5, b.top + 0.5);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public makeXPointsPath(...points: XPoint[]) {
+		this.ctx.beginPath();
+		let z: number = 0;
+		this.ctx.moveTo(points[z].left + 0.5, points[z].top + 0.5);
+		z++;
+		for (; z < points.length; z++) {
+			this.ctx.lineTo(points[z].left + 0.5, points[z].top + 0.5);
+		}
+		this.ctx.closePath(); // important
+		this.ctx.stroke();
+	}
+
+
+
+	//-------------------------------------------------------------------------------------------------
 	public makeCircle(left: number, top: number, radius: number) {
 		this.ctx.moveTo(left, top);
 		this.ctx.arc(left, top, radius, 0, 2 * Math.PI, false);
@@ -439,6 +479,42 @@ export class XMatrixTool {
 	constructor() {
 		this.reset();
 	}
+
+	//-------------------------------------------------------------------------------------------------
+	public applyForPoints(...points: XPoint[]): number[][] {
+		let a: number[][] = this.matrix;
+		let b: number[][] = this.prepareMatrixForPoints(points);
+		let result: number[][] = XMatrixTool.MatrixMultiply(a, b);
+		let z1: number, z2: number;
+		for (z2 = 0; z2 < points.length; z2++) {
+			z1 = 0;
+			points[z2].rebuild(Math.floor(result[z1++][z2]), Math.floor(result[z1++][z2]));
+		}
+		return result;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private prepareMatrixForPoints(points: XPoint[]): number[][] {
+		if (!Array.isArray(points)) return [];
+		let z1: number = 0,
+			z2: number = 0,
+			result: number[][],
+			rowsCount: number = 3,
+			colCount: number = points.length;
+		result = new Array(rowsCount);
+
+		result[z1++] = new Array(colCount); // left coordinate
+		result[z1++] = new Array(colCount); // top coordinate
+		result[z1++] = new Array(colCount);
+		for (; z2 < colCount; z2++) {
+			z1 = 0;
+			result[z1++][z2] = points[z2].left;
+			result[z1++][z2] = points[z2].top;
+			result[z1++][z2] = 0;
+		}
+		return result;
+	}
+
 
 	//-------------------------------------------------------------------------------------------------
 	public reset() {
@@ -511,8 +587,9 @@ export class XMatrixTool {
 	static MatrixMultiply(a: number[][], b: number[][]): number[][] {
 		if (!Array.isArray(a) ||
 			!Array.isArray(b) ||
+			a.length === 0 ||
 			b.length === 0 ||
-			a.length != b[0].length)
+			(a.length != b[0].length && b.length != a[0].length))
 			return [];
 
 		let aRowsCnt: number = a.length,
@@ -547,3 +624,120 @@ export class XMatrixTool {
 	}
 
 }
+
+
+
+
+//-------------------------------------------------------------------------------------------------
+// XAnimation
+//-------------------------------------------------------------------------------------------------
+export class XAnimation {
+	private _length: number = 2000;
+	private _frameId: number;
+	private _start: number;
+	private _now: number;
+	private _debug: boolean;
+	private _tc: number;
+	private _type: XAnimationType = XAnimationType.LinearEaseNone;
+	private _animation: Function;
+	private _animationEnd: Function;
+	private _animate: boolean = false;
+	private _runing: boolean = false;
+
+	public get maxTime(): number { return this._start === 0 ? 0 : this._start + this._length; }
+	public get animate(): boolean { return this._now < this.maxTime; }
+	public set animation(v: Function) { this._animation = v; }
+	public set animationEnd(v: Function) { this._animationEnd = v; }
+	public set length(v: number) { this._length = v; }
+	public set easing(t: XAnimationType) { this._type = t; }
+	public get runing(): boolean { return this.runing; }
+
+	//----------------------------------------------------------------------------------------------
+	constructor(db: boolean = false) { this._debug = db; }
+
+	//----------------------------------------------------------------------------------------------
+	public get tc(): number { return this._tc; }
+
+	//----------------------------------------------------------------------------------------------
+	private get transform(): number {
+		let tc: number = (this._now - this._start) / this._length;
+		let next: number;
+		switch (this._type) {
+			case XAnimationType.LinearEaseNone:
+				next = tc;
+				break;
+			case XAnimationType.CubicEaseIn:
+				next = tc * tc * tc;
+				break;
+			case XAnimationType.CubicEaseOut:
+				next = --tc * tc * tc + 1;
+				break;
+			case XAnimationType.CubicEaseInOut:
+				if ((tc *= 2) < 1) next = 0.5 * tc * tc * tc;
+				next = 0.5 * ((tc -= 2) * tc * tc + 2);
+				break;
+			case XAnimationType.QuintEaseOut:
+				next = --tc * tc * tc * tc * tc + 1;
+				break;
+			default:
+				next = tc;
+		}
+		return next;
+	}
+
+	//----------------------------------------------------------------------------------------------
+	public nextFrame() {
+		if (!this._animate) return;
+		this._now = Date.now();
+		if (this._now >= this.maxTime) {
+			this._tc = 1;
+			this._animation(this.tc);
+			this.end();
+			return;
+		};
+		this._tc = this.transform;
+		if (this._debug) console.info(`A: draw ${Date.now() - this._start}ms`);
+		if (this._animation) this._animation(this.tc);
+		this._frameId = requestAnimationFrame(this.nextFrame.bind(this));
+	}
+
+	//----------------------------------------------------------------------------------------------
+	public start() {
+		if (this._runing) return; // cancel animation
+		this._start = Date.now();
+		this._animate = true;
+		this._runing = true;
+		this.nextFrame();
+	}
+
+	//----------------------------------------------------------------------------------------------
+	public end() {
+		if (this._debug) console.info(`A: end ${Date.now() - this._start}ms`);
+		if (this._animationEnd) this._animationEnd();
+		this._start = 0;
+		this._now = 0;
+		this._tc = 0;
+		this._runing = false;
+		this._animate = false;
+		cancelAnimationFrame(this._frameId);
+	}
+
+	//----------------------------------------------------------------------------------------------
+	public cancel() {
+		this._runing = false;
+		this._animate = false;
+	}
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// XAnimationType
+//-------------------------------------------------------------------------------------------------
+export enum XAnimationType {
+	LinearEaseNone,
+	CubicEaseIn,
+	CubicEaseOut,
+	CubicEaseInOut,
+	QuintEaseOut
+}
+

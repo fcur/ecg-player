@@ -7,7 +7,7 @@ import { DataService } from "../service/data.service"
 import {
 	XDrawingCell, XDrawingChangeSender, XDrawingGridMode,
 	XDrawingChange, XDrawingProxyState, XCanvasTool,
-	XMatrixTool
+	XMatrixTool, XAnimation, XAnimationType
 } from "../model/misc";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState, XLabel,
@@ -65,6 +65,8 @@ export class DrawableComponent implements OnInit {
 	private _threshold: number;
 	private _lastEmitTime: number;
 	private _drawingScrollSubs: Subscription;
+
+	private _zoomAnimation: XAnimation;
 
 	//----------------------------------------------------------------------------------------------
 	@Input("clip-canvas")
@@ -363,63 +365,45 @@ export class DrawableComponent implements OnInit {
 		// Normalize wheel to +1 or -1
 		let wheel: number = event.wheelDelta / 120;
 		// Compute zoom factor
-		let zoom: number = Math.exp(wheel * 2 * this._zoomIntensity);
-		this._cursorClient.scale *= zoom;
+		let zoom: number = Math.exp(wheel * this._zoomIntensity);
+		this._cursorClient.zoom = zoom;
+		let scale = this._cursorClient.scale;
+		this._cursorClient.zoom2 += (wheel / 2);
+		let newScale = this._cursorClient.scale *(2 ** this._cursorClient.zoom2);
+		let localDelta: number = newScale - this._cursorClient.scale;
 
-		//console.info("zoom:", zoom, wheel);
+		//console.log(this._cursorClient.zoom2, newScale);
 
-		this._ct.clear();
-		this.renderVisibleGroups();
-		this.drawCursotPosition();
 
-		
+		this._zoomAnimation = new XAnimation();
+		this._zoomAnimation.length = 1000;
+
+		this._zoomAnimation.animation = (progress: number) => {
+			//console.log(progress);
+			this._cursorClient.scale = scale + localDelta * progress;
+
+			this._ct.clear();
+			this.renderVisibleGroups();
+			this.drawCursotPosition();
+			this.drawTargeRectangle();
+		};
+
+		this._zoomAnimation.animationEnd = () => {
+			this._cursorClient.scale = newScale;
+			this._cursorClient.zoom = zoom;
+			this._zoomAnimation = null;
+
+			this._ct.clear();
+			this.renderVisibleGroups();
+			this.drawCursotPosition();
+			this.drawTargeRectangle();
+		};
+
+
+		this._zoomAnimation.start();
+
 	}
 
-	//-------------------------------------------------------------------------------------
-	private matrixTest() {
-		let a: number[][] = [
-			[1, 2, 3],
-			[4, 5, 6],
-			[7, 8, 9]
-		];
-		let b: number[][] = [
-			[10, 11, 12],
-			[13, 14, 15],
-			[16, 17, 18]
-		];
-		let c: number[][] = XMatrixTool.MatrixMultiply(a, b);
-
-		let matr1: number[][] = this._mt.translate(0, 0).rotate(0).matrix;
-		this._mt.reset();
-		let matr11: number[][] = this._mt.matrix;
-		let matr2: number[][] = this._mt.scale(2, 3).translate(-20, 43).matrix;
-		let matr21: number[][] = this._mt.matrix;
-		let matr22: number[][] = this._mt.scale(2, 3).translate(-20, 43).matrix;
-		let matr212: number[][] = this._mt.matrix;
-		this._mt.reset();
-		let matr3: number[][] = this._mt.scale(1, 1).translate(0, 0).rotate(0).matrix;
-		this._mt.reset();
-
-		let left: number = 40,
-			top: number = 158,
-			left2: number,
-			top2: number,
-			left3: number,
-			top3: number,
-			multResult1: number[][],
-			multResult2: number[][],
-			matr: number[][] = this._mt.scale(2, 2).matrix;
-
-		multResult1 = XMatrixTool.PointMultiply(left, top, matr);
-		left2 = multResult1[0][0];
-		top2 = multResult1[1][0];
-		this._mt.reset();
-		this._mt.translate(left, top);
-		multResult2 = XMatrixTool.PointMultiply(left, top, matr);
-		left3 = multResult2[0][0];
-		top3 = multResult2[1][0];
-		console.info(`input {left=${left}, top=${top}}\n scale 2,2 {left=${left2}, top=${top2}}\n translate ${left},${top} {left=${left3}, top=${top3}}\n`);
-	}
 
 	//-------------------------------------------------------------------------------------
 	private onScrollDrawings(val: number) {
@@ -485,12 +469,18 @@ export class DrawableComponent implements OnInit {
 		let space: number = 33;
 		let proxyContainer: XRectangle = new XRectangle(space, space, this._ct.width - space * 2, this._ct.height - space * 2);
 		this._dp.state.container = proxyContainer;
-		let clientContainer: XRectangle = new XRectangle(
+
+		this._dp.state.screen = new XRectangle(
 			space + this._drawingElement.nativeElement.offsetLeft,
 			space + this._drawingElement.nativeElement.offsetTop,
 			proxyContainer.width,
 			proxyContainer.height);
-		this._dp.state.screen = clientContainer;
+
+		this._dp.state.canvas = new XRectangle(
+			this._drawingElement.nativeElement.offsetLeft,
+			this._drawingElement.nativeElement.offsetTop,
+			this._drawingElement.nativeElement.offsetWidth,
+			this._drawingElement.nativeElement.offsetHeight);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -629,35 +619,23 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.fillText(text, left, top);
 
 		this._ct.restoreState();
-		this.drawTargeRectangle();
 	}
 
 	//-------------------------------------------------------------------------------------
+	// TODO: add affine transform tests for rectangle
 	private drawTargeRectangle() {
-		//this._targRectClient
-		let l: number,
-			t: number,
-			w: number,
-			h: number,
-			ax: number,
-			ay: number,
-			bx: number,
-			by: number;
-
-		l = this._targRectClient.figure.left;
-		t = this._targRectClient.figure.top;
-		w = this._targRectClient.figure.width;
-		h = this._targRectClient.figure.height;
-
-		ax = this._targRectClient.figure.minOx;
-		ay = this._targRectClient.figure.minOy;
-		bx = this._targRectClient.figure.maxOx;
-		by = this._targRectClient.figure.maxOy;
-
-		// TODO: add affine transform tests for rectangle
-
 		this._ct.saveState();
-		this._ct.ctx.strokeRect(l,t,w,h);
+		//this._targRectClient
+		let a: XPoint = new XPoint(this._targRectClient.figure.minOx, this._targRectClient.figure.minOy),
+			b: XPoint = new XPoint(this._targRectClient.figure.maxOx, this._targRectClient.figure.minOy),
+			c: XPoint = new XPoint(this._targRectClient.figure.maxOx, this._targRectClient.figure.maxOy),
+			d: XPoint = new XPoint(this._targRectClient.figure.minOx, this._targRectClient.figure.maxOy),
+			scale: number = this._cursorClient.scale;
+
+		this._mt.scale(scale, scale);
+		this._mt.applyForPoints(a, b, c, d);
+		this._ct.ctx.strokeStyle = "blue";
+		this._ct.makeXPointsPath(a, b, c, d);
 		this._ct.restoreState();
 	}
 

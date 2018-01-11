@@ -644,13 +644,36 @@ export class CursorDrawingClient extends XDrawingClient {
 	pointColor: string;
 	pointRadius: number;
 	clientHalfWidth: number;
-	scale: number;
+	
+	zoom: number;
+	zoom2: number;
 
+	private _scale: number;
+	private _prewScale: number;
+
+	//-------------------------------------------------------------------------------------
+	set scale(val: number) {
+		this._prewScale = this._scale;
+		this._scale = val;
+	}
+
+	//-------------------------------------------------------------------------------------
+	get scale(): number {
+		return this._scale;
+	}
+
+	//-------------------------------------------------------------------------------------
+	get prewScale(): number {
+		return this._prewScale;
+	}
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
-		this.scale = 1;
+		this._scale = 1;
+		this.zoom = 1;
+		this.zoom2 = 1;
+		this._prewScale = 1;
 		this.clientHalfWidth = 4;
 		this.pointColor = "red";
 		this.lineColor = "#ccc";
@@ -663,6 +686,7 @@ export class CursorDrawingClient extends XDrawingClient {
 		this.afterDraw = this.afterDrawFCursor.bind(this);
 		this.createDrawingObject = this.createCursorDrawingObject.bind(this);
 	}
+
 
 	//-------------------------------------------------------------------------------------
 	public drawCursor() {
@@ -746,10 +770,10 @@ export class TargetRectangleClient {
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
-		this.left = 200;
+		this.left = 120;
 		this.top = 123;
-		this.width = 300;
-		this.height = 224;
+		this.width = 321;
+		this.height = 123;
 		this.figure = new XRectangle(this.left, this.top, this.width, this.height);
 
 	}
