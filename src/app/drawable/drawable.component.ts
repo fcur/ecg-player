@@ -362,46 +362,43 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onWheelScroll(event: WheelEvent) {
+		// Skip animation
+		if (this._zoomAnimation != null) return;
 		// Normalize wheel to +1 or -1
 		let wheel: number = event.wheelDelta / 120;
-		// Compute zoom factor
-		let zoom: number = Math.exp(wheel * this._zoomIntensity);
-		this._cursorClient.zoom = zoom;
-		let scale = this._cursorClient.scale;
-		this._cursorClient.zoom2 += (wheel / 2);
-		let newScale = this._cursorClient.scale *(2 ** this._cursorClient.zoom2);
-		let localDelta: number = newScale - this._cursorClient.scale;
 
-		//console.log(this._cursorClient.zoom2, newScale);
+		let prewZoom: number = this._cursorClient.zoomStep;
+		this._cursorClient.zoomIndex += wheel;
+		if (this._cursorClient.zoomIndex < 0 || this._cursorClient.zoomIndex >= this._cursorClient.zoomSteps.length)
+			this._cursorClient.zoomIndex = this._cursorClient.zoomSteps.indexOf(1);
 
+		let localDelta: number = this._cursorClient.zoomStep - prewZoom;
+		let localZoom: number = prewZoom;
 
 		this._zoomAnimation = new XAnimation();
-		this._zoomAnimation.length = 1000;
+		this._zoomAnimation.length = 400;
 
 		this._zoomAnimation.animation = (progress: number) => {
-			//console.log(progress);
-			this._cursorClient.scale = scale + localDelta * progress;
-
+			this._cursorClient.zoom = prewZoom + progress * localDelta;
+			this._mt.scale(this._cursorClient.zoom, this._cursorClient.zoom);
 			this._ct.clear();
 			this.renderVisibleGroups();
 			this.drawCursotPosition();
-			this.drawTargeRectangle();
+			this.drawTargeRectangle("red"); //control
+			this.drawTargeRectangle("blue");
 		};
 
 		this._zoomAnimation.animationEnd = () => {
-			this._cursorClient.scale = newScale;
-			this._cursorClient.zoom = zoom;
+			this._cursorClient.zoom = this._cursorClient.zoomStep;
+			this._mt.scale(this._cursorClient.zoom, this._cursorClient.zoom);
 			this._zoomAnimation = null;
-
 			this._ct.clear();
 			this.renderVisibleGroups();
 			this.drawCursotPosition();
-			this.drawTargeRectangle();
+			//this.drawTargeRectangle("red"); //control
+			this.drawTargeRectangle("blue");
 		};
-
-
 		this._zoomAnimation.start();
-
 	}
 
 
@@ -436,6 +433,7 @@ export class DrawableComponent implements OnInit {
 		this._ct.clear();
 		this.renderVisibleGroups();
 		this.drawCursotPosition();
+		//this.drawTargeRectangle(this._cursorClient.zoomStep, "red");
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -599,7 +597,7 @@ export class DrawableComponent implements OnInit {
 			top: number,
 			text: string,
 			radius: number;
-		radius = this._cursorClient.scale * baseRadius;
+		radius = this._cursorClient.zoom * baseRadius * 2;
 		let textSize: number = 12;
 		this._ct.saveState();
 		this._ct.ctx.beginPath();
@@ -623,19 +621,18 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	// TODO: add affine transform tests for rectangle
-	private drawTargeRectangle() {
+	private drawTargeRectangle(cl: string) {
 		this._ct.saveState();
 		//this._targRectClient
 		let a: XPoint = new XPoint(this._targRectClient.figure.minOx, this._targRectClient.figure.minOy),
 			b: XPoint = new XPoint(this._targRectClient.figure.maxOx, this._targRectClient.figure.minOy),
 			c: XPoint = new XPoint(this._targRectClient.figure.maxOx, this._targRectClient.figure.maxOy),
-			d: XPoint = new XPoint(this._targRectClient.figure.minOx, this._targRectClient.figure.maxOy),
-			scale: number = this._cursorClient.scale;
+			d: XPoint = new XPoint(this._targRectClient.figure.minOx, this._targRectClient.figure.maxOy);
 
-		this._mt.scale(scale, scale);
 		this._mt.applyForPoints(a, b, c, d);
-		this._ct.ctx.strokeStyle = "blue";
-		this._ct.makeXPointsPath(a, b, c, d);
+		//console.log(a, b, c, d);
+		this._ct.ctx.strokeStyle = cl;
+		this._ct.strokePointsPath(a, b, c, d);
 		this._ct.restoreState();
 	}
 

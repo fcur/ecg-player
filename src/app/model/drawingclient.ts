@@ -648,8 +648,16 @@ export class CursorDrawingClient extends XDrawingClient {
 	zoom: number;
 	zoom2: number;
 
+
+	zoomSteps: number[];
+	zoomIndex: number;
+
 	private _scale: number;
 	private _prewScale: number;
+
+	get zoomStep(): number {
+		return this.zoomSteps[this.zoomIndex];
+	}
 
 	//-------------------------------------------------------------------------------------
 	set scale(val: number) {
@@ -670,6 +678,9 @@ export class CursorDrawingClient extends XDrawingClient {
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
+		this.zoomSteps = [0.25, 0.33, 0.5, 0.75, 1, 1.5, 3, 5, 8, 12];
+		this.zoomIndex = this.zoomSteps.indexOf(1);
+
 		this._scale = 1;
 		this.zoom = 1;
 		this.zoom2 = 1;
@@ -768,12 +779,17 @@ export class TargetRectangleClient {
 	public width: number;
 	public height: number;
 
+	public originX: number;
+	public originY: number;
+
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		this.left = 120;
 		this.top = 123;
 		this.width = 321;
 		this.height = 123;
+		this.originX = 0;
+		this.originY = 0;
 		this.figure = new XRectangle(this.left, this.top, this.width, this.height);
 
 	}

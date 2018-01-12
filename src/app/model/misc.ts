@@ -199,7 +199,6 @@ export class XDrawingProxyState {
 	public saveClientPosition(x: number, y: number) {
 		this.clientX = x;
 		this.clientY = y;
-
 		this.mouseX = x - this.canvas.left;
 		this.mouseY = y - this.canvas.top;
 	}
@@ -238,8 +237,10 @@ export class XDrawingProxyState {
 
 	//}
 
+
 	//-------------------------------------------------------------------------------------------------
 	constructor() {
+		this.resetPointer();
 		this.devMode = true;
 		this.leadsCodes = [];
 		this.onScrollBs = new BehaviorSubject(NaN);
@@ -254,6 +255,13 @@ export class XDrawingProxyState {
 		this.limitPx = 0;
 		this.signalSamplesClip = Math.floor(this.maxSample * this.signalMicrovoltsClip / this.signalScale);
 		this.gridMode = XDrawingGridMode.EMPTY;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public resetPointer() {
+		this.clientX = 0; this.clientY = 0;
+		this.mouseX = 0; this.mouseY = 0;
+		this.pointerX = 0; this.pointerY = 0;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -404,7 +412,7 @@ export class XCanvasTool {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public makeXPointsPath(...points: XPoint[]) {
+	public strokePointsPath(...points: XPoint[]) {
 		this.ctx.beginPath();
 		let z: number = 0;
 		this.ctx.moveTo(points[z].left + 0.5, points[z].top + 0.5);
@@ -434,9 +442,9 @@ export class XMatrixTool {
 	/** Rotate about this point. */
 	public rotationPoint: XPoint;
 	/** Translate OX. */
-	private tx: number;
+	public tx: number;
 	/** Translate OY. */
-	private ty: number;
+	public ty: number;
 	/** Scale OX. */
 	public sx: number;
 	/** Scale OY. */
@@ -510,7 +518,7 @@ export class XMatrixTool {
 			z1 = 0;
 			result[z1++][z2] = points[z2].left;
 			result[z1++][z2] = points[z2].top;
-			result[z1++][z2] = 0;
+			result[z1++][z2] = 1;
 		}
 		return result;
 	}
@@ -589,7 +597,7 @@ export class XMatrixTool {
 			!Array.isArray(b) ||
 			a.length === 0 ||
 			b.length === 0 ||
-			(a.length != b[0].length && b.length != a[0].length))
+			b.length != a[0].length)
 			return [];
 
 		let aRowsCnt: number = a.length,
