@@ -384,8 +384,8 @@ export class DrawableComponent implements OnInit {
 			this._ct.clear();
 			this.renderVisibleGroups();
 			this.drawCursotPosition();
-			this.drawTargeRectangle("red"); //control
-			this.drawTargeRectangle("blue");
+			this.drawTargeRectangle(this._cursorClient.zoomStep, "red");
+			this.drawTargeRectangle(this._cursorClient.zoom, "blue");
 		};
 
 		this._zoomAnimation.animationEnd = () => {
@@ -395,8 +395,8 @@ export class DrawableComponent implements OnInit {
 			this._ct.clear();
 			this.renderVisibleGroups();
 			this.drawCursotPosition();
-			//this.drawTargeRectangle("red"); //control
-			this.drawTargeRectangle("blue");
+			this.drawTargeRectangle(this._cursorClient.zoomStep, "red");
+			this.drawTargeRectangle(this._cursorClient.zoom, "blue");
 		};
 		this._zoomAnimation.start();
 	}
@@ -635,7 +635,6 @@ export class DrawableComponent implements OnInit {
 		this._ct.strokePointsPath(a, b, c, d);
 		this._ct.restoreState();
 	}
-
 
 	//-------------------------------------------------------------------------------------
 	private drawBeatsRangesObjects(objs: BeatsRangeDrawingObject[]) {
