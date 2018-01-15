@@ -58,6 +58,7 @@ export interface IDObject {
 	hud: boolean;
 	/** Update drawing object proxy state. */
 	updateState(dd: DrawingData, pd: XDProxyState);
+
 }
 
 

@@ -7,7 +7,8 @@ import { DataService } from "../service/data.service"
 import {
 	XDCell, XDChangeSender, XDGridMode,
 	XDPSEvent, XDProxyState, XCanvasTool,
-	XMatrixTool, XAnimation, XAnimationType
+	XMatrixTool, XAnimation, XAnimationType,
+	XDChangeType, XDCoordinates
 } from "../model/misc";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState, XLabel,
@@ -59,11 +60,11 @@ export class DrawableComponent implements OnInit {
 	private _ct: XCanvasTool;
 	private _mt: XMatrixTool;
 	private _loadDataSubs: Subscription;
-	private _waveformDragStartPosition: XPoint;
+	private _changeStateSubs: Subscription;
+	private _prepareDrawingSubs: Subscription;
 	private _pinBeatsToSignal: boolean;
 	private _clipCanvas: boolean;
 	private _threshold: number;
-	private _lastEmitTime: number;
 	private _drawingScrollSubs: Subscription;
 
 	private _zoomAnimation: XAnimation;
@@ -204,20 +205,15 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	constructor(private _el: ElementRef, private _ds: DataService) {
-		//console.info("DrawableComponent constructor");
 		this._hideFileDrop = false;
 		this._clipCanvas = false;
 		this._pinBeatsToSignal = true;
 		this._loadDataSubs = null;
 		this._drawingScrollSubs = null;
-		this._waveformDragStartPosition = null;
 		this._threshold = 100;
-		this._lastEmitTime = 0;
 		this._zoomIntensity = 0.2;
 		this._dp = new XDProxy();
 		this._mt = new XMatrixTool();
-		//this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
-		this._dp.onPrepareDrawings.subscribe((v: IDObject[][]) => this.onReceiveDrawingObjects(v));
 		this._fileReader = new FileReader();
 		this.prepareClients();
 	}
@@ -225,9 +221,12 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	public ngOnInit() {
 		//console.info("DrawableComponent: init");
-		this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
 		this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord[]));
 		this._drawingScrollSubs = this._dp.state.onScrollBs.subscribe(v => this.onScrollDrawings(v as number));
+		this._changeStateSubs = this._dp.onChangeState.subscribe((v: XDPSEvent) => this.onProxyStateChanges(v));
+		this._prepareDrawingSubs = this._dp.onPrepareDrawings.subscribe((v: IDObject[][]) => this.onReceiveDObjects(v));
+
+		this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
 		this._canvasContainer.nativeElement.addEventListener("dragover", this.onDragOver.bind(this), false);
 		this._canvasContainer.nativeElement.addEventListener("drop", this.onDragDrop.bind(this), false);
 	}
@@ -245,7 +244,9 @@ export class DrawableComponent implements OnInit {
 	public ngOnDestroy() {
 		//console.info("DrawableComponent: destroy");
 		if (this._loadDataSubs) this._loadDataSubs.unsubscribe();
+		if (this._changeStateSubs) this._dp.onChangeState.unsubscribe();
 		if (this._drawingScrollSubs) this._drawingScrollSubs.unsubscribe();
+		if (this._prepareDrawingSubs) this._prepareDrawingSubs.unsubscribe();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -265,15 +266,18 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onDragStart(event: any) {
-		this._waveformDragStartPosition = this.getEventPosition(event);
+		this._dp.startWaveformDrag(this.getEventPosition(event));
+		//this._dp.state.dragPosition = this.getEventPosition(event);
 	}
 
 	//-------------------------------------------------------------------------------------
 	private onDragMove(event: any) {
-		if (this._waveformDragStartPosition) {
-			this.scroll(event);
+		if (this._dp.state.canDrag) {
+			this._dp.updateWaveformDrag(this.getEventPosition(event));
+			this._dp.performScroll(event);
+		} else {
+			this._dp.performCursorMove(event);
 		}
-		this.pointerMove(event);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -303,8 +307,8 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onDragEnd(event: any) {
-		if (!this._waveformDragStartPosition) return;
-		this._waveformDragStartPosition = null;
+		if (!this._dp.canDragWaveform) return;
+		this._dp.stopWaveformDrag();
 	}
 
 	//----------------------------------------------------------------------------------------------
@@ -344,20 +348,20 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	//private onProxyStateChanges(change: XDrawingChange) {
-	//  //console.info("onProxyStateChanges:", change);
-	//  // refresh drawings
-	//  this._ct.clear();
-	//  //this._ct.saveState();
-	//  //let state: XDrawingProxyState = this._dp.state;
-	//  //this._ct.ctx.rect(state.container.left, state.container.top, state.container.width, state.container.height);
-	//  //this._ct.ctx.stroke();
-	//  //this._ct.restoreState();
-	//  for (let z: number = 0; z < change.objects.length; z++) {
-	//    if (!change.objects[z].owner.draw) continue;
-	//    change.objects[z].owner.draw(change.objects[z]);
-	//  }
-	//}
+	private onProxyStateChanges(v: XDPSEvent) {
+		//console.info(v.info, v.timeStamp);
+		// refresh drawings
+		//this._ct.clear();
+		////this._ct.saveState();
+		////let state: XDrawingProxyState = this._dp.state;
+		////this._ct.ctx.rect(state.container.left, state.container.top, state.container.width, state.container.height);
+		////this._ct.ctx.stroke();
+		////this._ct.restoreState();
+		//for (let z: number = 0; z < change.objects.length; z++) {
+		//  if (!change.objects[z].owner.draw) continue;
+		//  change.objects[z].owner.draw(change.objects[z]);
+		//}
+	}
 
 
 	//-------------------------------------------------------------------------------------
@@ -429,7 +433,7 @@ export class DrawableComponent implements OnInit {
 
 
 	//-------------------------------------------------------------------------------------
-	private onReceiveDrawingObjects(p: IDObject[][]) {
+	private onReceiveDObjects(p: IDObject[][]) {
 		this._ct.clear();
 		this.renderVisibleGroups();
 		this.drawCursotPosition();
@@ -483,23 +487,10 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private scroll(event: any) {
-		this._dp.prepareCursor(event);
-		let endpoint: XPoint = this.getEventPosition(event);
-		let actionPoint: XPoint = this._waveformDragStartPosition.subtract(endpoint);
-		this._waveformDragStartPosition = endpoint;
-		if (actionPoint.left === 0) return; // skip scrolling
-		this._dp.scroll(actionPoint.left);
+
 	}
 
-	//-------------------------------------------------------------------------------------
-	private pointerMove(event: any) {
-		//let timeNow: number = Date.now();
-		//if (timeNow - this._lastEmitTime > this._threshold) {
-		// this._lastEmitTime = timeNow;
-		// this._dp.performMouseMove(event);
-		//}
-		this._dp.performMouseMove(event);
-	}
+
 
 	//-------------------------------------------------------------------------------------
 	private drawSignalObjects(objs: SignalDrawingObject[]) {
@@ -682,12 +673,12 @@ export class DrawableComponent implements OnInit {
 
 				dx = beatRange.container.minOx - state.minPx;
 				left = cell.container.left + dx;
-				//this._ct.ctx.fillRect(
-				//	left,
-				//	cell.container.top,
-				//	beatRange.container.width,
-				//	cell.container.height
-				//);
+				this._ct.ctx.fillRect(
+					left,
+					cell.container.top,
+					beatRange.container.width,
+					cell.container.height
+				);
 			}
 		}
 

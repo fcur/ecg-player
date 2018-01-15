@@ -1,5 +1,9 @@
 import { EventEmitter } from "@angular/core";
-import { XDPSEvent, XDProxyState, XDChangeSender } from "./misc";
+import {
+	XDPSEvent, XDProxyState, XDChangeSender, XAnimation,
+	XAnimationType, XCanvasTool, XDCell, XDChangeType,
+	XDCoordinates, XDGridMode, XMatrixTool
+} from "./misc";
 import {
 	BeatsDrawingClient, IDrawingClient, SignalDrawingClient,
 	XDrawingClient, XDrawingMode, AnsDrawingClient,
@@ -35,12 +39,12 @@ export class XDProxy {
 	public lastEvent: XDPSEvent;
 
 	public drawingData: DrawingData;
-	//public onChangeState: EventEmitter<XDrawingChange>;
+	public onChangeState: EventEmitter<XDPSEvent>;
+
 	public onPrepareDrawings: EventEmitter<IDObject[][]>;
 	//public drawingObjects: IDrawingObject[];
 	private _clients: IDrawingClient[]; // F2, F3
-	//public objectsF2: IDrawingObject[][];
-	// feature3
+
 	/** All prepared drawing objects. */
 	public doAll: IDObject[];
 	/** HUD drawing objects, always visible on surface. */
@@ -59,16 +63,26 @@ export class XDProxy {
 
 	//-------------------------------------------------------------------------------------
 	public get state(): XDProxyState {
-		return this.lastEvent.state;
+		return this.lastEvent.currentState;
 	}
 	//-------------------------------------------------------------------------------------
-	public set state(v: XDProxyState) {
-		this.lastEvent.state = v;
+	public get canDragWaveform(): boolean {
+		return this.lastEvent.currentState.canDrag;
 	}
 	//-------------------------------------------------------------------------------------
 	public get previousState(): XDProxyState {
-		return this.lastEvent.previous;
+		return this.lastEvent.previousState;
 	}
+	//-------------------------------------------------------------------------------------
+	public get drawingClients(): IDrawingClient[] {
+		if (!this._clients) return [];
+		return this._clients;
+	}
+	//-------------------------------------------------------------------------------------
+	public get canScrollWaveform(): boolean {
+		return this.lastEvent.previousState.minPx != this.lastEvent.currentState.minPx;
+	}
+
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		//console.info("DrawingProxy constructor");
@@ -76,9 +90,25 @@ export class XDProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public get drawingClients(): IDrawingClient[] {
-		if (!this._clients) return [];
-		return this._clients;
+	public startWaveformDrag(v: XPoint) {
+		this.lastEvent.previousState.dragPosition.rebuild(v.left, v.top);
+		this.lastEvent.currentState.dragPosition.rebuild(v.left, v.top);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public updateWaveformDrag(endpoint: XPoint) {
+		let actionPoint: XPoint = this.state.dragPosition.subtract(endpoint);
+		this.lastEvent.currentState.scroll(actionPoint.left);
+		this.lastEvent.previousState.dragPosition.rebuild(
+			this.lastEvent.currentState.dragPosition.left,
+			this.lastEvent.currentState.dragPosition.top);
+		this.lastEvent.currentState.dragPosition.rebuild(endpoint.left, endpoint.top);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public stopWaveformDrag() {
+		this.lastEvent.previousState.resetDrag();
+		this.lastEvent.currentState.resetDrag();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -115,9 +145,13 @@ export class XDProxy {
 		this.doHidLeft = [];
 		this.doHidRight = [];
 		this.drawingData = new DrawingData();
-		this.state = new XDProxyState();
-		//this.onChangeState = new EventEmitter<XDrawingChange>();
+		this.onChangeState = new EventEmitter<XDPSEvent>();
 		this.onPrepareDrawings = new EventEmitter<IDObject[][]>();
+	}
+
+	//-------------------------------------------------------------------------------------
+	public startDtag(v: XPoint) {
+		this.lastEvent.currentState.updateDragStart(v);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -267,6 +301,8 @@ export class XDProxy {
 		//this.onChangeState.emit(changes);
 		//this.onPrepareDrawings.emit(objects);
 
+		this.lastEvent.type = XDChangeType.ForceRefresh;
+		this.onChangeState.emit(this.lastEvent.updateTimestamp());
 		this.onPrepareDrawings.emit([]/*this.objectsF2*/);
 	}
 
@@ -284,51 +320,33 @@ export class XDProxy {
 
 
 	//-------------------------------------------------------------------------------------
-	public performDrag(event: any) {
-		//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.Drag, event);
-		//this.onChangeState.emit(changes);
-	}
-
-	//-------------------------------------------------------------------------------------
-	public performMouseMove(event: any) {
+	public performScroll(event: any) {
 		if (!this.state.container) return;
-		// TODO handle floating pointer
-		//console.info("proxy: mouse move", this.state.pointerX, this.state.pointerY);
-		this.prepareCursor(event);
-		//this.prepareFloatingObjects(this.state.pointerX, this.state.pointerY);
-		//let objects: IDrawingObject[][] = this.prepareDrawingObjectsF2();
-		//console.info("proxy mouse move: ", this.objectsF2);
-		//this.objectsF2 = this.prepareDrawingObjectsF2();
-		//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseMove, event);
-		//this.onChangeState.emit(changes);
-		//this.onPrepareDrawings.emit(objects);
-		let z1: number;
+		
+		this.moveCursor(event);
+		this.lastEvent.type = XDChangeType.Scroll;
+		this.lastEvent.sender = XDChangeSender.Drag;
+		this.onChangeState.emit(this.lastEvent.updateTimestamp());
+		this.onPrepareDrawings.emit([]);
+	}
 
-		for (z1 = 0; z1 < this.doVisible.length; z1++) {
-			if (!this.doVisible[z1].hud) continue;
-			this.doVisible[z1].updateState(this.drawingData, this.state);
-		}
+	//-------------------------------------------------------------------------------------
+	public performCursorMove(event: any) {
+		if (!this.state.container) return;
+		this.moveCursor(event);
 
-		//this.resetDOF3Groups();
-		//let ownerIndex: number, doAllIndex: number;
-		//for (z1 = 0; z1 < this.doF3Visible.length; z1++) {
-		//	doAllIndex = this.doF3All.indexOf(this.doF3Visible[z1]);
-		//	if (doAllIndex < 0 || this.doF3All[doAllIndex].hidden != this.doF3Visible[z1].hidden) {
-		//		console.warn("scrollDrawObjGroupsF3");
-		//	}
-		//	ownerIndex = this._clients.indexOf(this.doF3Visible[z1].owner);
-		//	if (ownerIndex < 0) continue;
-		//	this.doF3CGroups[ownerIndex].push(this.doF3Visible[z1]);
-		//}
-
-		this.onPrepareDrawings.emit([]/*this.objectsF2*/);
-		// add/update floating point client
-		//this._doF3Viaible.push()
+		this.lastEvent.type = XDChangeType.ForceRefresh;
+		this.lastEvent.sender = XDChangeSender.MouseHover;
+		this.onChangeState.emit(this.lastEvent.updateTimestamp());
+		this.onPrepareDrawings.emit([]);
 	}
 
 
+
+
+
 	//-------------------------------------------------------------------------------------
-	public prepareCursor(event: any) {
+	private prepareCursor(event: any) {
 		let proxyX: number = event.clientX - this.state.screen.left;
 		let proxyY: number = event.clientY - this.state.screen.top;
 		if (proxyX < 0 || proxyX > this.state.container.width ||
@@ -336,5 +354,16 @@ export class XDProxy {
 		this.state.savePointerPosition(proxyX, proxyY);
 		this.state.saveClientPosition(event.clientX, event.clientY);
 	}
+
+	//-------------------------------------------------------------------------------------
+	private moveCursor(event: any) {
+		this.prepareCursor(event);
+		let z1: number;
+		for (z1 = 0; z1 < this.doVisible.length; z1++) {
+			if (!this.doVisible[z1].hud) continue;
+			this.doVisible[z1].updateState(this.drawingData, this.state);
+		}
+	}
+
 
 }

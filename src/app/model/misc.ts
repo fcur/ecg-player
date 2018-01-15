@@ -62,7 +62,7 @@ export enum XDCoordinates {
 // Drawing change sender
 // -------------------------------------------------------------------------------------------------
 export enum XDChangeSender {
-	UpdateDrawings,
+	None,
 	MouseClick,
 	MouseHover,
 	MouseDbClick,
@@ -71,36 +71,106 @@ export enum XDChangeSender {
 	MouseMove
 }
 
+// -------------------------------------------------------------------------------------------------
+// Drawing change type
+// -------------------------------------------------------------------------------------------------
+export enum XDChangeType {
+	Default,
+	ZoomX,
+	ZoomY,
+	Scroll,
+	ForceRefresh
+}
+
 
 // -------------------------------------------------------------------------------------------------
-// Drawing change
+// Drawing change event object
 // -------------------------------------------------------------------------------------------------
 export class XDPSEvent {
 
 	private _currentState: XDProxyState;
 	private _previousState: XDProxyState;
 
-
 	public sender: XDChangeSender;
-	public curState: XDProxyState;
-	public objects: IDObject[];
-	public clients: IDrawingClient[];
+	public type: XDChangeType;
+	public timeStamp: number;
 
 	//-------------------------------------------------------------------------------------------------
-	public get state(): XDProxyState {
+	public get currentState(): XDProxyState {
 		return this._currentState;
 	}
 	//-------------------------------------------------------------------------------------------------
-	public set state(v: XDProxyState)  {
+	public set currentState(v: XDProxyState) {
 		this._currentState = v;;
 	}
 	//-------------------------------------------------------------------------------------------------
-	public get previous(): XDProxyState {
+	public get previousState(): XDProxyState {
 		return this._previousState;
 	}
+
 	//-------------------------------------------------------------------------------------------------
 	constructor() {
+		this.reset();
+	}
 
+	//-------------------------------------------------------------------------------------------------
+	public reset() {
+		this._currentState = new XDProxyState();
+		this._previousState = new XDProxyState();
+		this.timeStamp = Date.now();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public updateTimestamp(): XDPSEvent {
+		this.timeStamp = Date.now();
+		return this;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public get info(): string {
+		let r = "t=";
+		switch (this.type) {
+			case XDChangeType.Default:
+				r += "default";
+				break;
+			case XDChangeType.ForceRefresh:
+				r += "force refresh";
+				break;
+			case XDChangeType.Scroll:
+				r += "scroll";
+				break;
+			case XDChangeType.ZoomX:
+				r += "zoom-x";
+				break;
+			case XDChangeType.ZoomY:
+				r += "zoom-y";
+				break;
+		}
+		r += " s=";
+		switch (this.sender) {
+			case XDChangeSender.None:
+				r += "none";
+				break;
+			case XDChangeSender.Drag:
+				r += "drag";
+				break;
+			case XDChangeSender.MouseClick:
+				r += "mouse single click";
+				break;
+			case XDChangeSender.MouseDbClick:
+				r += "mouse double click";
+				break;
+			case XDChangeSender.MouseHover:
+				r += "mouse hover";
+				break;
+			case XDChangeSender.MouseMove:
+				r += "mouse move";
+				break;
+			case XDChangeSender.Tap:
+				r += "tap";
+				break;
+		}
+		return r;
 	}
 
 }
@@ -145,10 +215,10 @@ import { Subscription, BehaviorSubject } from "rxjs";
 // Drawing proxy state
 // -------------------------------------------------------------------------------------------------
 export class XDProxyState {
-
-	/** Creation time. */
+	/** Drag position. */
+	private _dragPosition: XPoint;
+	/** Time at which state was created/changed. */
 	public timestamp: number;
-
 	/** Samples count to pixel convertion MUL coefficient. */
 	public sampleToPixelRatio: number;
 	/** Samples count to time convertion MUL coefficient. */
@@ -195,9 +265,7 @@ export class XDProxyState {
 	public clientY: number;
 	public mouseX: number;
 	public mouseY: number;
-
 	public leadsCodes: EcgLeadCode[];
-
 	public onScrollBs: BehaviorSubject<number>;
 	/** Last scroll movement delta. */
 	public movDelta: number;
@@ -208,10 +276,73 @@ export class XDProxyState {
 	public get onLeftEdge(): boolean {
 		return this._skipPx === 0;
 	}
-
 	//-------------------------------------------------------------------------------------------------
 	public get onRightEdge(): boolean {
 		return false;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get minPx(): number {
+		return this._skipPx;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get maxPx(): number {
+		return this._skipPx + this.limitPx;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get skipPx(): number {
+		return this._skipPx;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get canDrag(): boolean {
+		return this._dragPosition.left != -1
+			&& this._dragPosition.top != -1;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public set dragPosition(v: XPoint) {
+		this._dragPosition.rebuild(v.left, v.top);
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get dragPosition(): XPoint {
+		return this._dragPosition;
+	}
+
+
+	//-------------------------------------------------------------------------------------------------
+	constructor() {
+		this._dragPosition = new XPoint(-1, -1);
+		this.devMode = true;
+		this.leadsCodes = [];
+		this.onScrollBs = new BehaviorSubject(NaN);
+		this.timestamp = Date.now();            // drawing proxy state creation time
+		this.scale = 1;                         // default scale = 1   
+		this.apxmm = 3;                         // for default dpi
+		this.signalScale = 5000;                // from input signal
+		this.signalMicrovoltsClip = 5000;       // from settings
+		this.maxSample = 32767;                 // from input signal
+		this.gridCells = [];
+		this._skipPx = 0;
+		this.limitPx = 0;
+		this.signalSamplesClip = Math.floor(this.maxSample * this.signalMicrovoltsClip / this.signalScale);
+		this.gridMode = XDGridMode.EMPTY;
+		this.resetPointer();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public resetPointer() {
+		this.resetDrag();
+		this.clientX = 0; this.clientY = 0;
+		this.mouseX = 0; this.mouseY = 0;
+		this.pointerX = 0; this.pointerY = 0;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public resetDrag() {
+		this._dragPosition.rebuild(-1, -1);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public updateDragStart(v: XPoint) {
+		this._dragPosition.rebuild(v.left, v.top);
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -231,56 +362,11 @@ export class XDProxyState {
 	//-------------------------------------------------------------------------------------------------
 	public scroll(delta: number) {
 		if (!Number.isInteger(delta)) return;
+
 		this.movDelta = delta;
 		this._skipPx = Math.max(Math.floor(this._skipPx - delta), 0);
 		if (!Number.isInteger(this.onScrollBs.value) || this._skipPx != this.onScrollBs.value)
 			this.onScrollBs.next(this._skipPx);
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public get minPx(): number {
-		return this._skipPx;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public get maxPx(): number {
-		return this._skipPx + this.limitPx;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public get skipPx(): number {
-		return this._skipPx;
-	}
-
-	//public set skipPx(v: number) {
-
-	//}
-
-
-	//-------------------------------------------------------------------------------------------------
-	constructor() {
-		this.resetPointer();
-		this.devMode = true;
-		this.leadsCodes = [];
-		this.onScrollBs = new BehaviorSubject(NaN);
-		this.timestamp = Date.now();            // drawing proxy state creation time
-		this.scale = 1;                         // default scale = 1   
-		this.apxmm = 3;                         // for default dpi
-		this.signalScale = 5000;                // from input signal
-		this.signalMicrovoltsClip = 5000;       // from settings
-		this.maxSample = 32767;                 // from input signal
-		this.gridCells = [];
-		this._skipPx = 0;
-		this.limitPx = 0;
-		this.signalSamplesClip = Math.floor(this.maxSample * this.signalMicrovoltsClip / this.signalScale);
-		this.gridMode = XDGridMode.EMPTY;
-	}
-
-	//-------------------------------------------------------------------------------------------------
-	public resetPointer() {
-		this.clientX = 0; this.clientY = 0;
-		this.mouseX = 0; this.mouseY = 0;
-		this.pointerX = 0; this.pointerY = 0;
 	}
 
 	//-------------------------------------------------------------------------------------------------

@@ -257,7 +257,7 @@ export class XPoint extends XDrawingPrimitive {
 
 	//-------------------------------------------------------------------------------------------------
 	/**
-	 * Rectangle constructor.
+	 * Point constructor.
 	 * @param t position on Y axis in pixels
 	 * @param l position on X axis in pixels
 	 */
@@ -268,7 +268,7 @@ export class XPoint extends XDrawingPrimitive {
 
 	//-------------------------------------------------------------------------------------------------
 	/**
-	 * Rebuild rectangle
+	 * Rebuild point
 	 * @param t position on Y axis in pixels
 	 * @param l position on X axis in pixels
 	 */
