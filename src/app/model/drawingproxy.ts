@@ -1,5 +1,5 @@
 import { EventEmitter } from "@angular/core";
-import { XDrawingChange, XDrawingProxyState, XDrawingChangeSender } from "./misc";
+import { XDPSEvent, XDProxyState, XDChangeSender } from "./misc";
 import {
 	BeatsDrawingClient, IDrawingClient, SignalDrawingClient,
 	XDrawingClient, XDrawingMode, AnsDrawingClient,
@@ -11,7 +11,7 @@ import {
 	CursorDrawingObject, GridCellDrawingObject,
 	WavepointDrawingObject, PeakDrawingObject,
 	ClPointDrawingObject, CellDrawingObject,
-	BeatsRangeDrawingObject, IDrawingObject,
+	BeatsRangeDrawingObject, IDObject,
 	XDrawingObjectType, AnsDrawingObject,
 	XDrawingObject, SignalDrawingObject,
 	WaveDrawingObject
@@ -30,32 +30,45 @@ import {
 // -------------------------------------------------------------------------------------------------
 // DrawingProxy
 // -------------------------------------------------------------------------------------------------
-export class XDrawingProxy {
-	public state: XDrawingProxyState;
+export class XDProxy {
+
+	public lastEvent: XDPSEvent;
+
 	public drawingData: DrawingData;
 	//public onChangeState: EventEmitter<XDrawingChange>;
-	public onPrepareDrawings: EventEmitter<IDrawingObject[][]>;
+	public onPrepareDrawings: EventEmitter<IDObject[][]>;
 	//public drawingObjects: IDrawingObject[];
 	private _clients: IDrawingClient[]; // F2, F3
 	//public objectsF2: IDrawingObject[][];
 	// feature3
 	/** All prepared drawing objects. */
-	public doAll: IDrawingObject[];
+	public doAll: IDObject[];
 	/** HUD drawing objects, always visible on surface. */
-	public doHud: IDrawingObject[];
+	public doHud: IDObject[]; // grid
 	/** Visible drawing objects. */
-	public doVisible: IDrawingObject[];
+	public doVisible: IDObject[];
 	/** Hidden from the left drawing objects. */
-	public doHidLeft: IDrawingObject[];
+	public doHidLeft: IDObject[];
 	/** Hidden from the right drawing objects. */
-	public doHidRight: IDrawingObject[];
+	public doHidRight: IDObject[];
 	/** Groupped visible drawing objects [i][j].
 		[i] - index of DO client, max(i)= clients.length-1
 		[j] - index of DO
 	*/
-	public doCGroups: IDrawingObject[][];
+	public doCGroups: IDObject[][];
 
-
+	//-------------------------------------------------------------------------------------
+	public get state(): XDProxyState {
+		return this.lastEvent.state;
+	}
+	//-------------------------------------------------------------------------------------
+	public set state(v: XDProxyState) {
+		this.lastEvent.state = v;
+	}
+	//-------------------------------------------------------------------------------------
+	public get previousState(): XDProxyState {
+		return this.lastEvent.previous;
+	}
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		//console.info("DrawingProxy constructor");
@@ -94,6 +107,7 @@ export class XDrawingProxy {
 	//-------------------------------------------------------------------------------------
 	private init() {
 		//this.drawingObjects = [];
+		this.lastEvent = new XDPSEvent();
 		this._clients = [];
 		this.doCGroups = [];
 		this.doHud = [];
@@ -101,9 +115,9 @@ export class XDrawingProxy {
 		this.doHidLeft = [];
 		this.doHidRight = [];
 		this.drawingData = new DrawingData();
-		this.state = new XDrawingProxyState();
+		this.state = new XDProxyState();
 		//this.onChangeState = new EventEmitter<XDrawingChange>();
-		this.onPrepareDrawings = new EventEmitter<IDrawingObject[][]>();
+		this.onPrepareDrawings = new EventEmitter<IDObject[][]>();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -200,7 +214,7 @@ export class XDrawingProxy {
 
 	//-------------------------------------------------------------------------------------
 	public projectDrawObjF3() {
-		let data: IDrawingObject[] = new Array();
+		let data: IDObject[] = new Array();
 		// prepare list of drawing objects
 		this.doAll = [];
 		this.doHud = [];
@@ -292,7 +306,7 @@ export class XDrawingProxy {
 
 		for (z1 = 0; z1 < this.doVisible.length; z1++) {
 			if (!this.doVisible[z1].hud) continue;
-			this.doVisible[z1].updateState(this.drawingData,this.state);
+			this.doVisible[z1].updateState(this.drawingData, this.state);
 		}
 
 		//this.resetDOF3Groups();

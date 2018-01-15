@@ -7,7 +7,7 @@ import {
 	CursorDrawingObject, GridCellDrawingObject, PeakDrawingObject,
 	XDrawingObjectType, AnsDrawingObject, BeatsRangeDrawingObject,
 	CellDrawingObject, ClPointDrawingObject, XDrawingObject,
-	IDrawingObject
+	IDObject
 } from "./drawingobject";
 import {
 	BeatsDrawingClient, IDrawingClient, ClickablePointDrawingClient,
@@ -26,7 +26,7 @@ import { ElementRef } from "@angular/core";
 // -------------------------------------------------------------------------------------------------
 // Drawing grid cells mode
 // -------------------------------------------------------------------------------------------------
-export enum XDrawingGridMode {
+export enum XDGridMode {
 	EMPTY = 0,			// 
 	// 3 CH
 	LEADS3CH111,		// 3 channels, 1H + 1H + 1H
@@ -49,7 +49,7 @@ export enum XDrawingGridMode {
 // -------------------------------------------------------------------------------------------------
 // Drawing change sender
 // -------------------------------------------------------------------------------------------------
-export enum XDrawingCoordinates {
+export enum XDCoordinates {
 	ABSOLUTE,
 	SCREEN,
 	COMPONENT,
@@ -61,7 +61,7 @@ export enum XDrawingCoordinates {
 // -------------------------------------------------------------------------------------------------
 // Drawing change sender
 // -------------------------------------------------------------------------------------------------
-export enum XDrawingChangeSender {
+export enum XDChangeSender {
 	UpdateDrawings,
 	MouseClick,
 	MouseHover,
@@ -75,13 +75,29 @@ export enum XDrawingChangeSender {
 // -------------------------------------------------------------------------------------------------
 // Drawing change
 // -------------------------------------------------------------------------------------------------
-export class XDrawingChange {
-	public sender: XDrawingChangeSender;
-	public curState: XDrawingProxyState;
-	public objects: IDrawingObject[];
+export class XDPSEvent {
+
+	private _currentState: XDProxyState;
+	private _previousState: XDProxyState;
+
+
+	public sender: XDChangeSender;
+	public curState: XDProxyState;
+	public objects: IDObject[];
 	public clients: IDrawingClient[];
 
-
+	//-------------------------------------------------------------------------------------------------
+	public get state(): XDProxyState {
+		return this._currentState;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public set state(v: XDProxyState)  {
+		this._currentState = v;;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get previous(): XDProxyState {
+		return this._previousState;
+	}
 	//-------------------------------------------------------------------------------------------------
 	constructor() {
 
@@ -93,7 +109,7 @@ export class XDrawingChange {
 // -------------------------------------------------------------------------------------------------
 // Drawing proxy grid cell
 // -------------------------------------------------------------------------------------------------
-export class XDrawingCell {
+export class XDCell {
 	/** Cell relative size & position.*/
 	public container: XRectangle;
 	/** Cell index. */
@@ -121,11 +137,14 @@ export class XDrawingCell {
 
 }
 
+
+
+
 import { Subscription, BehaviorSubject } from "rxjs";
 // -------------------------------------------------------------------------------------------------
 // Drawing proxy state
 // -------------------------------------------------------------------------------------------------
-export class XDrawingProxyState {
+export class XDProxyState {
 
 	/** Creation time. */
 	public timestamp: number;
@@ -165,9 +184,9 @@ export class XDrawingProxyState {
 	/** Maximum sample value in microvolts from input signal. */
 	public signalScale: number;
 	/** Surface grid cells array. Position on canvas. */
-	public gridCells: XDrawingCell[];
+	public gridCells: XDCell[];
 	/**  Surface grid cells mode.*/
-	public gridMode: XDrawingGridMode;
+	public gridMode: XDGridMode;
 	/** Cursor pointer X. */
 	public pointerX: number;
 	/** Cursor pointer Y. */
@@ -254,7 +273,7 @@ export class XDrawingProxyState {
 		this._skipPx = 0;
 		this.limitPx = 0;
 		this.signalSamplesClip = Math.floor(this.maxSample * this.signalMicrovoltsClip / this.signalScale);
-		this.gridMode = XDrawingGridMode.EMPTY;
+		this.gridMode = XDGridMode.EMPTY;
 	}
 
 	//-------------------------------------------------------------------------------------------------
@@ -266,7 +285,7 @@ export class XDrawingProxyState {
 
 	//-------------------------------------------------------------------------------------------------
 	/** Returns signal cells by row index. */
-	public getGridRowCells(ri: number): XDrawingCell[] {
+	public getGridRowCells(ri: number): XDCell[] {
 		console.info("getGridRowCells not implemented.")
 		return [];
 	}
@@ -274,8 +293,8 @@ export class XDrawingProxyState {
 	//-------------------------------------------------------------------------------------------------
 	public prepareGridCells(leads: EcgLeadCode[], leadLabels: string[]) {
 		if (!Array.isArray(leads) || !Array.isArray(leadLabels)) return;
-		if (leads.length === 3) this.gridMode = XDrawingGridMode.LEADS3CH111;
-		else if (leads.length === 12) this.gridMode = XDrawingGridMode.Leads12R3C4;
+		if (leads.length === 3) this.gridMode = XDGridMode.LEADS3CH111;
+		else if (leads.length === 12) this.gridMode = XDGridMode.Leads12R3C4;
 
 		// prepare grid
 		let rwCount: number = 3;
@@ -295,7 +314,7 @@ export class XDrawingProxyState {
 		this.gridCells = new Array(leads.length);
 		for (z = 0, cellTop = this.container.top, ci = 0; z < leads.length; z++ , ci++) {
 			for (y = 0; y < rwCount; y++ , z++) {
-				this.gridCells[z] = new XDrawingCell();
+				this.gridCells[z] = new XDCell();
 				this.gridCells[z].index = z;
 				this.gridCells[z].cellRowIndex = y;
 				this.gridCells[z].cellColumnIndex = ci;
@@ -303,8 +322,8 @@ export class XDrawingProxyState {
 				this.gridCells[z].lead = leads[z];
 				this.gridCells[z].leadLabel = leadLabels[z];
 				// prepare mul coefficients
-				this.gridCells[z].sampleValueToPixel = Math.floor((signalHeight / this.signalSamplesClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
-				this.gridCells[z].microvoltsToPixel = Math.floor((signalHeight / this.signalMicrovoltsClip) * XDrawingCell.FLOATING_MUL) / XDrawingCell.FLOATING_MUL;
+				this.gridCells[z].sampleValueToPixel = Math.floor((signalHeight / this.signalSamplesClip) * XDCell.FLOATING_MUL) / XDCell.FLOATING_MUL;
+				this.gridCells[z].microvoltsToPixel = Math.floor((signalHeight / this.signalMicrovoltsClip) * XDCell.FLOATING_MUL) / XDCell.FLOATING_MUL;
 				//console.info(this.gridCells[z].sampleValueToPixel, this.gridCells[z].microvoltsToPixel, signalHeight);
 				cellTop = this.gridCells[z].container.maxOy + space;
 				//console.info("z:", this.gridCells[z].index, "row:", this.gridCells[z].cellRowIndex, "column:", this.gridCells[z].cellColumnIndex);
@@ -316,7 +335,6 @@ export class XDrawingProxyState {
 
 
 }
-
 
 
 
@@ -523,7 +541,6 @@ export class XMatrixTool {
 		return result;
 	}
 
-
 	//-------------------------------------------------------------------------------------------------
 	public reset() {
 		this.tx = 0;
@@ -563,7 +580,6 @@ export class XMatrixTool {
 			[0, 0, 1]
 		];
 	}
-
 
 	//-------------------------------------------------------------------------------------------------
 	public translate(left: number, top: number): XMatrixTool {

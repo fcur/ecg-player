@@ -2,11 +2,11 @@ import {
 	Component, OnInit, ElementRef, HostListener,
 	ViewChild, Input
 } from '@angular/core';
-import { XDrawingProxy } from "../model/drawingproxy"
+import { XDProxy } from "../model/drawingproxy"
 import { DataService } from "../service/data.service"
 import {
-	XDrawingCell, XDrawingChangeSender, XDrawingGridMode,
-	XDrawingChange, XDrawingProxyState, XCanvasTool,
+	XDCell, XDChangeSender, XDGridMode,
+	XDPSEvent, XDProxyState, XCanvasTool,
 	XMatrixTool, XAnimation, XAnimationType
 } from "../model/misc";
 import {
@@ -22,7 +22,7 @@ import {
 	TargetRectangleClient
 } from "../model/drawingclient";
 import {
-	BeatsRangeDrawingObject, IDrawingObject, ClPointDrawingObject,
+	BeatsRangeDrawingObject, IDObject, ClPointDrawingObject,
 	GridCellDrawingObject, CursorDrawingObject, PeakDrawingObject,
 	XDrawingObjectType, AnsDrawingObject, WaveDrawingObject,
 	CellDrawingObject, SignalDrawingObject, XDrawingObject,
@@ -46,7 +46,7 @@ import { Subscription, BehaviorSubject } from "rxjs";
 // -------------------------------------------------------------------------------------------------
 export class DrawableComponent implements OnInit {
 
-	private _dp: XDrawingProxy;
+	private _dp: XDProxy;
 	private _signalClient: SignalDrawingClient;
 	private _gridClient: GridCellDrawingClient;
 	private _beatsClient: BeatsDrawingClient;
@@ -214,10 +214,10 @@ export class DrawableComponent implements OnInit {
 		this._threshold = 100;
 		this._lastEmitTime = 0;
 		this._zoomIntensity = 0.2;
-		this._dp = new XDrawingProxy();
+		this._dp = new XDProxy();
 		this._mt = new XMatrixTool();
 		//this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
-		this._dp.onPrepareDrawings.subscribe((v: IDrawingObject[][]) => this.onReceiveDrawingObjects(v));
+		this._dp.onPrepareDrawings.subscribe((v: IDObject[][]) => this.onReceiveDrawingObjects(v));
 		this._fileReader = new FileReader();
 		this.prepareClients();
 	}
@@ -429,7 +429,7 @@ export class DrawableComponent implements OnInit {
 
 
 	//-------------------------------------------------------------------------------------
-	private onReceiveDrawingObjects(p: IDrawingObject[][]) {
+	private onReceiveDrawingObjects(p: IDObject[][]) {
 		this._ct.clear();
 		this.renderVisibleGroups();
 		this.drawCursotPosition();
@@ -504,7 +504,7 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private drawSignalObjects(objs: SignalDrawingObject[]) {
 		let shift: number = 0; // #DEBUG_ONLY
-		let state: XDrawingProxyState = this._dp.state;
+		let state: XDProxyState = this._dp.state;
 		// z - drawing object index
 		// y - grid cell index = lead code index
 		// x - polyline index
@@ -561,7 +561,7 @@ export class DrawableComponent implements OnInit {
 	private drawCursorObjects(objs: CursorDrawingObject[]) {
 		//console.log("draw cursor", objs);
 		this._ct.saveState();
-		let state: XDrawingProxyState = this._dp.state;
+		let state: XDProxyState = this._dp.state;
 		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
 		let obj: CursorDrawingObject = objs[0];
 		this._ct.ctx.globalAlpha = this._cursorClient.opacity;
@@ -651,12 +651,12 @@ export class DrawableComponent implements OnInit {
 			top: number,
 			left: number,
 			point: XPoint,
-			cell: XDrawingCell,
+			cell: XDCell,
 			beatRange: BeatsRangeDrawingObject;
 
 		let shift: number = 0;
 		let textSize: number = 10;
-		let state: XDrawingProxyState = this._dp.state;
+		let state: XDProxyState = this._dp.state;
 		let printText: boolean;
 
 
@@ -747,7 +747,7 @@ export class DrawableComponent implements OnInit {
 			cellIndex: number,
 			renderCell: boolean,
 			leadCode: EcgLeadCode,
-			state: XDrawingProxyState;
+			state: XDProxyState;
 
 		state = this._dp.state;
 

@@ -14,9 +14,9 @@ import {
 	RecordProjection
 } from "./drawingdata";
 import {
-	XCanvasTool, XDrawingCell, XDrawingChange,
-	XDrawingChangeSender, XDrawingGridMode,
-	XDrawingProxyState, XDrawingCoordinates
+	XCanvasTool, XDCell, XDPSEvent,
+	XDChangeSender, XDGridMode,
+	XDProxyState, XDCoordinates
 } from "./misc";
 
 // -------------------------------------------------------------------------------------------------
@@ -37,7 +37,7 @@ export enum XDrawingObjectType {
 // -------------------------------------------------------------------------------------------------
 // Drawing object interface
 // -------------------------------------------------------------------------------------------------
-export interface IDrawingObject {
+export interface IDObject {
 	/** Object index. */
 	index: number;
 	/** Object owner. */
@@ -57,7 +57,7 @@ export interface IDrawingObject {
 	/** Head-up display / part of user innterface. */
 	hud: boolean;
 	/** Update drawing object proxy state. */
-	updateState(dd: DrawingData, pd: XDrawingProxyState);
+	updateState(dd: DrawingData, pd: XDProxyState);
 }
 
 
@@ -68,7 +68,7 @@ export interface IDrawingObject {
 // Add special coordinates (getter)
 // Absolute, relative from canvas start, relative from cell start (via cell index)
 
-export class XDrawingObject implements IDrawingObject {
+export class XDrawingObject implements IDObject {
 	/** REDUNDANT Object index. */
 	public index: number;
 	/** REDUNDANT Drawing object assigned cell index. */
@@ -107,7 +107,7 @@ export class XDrawingObject implements IDrawingObject {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public updateState(dd: DrawingData, pd: XDrawingProxyState) { }
+	public updateState(dd: DrawingData, pd: XDProxyState) { }
 
 	//-------------------------------------------------------------------------------------
 	// TODO remove
@@ -457,7 +457,7 @@ export class CursorDrawingObject extends XDrawingObject {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public updateState(dd: DrawingData, ps: XDrawingProxyState) {
+	public updateState(dd: DrawingData, ps: XDProxyState) {
 		this.container.rebuild(ps.minPx, 0, ps.limitPx, ps.container.height);
 		let lineHeight: number = ps.gridCells[ps.gridCells.length - 1].container.maxOy -
 			ps.gridCells[0].container.minOy;

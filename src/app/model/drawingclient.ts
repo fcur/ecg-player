@@ -2,7 +2,7 @@
 import {
 	WavepointDrawingObject, CursorDrawingObject, GridCellDrawingObject,
 	ClPointDrawingObject, CellDrawingObject, BeatsRangeDrawingObject,
-	IDrawingObject, XDrawingObjectType, AnsDrawingObject,
+	IDObject, XDrawingObjectType, AnsDrawingObject,
 	XDrawingObject, SignalDrawingObject,
 	PeakDrawingObject, WaveDrawingObject
 } from "./drawingobject";
@@ -14,9 +14,9 @@ import {
 	DrawingData, RecordDrawingData, RecordProjection
 } from "./drawingdata";
 import {
-	XDrawingChange, XDrawingChangeSender, XDrawingCoordinates,
-	XDrawingProxyState, XCanvasTool, XDrawingCell,
-	XDrawingGridMode
+	XDPSEvent, XDChangeSender, XDCoordinates,
+	XDProxyState, XCanvasTool, XDCell,
+	XDGridMode
 } from "./misc";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState, XLabel, XPeak,
@@ -58,9 +58,9 @@ export interface IDrawingClient {
 	/** Client groups drawing method(required). */
 	drawObjects: Function;
 	/** Prepare drawing objects. */
-	prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
+	prepareAllDrawings(data: DrawingData, state: XDProxyState): IDObject[];
 	/** Draw client drawing objects. */
-	render(obj: IDrawingObject[], st: XDrawingProxyState, ct: XCanvasTool);
+	render(obj: IDObject[], st: XDProxyState, ct: XCanvasTool);
 
 	// add mouse/touch events handlers
 
@@ -102,12 +102,12 @@ export class XDrawingClient implements IDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[] {
+	public prepareAllDrawings(data: DrawingData, state: XDProxyState): IDObject[] {
 		return [];
 	}
 
 	/** Draw client drawing objects. */
-	public render(obj: IDrawingObject[], st: XDrawingProxyState, ct: XCanvasTool) {
+	public render(obj: IDObject[], st: XDProxyState, ct: XCanvasTool) {
 
 	}
 }
@@ -148,7 +148,7 @@ export class AnsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): AnsDrawingObject[] {
+	public prepareAllDrawings(data: DrawingData, state: XDProxyState): AnsDrawingObject[] {
 		console.info("AnsDrawingClient.prepareAllDrawings", "not implemented");
 		return [];
 	}
@@ -214,7 +214,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): BeatsRangeDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): BeatsRangeDrawingObject[] {
 		// TODO: add drawings merge method (example: signal for other leads)
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
@@ -351,7 +351,7 @@ export class GridCellDrawingClient extends XDrawingClient {
 	 * @param dd drawing data
 	 * @param ps proxy state
 	 */
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): GridCellDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): GridCellDrawingObject[] {
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 		// TODO: merge record leads count & proxy state grid layout
 		// Add grid layouts presets to client
@@ -505,7 +505,7 @@ export class SignalDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): SignalDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): SignalDrawingObject[] {
 		// TODO: add drawings merge method (example: signal for other leads)
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
@@ -717,7 +717,7 @@ export class CursorDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): CursorDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): CursorDrawingObject[] {
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
 		let obj: CursorDrawingObject = new CursorDrawingObject();
@@ -760,7 +760,7 @@ export class WavepointClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): WavepointDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): WavepointDrawingObject[] {
 		return [];
 	}
 }
