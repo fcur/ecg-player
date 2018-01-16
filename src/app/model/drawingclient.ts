@@ -2,7 +2,7 @@
 import {
 	WavepointDrawingObject, CursorDrawingObject, GridCellDrawingObject,
 	ClPointDrawingObject, CellDrawingObject, BeatsRangeDrawingObject,
-	IDObject, XDrawingObjectType, AnsDrawingObject,
+	IDObject, XDOType, AnsDrawingObject,
 	XDrawingObject, SignalDrawingObject,
 	PeakDrawingObject, WaveDrawingObject
 } from "./drawingobject";
@@ -46,7 +46,7 @@ export interface IDrawingClient {
 	/** Drawing mode (required). */
 	mode: XDrawingMode;
 	/** Object type (required). */
-	type: XDrawingObjectType;
+	type: XDOType;
 	/** Client drawing method (required). */
 	draw: Function;
 	/** Init drawing client (required). */
@@ -81,7 +81,7 @@ export class XDrawingClient implements IDrawingClient {
 	/** Drawing mode */
 	public mode: XDrawingMode;
 	/** Object type. */
-	public type: XDrawingObjectType;
+	public type: XDOType;
 	/** Client drawing method (required). */
 	public draw: Function;
 	/** Init drawing client (required). */
@@ -123,7 +123,7 @@ export class AnsDrawingClient extends XDrawingClient {
 	constructor() {
 		super();
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Annotations;
+		this.type = XDOType.Annotations;
 		this.draw = this.drawAnnotations.bind(this);
 		this.afterDraw = this.afterdrawAnnotations.bind(this);
 		this.createDrawingObject = this.createAnsDrawingObject.bind(this);
@@ -188,7 +188,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 		this.layoutSpace = 30;
 		this.opacity = 1;
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Beats;
+		this.type = XDOType.Beats;
 		this.draw = this.drawBeats.bind(this);
 		this.afterDraw = this.afterDrawBeats.bind(this);
 		this.createDrawingObject = this.createBeatsDrawingObject.bind(this);
@@ -318,7 +318,7 @@ export class GridCellDrawingClient extends XDrawingClient {
 		this.axisOpacity = 1;
 		this.lineJoin = "miter";// round|miter|bevel
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Grid;
+		this.type = XDOType.Grid;
 		this.draw = this.drawGrid.bind(this);
 		this.afterDraw = this.afterDrawGrid.bind(this);
 		this.createDrawingObject = this.createGridDrawingObject.bind(this);
@@ -480,7 +480,7 @@ export class SignalDrawingClient extends XDrawingClient {
 		this.opacity = 1;
 		this.lineJoin = "miter";// round|miter|bevel
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Signal;
+		this.type = XDOType.Signal;
 		this.draw = this.drawSignal.bind(this);
 		this.afterDraw = this.afterDrawSignal.bind(this);
 		this.createDrawingObject = this.createSignalDrawingObject.bind(this);
@@ -571,7 +571,7 @@ export class ClickablePointDrawingClient extends XDrawingClient {
 	constructor() {
 		super();
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Signal;
+		this.type = XDOType.Signal;
 		this.draw = this.drawPonint.bind(this);
 		this.afterDraw = this.afterDrawPoint.bind(this);
 		this.createDrawingObject = this.createPointDrawingObject.bind(this);
@@ -608,7 +608,7 @@ export class CellDrawingClient extends XDrawingClient {
 	constructor() {
 		super();
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Signal;
+		this.type = XDOType.Signal;
 		this.draw = this.drawCell.bind(this);
 		this.afterDraw = this.afterDrawCell.bind(this);
 		this.createDrawingObject = this.createCellDrawingObject.bind(this);
@@ -692,7 +692,7 @@ export class CursorDrawingClient extends XDrawingClient {
 		this.clientHalfWidth = 3;
 		this.pointRadius = 3;
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Object;
+		this.type = XDOType.Object;
 		this.draw = this.drawCursor.bind(this);
 		this.afterDraw = this.afterDrawFCursor.bind(this);
 		this.createDrawingObject = this.createCursorDrawingObject.bind(this);

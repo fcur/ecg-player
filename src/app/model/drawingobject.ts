@@ -22,7 +22,7 @@ import {
 // -------------------------------------------------------------------------------------------------
 // Drawing object type
 // -------------------------------------------------------------------------------------------------
-export enum XDrawingObjectType {
+export enum XDOType {
 	Signal,
 	Beats,
 	Annotations,
@@ -32,6 +32,16 @@ export enum XDrawingObjectType {
 	Grid
 }
 
+// -------------------------------------------------------------------------------------------------
+// Drawing change type
+// -------------------------------------------------------------------------------------------------
+export enum XDOChangeType {
+	None,
+	Left,
+	Top,
+	Width,
+	Height
+}
 
 
 // -------------------------------------------------------------------------------------------------
@@ -43,7 +53,7 @@ export interface IDObject {
 	/** Object owner. */
 	owner: XDrawingClient;
 	/** Object type. */
-	type: XDrawingObjectType;
+	type: XDOType;
 	/** Container of drawing object (required). */
 	container: XRectangle;
 	/** Drawing object assigned cell index. -1: fill cells container */
@@ -58,7 +68,8 @@ export interface IDObject {
 	hud: boolean;
 	/** Update drawing object proxy state. */
 	updateState(dd: DrawingData, pd: XDProxyState);
-
+	/** Drawing object change type. */
+	changeType: number;
 }
 
 
@@ -77,7 +88,7 @@ export class XDrawingObject implements IDObject {
 	/** Object owner. */
 	public owner: XDrawingClient;
 	/** Object type. */
-	public type: XDrawingObjectType;
+	public type: XDOType;
 	/** Container of drawing object (required). */
 	public container: XRectangle;
 	/** Visiblity of drawing object. */
@@ -86,6 +97,8 @@ export class XDrawingObject implements IDObject {
 	public progress: number;
 	/** Head-up display / part of user innterface. */
 	public hud: boolean;
+	/** Drawing object change type. */
+	public changeType: number;
 
 	//-------------------------------------------------------------------------------------
 	//public get isFloating(): boolean {
@@ -100,6 +113,7 @@ export class XDrawingObject implements IDObject {
 		this.hidden = true;
 		this.progress = 100;
 		this.hud = false;
+		this.changeType = XDOChangeType.None;
 	}
 
 	//-------------------------------------------------------------------------------------

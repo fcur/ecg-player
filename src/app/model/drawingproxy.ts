@@ -16,7 +16,7 @@ import {
 	WavepointDrawingObject, PeakDrawingObject,
 	ClPointDrawingObject, CellDrawingObject,
 	BeatsRangeDrawingObject, IDObject,
-	XDrawingObjectType, AnsDrawingObject,
+	XDOType, AnsDrawingObject,
 	XDrawingObject, SignalDrawingObject,
 	WaveDrawingObject
 } from "./drawingobject";
@@ -302,9 +302,16 @@ export class XDProxy {
 		//this.onPrepareDrawings.emit(objects);
 
 		this.lastEvent.type = XDChangeType.ForceRefresh;
-		this.onChangeState.emit(this.lastEvent.updateTimestamp());
+		this.pushUpdate();
 		this.onPrepareDrawings.emit([]/*this.objectsF2*/);
 	}
+
+	//-------------------------------------------------------------------------------------
+	public pushUpdate() {
+		if (!this.lastEvent.notify) return;
+		this.onChangeState.emit(this.lastEvent);
+	}
+
 
 	//-------------------------------------------------------------------------------------
 	public preformClick(event: MouseEvent | TouchEvent) {
@@ -326,7 +333,7 @@ export class XDProxy {
 		this.moveCursor(event);
 		this.lastEvent.type = XDChangeType.Scroll;
 		this.lastEvent.sender = XDChangeSender.Drag;
-		this.onChangeState.emit(this.lastEvent.updateTimestamp());
+		this.pushUpdate();
 		this.onPrepareDrawings.emit([]);
 	}
 
@@ -337,7 +344,7 @@ export class XDProxy {
 
 		this.lastEvent.type = XDChangeType.ForceRefresh;
 		this.lastEvent.sender = XDChangeSender.MouseHover;
-		this.onChangeState.emit(this.lastEvent.updateTimestamp());
+		this.pushUpdate();
 		this.onPrepareDrawings.emit([]);
 	}
 

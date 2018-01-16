@@ -25,7 +25,7 @@ import {
 import {
 	BeatsRangeDrawingObject, IDObject, ClPointDrawingObject,
 	GridCellDrawingObject, CursorDrawingObject, PeakDrawingObject,
-	XDrawingObjectType, AnsDrawingObject, WaveDrawingObject,
+	XDOType, AnsDrawingObject, WaveDrawingObject,
 	CellDrawingObject, SignalDrawingObject, XDrawingObject,
 	WavepointDrawingObject
 } from "../model/drawingobject";
@@ -74,7 +74,6 @@ export class DrawableComponent implements OnInit {
 	set clipCanvas(value: boolean) {
 		this._clipCanvas = value;
 	}
-
 	//-------------------------------------------------------------------------------------
 	@ViewChild("waveformCanvas")
 	private _drawingElement: ElementRef;
@@ -196,7 +195,6 @@ export class DrawableComponent implements OnInit {
 		this.prepareCanvasSize();
 		this._ct.drawInfo();
 	}
-
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:wheel", ["$event"]) onMouseWheel(event: WheelEvent) {
 		event.preventDefault();
@@ -222,7 +220,7 @@ export class DrawableComponent implements OnInit {
 	public ngOnInit() {
 		//console.info("DrawableComponent: init");
 		this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord[]));
-		this._drawingScrollSubs = this._dp.state.onScrollBs.subscribe(v => this.onScrollDrawings(v as number));
+		//this._drawingScrollSubs = this._dp.state.onScrollBs.subscribe(v => this.onScrollDrawings(v as number));
 		this._changeStateSubs = this._dp.onChangeState.subscribe((v: XDPSEvent) => this.onProxyStateChanges(v));
 		this._prepareDrawingSubs = this._dp.onPrepareDrawings.subscribe((v: IDObject[][]) => this.onReceiveDObjects(v));
 
@@ -281,7 +279,7 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private performanceCounter() {
+	private canvasPerformanceTest() {
 		let t0: number, t1: number, l0: number, l1: number;
 		t0 = performance.now();
 		let imageData: ImageData = this._ct.ctx.getImageData(0, 0, this._ct.ctx.canvas.width, this._ct.ctx.canvas.height);
@@ -349,6 +347,10 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onProxyStateChanges(v: XDPSEvent) {
+
+		this._dp.scrollDrawObjGroupsF3();
+		this._dp.refreshDrawings();
+
 		//console.info(v.info, v.timeStamp);
 		// refresh drawings
 		//this._ct.clear();
@@ -423,11 +425,9 @@ export class DrawableComponent implements OnInit {
 			//console.log(`drawObjectsF3 for  ${this._dp.drawingClients[z].constructor.name}`);
 			this._dp.drawingClients[z].drawObjects(this._dp.doCGroups[z]);
 		}
-
 		for (z = 0; z < this._dp.doHud.length; z++) {
 			console.log("draw hud:", z);
 		}
-
 		this.printState();
 	}
 
@@ -484,13 +484,6 @@ export class DrawableComponent implements OnInit {
 			this._drawingElement.nativeElement.offsetWidth,
 			this._drawingElement.nativeElement.offsetHeight);
 	}
-
-	//-------------------------------------------------------------------------------------
-	private scroll(event: any) {
-
-	}
-
-
 
 	//-------------------------------------------------------------------------------------
 	private drawSignalObjects(objs: SignalDrawingObject[]) {
@@ -609,24 +602,6 @@ export class DrawableComponent implements OnInit {
 
 		this._ct.restoreState();
 	}
-
-	//-------------------------------------------------------------------------------------
-	// TODO: add affine transform tests for rectangle
-	private drawTargeRectangle(cl: string) {
-		this._ct.saveState();
-		//this._targRectClient
-		let a: XPoint = new XPoint(this._targRectClient.figure.minOx, this._targRectClient.figure.minOy),
-			b: XPoint = new XPoint(this._targRectClient.figure.maxOx, this._targRectClient.figure.minOy),
-			c: XPoint = new XPoint(this._targRectClient.figure.maxOx, this._targRectClient.figure.maxOy),
-			d: XPoint = new XPoint(this._targRectClient.figure.minOx, this._targRectClient.figure.maxOy);
-
-		this._mt.applyForPoints(a, b, c, d);
-		//console.log(a, b, c, d);
-		this._ct.ctx.strokeStyle = cl;
-		this._ct.strokePointsPath(a, b, c, d);
-		this._ct.restoreState();
-	}
-
 
 	//-------------------------------------------------------------------------------------
 	private drawBeatsRangesObjects(objs: BeatsRangeDrawingObject[]) {
@@ -857,29 +832,24 @@ export class DrawableComponent implements OnInit {
 	}
 
 
-	//-------------------------------------------------------------------------------------
-	//private calcScaling(left: number, top: number): number[] {
-	//	//left: number, top: number, zoomX: number = 1, zoomY: number = 1
-	//	let scaleOx: number,
-	//		scaleOy: number,
-	//		originOx: number,
-	//		originOy: number;
 
-	//	return [
-
-	//	]
-
-	//	// TODO: replace with matrix mul
-	//	//return [left * zoomX, top * zoomY];
-	//}
 
 	//-------------------------------------------------------------------------------------
-	//private calcPointScaling(point: XPoint, zx: number = 1, zy: number = 1): number[] {
-	//	return this.calcScaling(point.left, point.top);
-	//}
+	// TODO: add affine transform tests for rectangle
+	private drawTargeRectangle(cl: string) {
+		this._ct.saveState();
+		//this._targRectClient
+		let a: XPoint = new XPoint(this._targRectClient.figure.minOx, this._targRectClient.figure.minOy),
+			b: XPoint = new XPoint(this._targRectClient.figure.maxOx, this._targRectClient.figure.minOy),
+			c: XPoint = new XPoint(this._targRectClient.figure.maxOx, this._targRectClient.figure.maxOy),
+			d: XPoint = new XPoint(this._targRectClient.figure.minOx, this._targRectClient.figure.maxOy);
 
-
-
+		this._mt.applyForPoints(a, b, c, d);
+		//console.log(a, b, c, d);
+		this._ct.ctx.strokeStyle = cl;
+		this._ct.strokePointsPath(a, b, c, d);
+		this._ct.restoreState();
+	}
 
 
 

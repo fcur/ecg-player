@@ -5,7 +5,7 @@ import {
 import {
 	SignalDrawingObject, WaveDrawingObject, WavepointDrawingObject,
 	CursorDrawingObject, GridCellDrawingObject, PeakDrawingObject,
-	XDrawingObjectType, AnsDrawingObject, BeatsRangeDrawingObject,
+	XDOType, AnsDrawingObject, BeatsRangeDrawingObject,
 	CellDrawingObject, ClPointDrawingObject, XDrawingObject,
 	IDObject
 } from "./drawingobject";
@@ -79,7 +79,8 @@ export enum XDChangeType {
 	ZoomX,
 	ZoomY,
 	Scroll,
-	ForceRefresh
+	ForceRefresh,
+	Change
 }
 
 
@@ -87,6 +88,7 @@ export enum XDChangeType {
 // Drawing change event object
 // -------------------------------------------------------------------------------------------------
 export class XDPSEvent {
+	private _threshold: number = 300;
 
 	private _currentState: XDProxyState;
 	private _previousState: XDProxyState;
@@ -124,6 +126,13 @@ export class XDPSEvent {
 	public updateTimestamp(): XDPSEvent {
 		this.timeStamp = Date.now();
 		return this;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public notify(): boolean {
+		let t: number = Date.now();
+		let r: boolean = 
+		return this.timeStamp + this._threshold < t;
 	}
 
 	//-------------------------------------------------------------------------------------------------
