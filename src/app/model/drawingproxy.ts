@@ -98,13 +98,19 @@ export class XDProxy {
 	//-------------------------------------------------------------------------------------
 	public updateWaveformDrag(endpoint: XPoint) {
 		let actionPoint: XPoint = this.state.dragPosition.subtract(endpoint);
-		this.lastEvent.previousState.skipPx = this.lastEvent.currentState.skipPx;
+		this.updatePrevState();
 
 		this.lastEvent.currentState.scroll(actionPoint.left);
+		this.lastEvent.currentState.dragPosition.rebuild(endpoint.left, endpoint.top);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public updatePrevState() {
+		// TODO: merge currnt&previous proxy states
+		this.lastEvent.previousState.skipPx = this.lastEvent.currentState.skipPx;
 		this.lastEvent.previousState.dragPosition.rebuild(
 			this.lastEvent.currentState.dragPosition.left,
 			this.lastEvent.currentState.dragPosition.top);
-		this.lastEvent.currentState.dragPosition.rebuild(endpoint.left, endpoint.top);
 	}
 
 	//-------------------------------------------------------------------------------------

@@ -235,14 +235,12 @@ export class XDProxyState {
 	public sampleToPixelRatio: number;
 	/** Samples count to time convertion MUL coefficient. */
 	public sampleToTimeRatio: number;
-
 	/** Scale coefficient 1X1. */
 	public scale: number = 1;
 	/** Absolute surfce left offset in pixels. */
 	private _skipPx: number;
 	/** Absolute surfce width in pixels. */
 	public limitPx: number;
-
 	/** Surface relative size & position.*/
 	public container: XRectangle;
 
@@ -253,12 +251,10 @@ export class XDProxyState {
 	public apxmm: number;
 	/** Maximum declared sample value. */
 	public maxSample: number;
-
 	/** Maximum/minimum visible (calculated) sample value in microvolts. */
 	public signalMicrovoltsClip: number; // signalClip
 	/** Maximum/minimum visible (calculated) sample value. */
 	public signalSamplesClip: number;
-
 	/** Signal sample rate.*/
 	public sampleRate: number;
 	/** Enable development mode.*/
@@ -435,6 +431,8 @@ export class XDProxyState {
 		this.limitPx = this.gridCells[0].container.width;
 	}
 
+
+	
 
 }
 
