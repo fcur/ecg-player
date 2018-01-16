@@ -88,7 +88,7 @@ export enum XDChangeType {
 // Drawing change event object
 // -------------------------------------------------------------------------------------------------
 export class XDPSEvent {
-	private _threshold: number = 300;
+	private _threshold: number = 3000;
 
 	private _currentState: XDProxyState;
 	private _previousState: XDProxyState;
@@ -96,6 +96,7 @@ export class XDPSEvent {
 	public sender: XDChangeSender;
 	public type: XDChangeType;
 	public timeStamp: number;
+	public count: number;
 
 	//-------------------------------------------------------------------------------------------------
 	public get currentState(): XDProxyState {
@@ -117,22 +118,24 @@ export class XDPSEvent {
 
 	//-------------------------------------------------------------------------------------------------
 	public reset() {
+		this.count = 0;
 		this._currentState = new XDProxyState();
 		this._previousState = new XDProxyState();
 		this.timeStamp = Date.now();
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public updateTimestamp(): XDPSEvent {
-		this.timeStamp = Date.now();
-		return this;
-	}
+	//public updateTimestamp(): XDPSEvent {
+	//	this.timeStamp = Date.now();
+	//	return this;
+	//}
 
 	//-------------------------------------------------------------------------------------------------
 	public notify(): boolean {
 		let t: number = Date.now();
-		let r: boolean = 
-		return this.timeStamp + this._threshold < t;
+		let r: boolean = t - this.timeStamp > this._threshold;
+		if (r) this.timeStamp = t;
+		return r;
 	}
 
 	//-------------------------------------------------------------------------------------------------

@@ -222,7 +222,7 @@ export class DrawableComponent implements OnInit {
 		this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord[]));
 		//this._drawingScrollSubs = this._dp.state.onScrollBs.subscribe(v => this.onScrollDrawings(v as number));
 		this._changeStateSubs = this._dp.onChangeState.subscribe((v: XDPSEvent) => this.onProxyStateChanges(v));
-		this._prepareDrawingSubs = this._dp.onPrepareDrawings.subscribe((v: IDObject[][]) => this.onReceiveDObjects(v));
+		//this._prepareDrawingSubs = this._dp.onPrepareDrawings.subscribe((v: IDObject[][]) => this.onReceiveDObjects(v));
 
 		this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
 		this._canvasContainer.nativeElement.addEventListener("dragover", this.onDragOver.bind(this), false);
@@ -348,8 +348,13 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private onProxyStateChanges(v: XDPSEvent) {
 
-		this._dp.scrollDrawObjGroupsF3();
-		this._dp.refreshDrawings();
+		this._ct.clear();
+		this.renderVisibleGroups();
+		this.drawCursotPosition();
+
+
+		//this._dp.scrollDrawObjGroupsF3();
+		//this._dp.refreshDrawings();
 
 		//console.info(v.info, v.timeStamp);
 		// refresh drawings

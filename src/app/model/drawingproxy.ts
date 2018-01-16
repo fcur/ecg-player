@@ -25,7 +25,7 @@ import {
 	EcgWavePoint, EcgWavePointType, EcgAnnotation, EcgSignal,
 	EcgAnnotationCode, EcgLeadCode, EcgRecord
 } from "./ecgdata"
-import { BehaviorSubject } from "rxjs";
+import { Subscription, BehaviorSubject } from "rxjs";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState, XLabel,
 	XLine, XPeak, XPoint, XPolyline, XRectangle
@@ -41,7 +41,7 @@ export class XDProxy {
 	public drawingData: DrawingData;
 	public onChangeState: EventEmitter<XDPSEvent>;
 
-	public onPrepareDrawings: EventEmitter<IDObject[][]>;
+	//public onPrepareDrawings: EventEmitter<IDObject[][]>;
 	//public drawingObjects: IDrawingObject[];
 	private _clients: IDrawingClient[]; // F2, F3
 
@@ -146,7 +146,7 @@ export class XDProxy {
 		this.doHidRight = [];
 		this.drawingData = new DrawingData();
 		this.onChangeState = new EventEmitter<XDPSEvent>();
-		this.onPrepareDrawings = new EventEmitter<IDObject[][]>();
+		//this.onPrepareDrawings = new EventEmitter<IDObject[][]>();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -303,12 +303,20 @@ export class XDProxy {
 
 		this.lastEvent.type = XDChangeType.ForceRefresh;
 		this.pushUpdate();
-		this.onPrepareDrawings.emit([]/*this.objectsF2*/);
+		//this.onPrepareDrawings.emit([]/*this.objectsF2*/);
 	}
 
 	//-------------------------------------------------------------------------------------
 	public pushUpdate() {
+		//let timeNow: number = Date.now();
+		//if (timeNow - this.lastEvent.timeStamp > 0) {
+		//	this.lastEvent.timeStamp = timeNow;
+		//	this.lastEvent.count++;
+		//	this.onChangeState.emit(this.lastEvent);
+		//}
+
 		if (!this.lastEvent.notify) return;
+		this.lastEvent.count++;
 		this.onChangeState.emit(this.lastEvent);
 	}
 
@@ -334,7 +342,7 @@ export class XDProxy {
 		this.lastEvent.type = XDChangeType.Scroll;
 		this.lastEvent.sender = XDChangeSender.Drag;
 		this.pushUpdate();
-		this.onPrepareDrawings.emit([]);
+		//this.onPrepareDrawings.emit([]);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -345,7 +353,7 @@ export class XDProxy {
 		this.lastEvent.type = XDChangeType.ForceRefresh;
 		this.lastEvent.sender = XDChangeSender.MouseHover;
 		this.pushUpdate();
-		this.onPrepareDrawings.emit([]);
+		//this.onPrepareDrawings.emit([]);
 	}
 
 
