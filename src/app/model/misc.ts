@@ -305,6 +305,10 @@ export class XDProxyState {
 		return this._skipPx;
 	}
 	//-------------------------------------------------------------------------------------------------
+	public set skipPx(v: number) {
+		this._skipPx = v;
+	}
+	//-------------------------------------------------------------------------------------------------
 	public get canDrag(): boolean {
 		return this._dragPosition.left != -1
 			&& this._dragPosition.top != -1;

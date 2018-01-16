@@ -79,7 +79,7 @@ export class XDProxy {
 		return this._clients;
 	}
 	//-------------------------------------------------------------------------------------
-	public get canScrollWaveform(): boolean {
+	public get scrollWaveform(): boolean {
 		return this.lastEvent.previousState.minPx != this.lastEvent.currentState.minPx;
 	}
 
@@ -98,6 +98,8 @@ export class XDProxy {
 	//-------------------------------------------------------------------------------------
 	public updateWaveformDrag(endpoint: XPoint) {
 		let actionPoint: XPoint = this.state.dragPosition.subtract(endpoint);
+		this.lastEvent.previousState.skipPx = this.lastEvent.currentState.skipPx;
+
 		this.lastEvent.currentState.scroll(actionPoint.left);
 		this.lastEvent.previousState.dragPosition.rebuild(
 			this.lastEvent.currentState.dragPosition.left,
@@ -293,17 +295,9 @@ export class XDProxy {
 	//-------------------------------------------------------------------------------------
 
 	//-------------------------------------------------------------------------------------
-	public refreshDrawings() {
-		//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.UpdateDrawings);
-		//let objects: IDrawingObject[][] = this.prepareDrawingObjectsF2();
-		//console.info("proxy refresh drawings: ", this.objectsF2);
-		//this.objectsF2 = this.prepareDrawingObjectsF2();
-		//this.onChangeState.emit(changes);
-		//this.onPrepareDrawings.emit(objects);
-
+	public forceDrRefresh() {
 		this.lastEvent.type = XDChangeType.ForceRefresh;
 		this.pushUpdate();
-		//this.onPrepareDrawings.emit([]/*this.objectsF2*/);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -341,6 +335,12 @@ export class XDProxy {
 		this.moveCursor(event);
 		this.lastEvent.type = XDChangeType.Scroll;
 		this.lastEvent.sender = XDChangeSender.Drag;
+
+		// scroll data
+		if (this.scrollWaveform) {
+			this.scrollDrawObjGroupsF3();
+		}
+
 		this.pushUpdate();
 		//this.onPrepareDrawings.emit([]);
 	}

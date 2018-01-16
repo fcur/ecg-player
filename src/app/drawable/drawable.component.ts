@@ -221,7 +221,7 @@ export class DrawableComponent implements OnInit {
 		//console.info("DrawableComponent: init");
 		this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord[]));
 		//this._drawingScrollSubs = this._dp.state.onScrollBs.subscribe(v => this.onScrollDrawings(v as number));
-		this._changeStateSubs = this._dp.onChangeState.subscribe((v: XDPSEvent) => this.onProxyStateChanges(v));
+		this._changeStateSubs = this._dp.onChangeState.subscribe((v: XDPSEvent) => this.onStateChanges(v));
 		//this._prepareDrawingSubs = this._dp.onPrepareDrawings.subscribe((v: IDObject[][]) => this.onReceiveDObjects(v));
 
 		this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
@@ -336,7 +336,7 @@ export class DrawableComponent implements OnInit {
 		this._dp.reset();
 		this._dp.rebuildDrawObjGroupsF3();
 		this._dp.scrollDrawObjGroupsF3();
-		this._dp.refreshDrawings();
+		this._dp.forceDrRefresh();
 	}
 
 
@@ -346,7 +346,9 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private onProxyStateChanges(v: XDPSEvent) {
+	private onStateChanges(v: XDPSEvent) {
+
+
 
 		this._ct.clear();
 		this.renderVisibleGroups();
@@ -414,11 +416,11 @@ export class DrawableComponent implements OnInit {
 
 
 	//-------------------------------------------------------------------------------------
-	private onScrollDrawings(val: number) {
-		if (!Number.isInteger(val)) return;
-		this._dp.scrollDrawObjGroupsF3();
-		this._dp.refreshDrawings();
-	}
+	//private onScrollDrawings(val: number) {
+	//	if (!Number.isInteger(val)) return;
+	//	this._dp.scrollDrawObjGroupsF3();
+	//	this._dp.refreshDrawings();
+	//}
 
 	//-------------------------------------------------------------------------------------
 	private renderVisibleGroups() {
@@ -629,7 +631,6 @@ export class DrawableComponent implements OnInit {
 		let textSize: number = 10;
 		let state: XDProxyState = this._dp.state;
 		let printText: boolean;
-
 
 		// fill beat background
 		this._ct.ctx.font = `${textSize}px Roboto`;
