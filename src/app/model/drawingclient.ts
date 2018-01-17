@@ -2,9 +2,8 @@
 import {
 	WavepointDrawingObject, CursorDrawingObject, GridCellDrawingObject,
 	ClPointDrawingObject, CellDrawingObject, BeatsRangeDrawingObject,
-	IDObject, XDOType, AnsDrawingObject,
-	XDrawingObject, SignalDrawingObject,
-	PeakDrawingObject, WaveDrawingObject
+	SignalDrawingObject, PeakDrawingObject, WaveDrawingObject,
+	IDObject, XDOType, AnsDrawingObject, XDrawingObject
 } from "./drawingobject";
 import {
 	EcgWavePoint, EcgWavePointType, EcgAnnotation, EcgSignal,
@@ -15,8 +14,9 @@ import {
 } from "./drawingdata";
 import {
 	XDPSEvent, XDChangeSender, XDCoordinates,
+	XDGridMode, XAnimation, XAnimationType,
 	XDProxyState, XCanvasTool, XDCell,
-	XDGridMode
+	XDChangeType, XMatrixTool
 } from "./misc";
 import {
 	XDrawingPrimitive, XDrawingPrimitiveState, XLabel, XPeak,
@@ -63,7 +63,9 @@ export interface IDrawingClient {
 	render(obj: IDObject[], st: XDProxyState, ct: XCanvasTool);
 
 	// add mouse/touch events handlers
-
+	select(obj: IDObject, st: XDProxyState);
+	hover(obj: IDObject, st: XDProxyState);
+	drag(obj: IDObject, st: XDProxyState);
 }
 
 
@@ -106,8 +108,24 @@ export class XDrawingClient implements IDrawingClient {
 		return [];
 	}
 
+	//-------------------------------------------------------------------------------------
 	/** Draw client drawing objects. */
 	public render(obj: IDObject[], st: XDProxyState, ct: XCanvasTool) {
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public select(obj: IDObject, st: XDProxyState) {
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public hover(obj: IDObject, st: XDProxyState) {
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public drag(obj: IDObject, st: XDProxyState) {
 
 	}
 }
@@ -173,11 +191,13 @@ export class BeatsDrawingClient extends XDrawingClient {
 	recordsThreshold: number;
 	recordSpace: number; // count of pixels between two records with  
 	layoutSpace: number; // count of pixels between two grid layouts
+	zindex: number;
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
 		this.radius = 2;
+		this.zindex = 100;
 		this.color = "orange";
 		this.colorF3 = "#00f8cd";
 		this.backgroundOpacity = 0.15;
@@ -283,6 +303,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 				left = recLeftPos + Math.floor(curBeatLeft - (curBeatLeft - prewBeatLeft) / 2);
 				width = Math.floor((nextBeatLeft - prewBeatLeft) / 2);
 				drawObj.container = new XRectangle(left, 0, width, 0);
+				drawObj.container.zindex = this.zindex;
 				drawObj.index = results.length;
 				results.push(drawObj);
 			}
@@ -291,6 +312,22 @@ export class BeatsDrawingClient extends XDrawingClient {
 		}
 		return results;
 	}
+
+	//-------------------------------------------------------------------------------------
+	public select(obj: IDObject, st: XDProxyState) {
+		console.info("handle click from client", obj, st);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public hover(obj: IDObject, st: XDProxyState) {
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public drag(obj: IDObject, st: XDProxyState) {
+
+	}
+
 
 }
 
@@ -644,7 +681,7 @@ export class CursorDrawingClient extends XDrawingClient {
 	pointColor: string;
 	pointRadius: number;
 	clientHalfWidth: number;
-	
+
 	zoom: number;
 	zoom2: number;
 

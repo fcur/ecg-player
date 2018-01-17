@@ -18,7 +18,7 @@ import {
 	BeatsRangeDrawingObject, IDObject,
 	XDOType, AnsDrawingObject,
 	XDrawingObject, SignalDrawingObject,
-	WaveDrawingObject
+	WaveDrawingObject, XDOChangeType
 } from "./drawingobject";
 import { DrawingData } from "./drawingdata";
 import {
@@ -325,6 +325,19 @@ export class XDProxy {
 	public preformClick(event: MouseEvent | TouchEvent) {
 		//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseClick, event);
 		//this.onChangeState.emit(changes);
+		this.prepareCursor(event);
+		let z1: number, dObj: IDObject, zindex: number = -1;
+		let l: number = this.state.pointerX, t: number = this.state.pointerY;
+
+		for (z1 = 0; z1 < this.doVisible.length; z1++) {
+			if (!this.doVisible[z1].container.containsPoint(l, t) ||
+				this.doVisible[z1].container.zindex < zindex) continue;
+			zindex = this.doVisible[z1].container.zindex;
+			dObj = this.doVisible[z1];
+		}
+		if (zindex > -1) {
+			dObj.owner.select(dObj, this.state);
+		}
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -337,7 +350,7 @@ export class XDProxy {
 	//-------------------------------------------------------------------------------------
 	public performScroll(event: any) {
 		if (!this.state.container) return;
-		
+
 		this.moveCursor(event);
 		this.lastEvent.type = XDChangeType.Scroll;
 		this.lastEvent.sender = XDChangeSender.Drag;
