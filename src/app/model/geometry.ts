@@ -14,7 +14,7 @@ export enum XDPrimitiveState {
 // Drawing primitives
 //-------------------------------------------------------------------------------------------------
 export class XDrawingPrimitive {
-	zindex: number;
+	zIndex: number;
 	state: XDPrimitiveState;
 	//floatingX: boolean;
 	//floatingY: boolean;
@@ -26,7 +26,7 @@ export class XDrawingPrimitive {
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
-		this.zindex = 0;
+		this.zIndex = 0;
 		//this.floatingX = false;
 		//this.floatingY = false;
 		this.state = XDPrimitiveState.Default;

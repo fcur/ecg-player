@@ -337,18 +337,6 @@ export class XDProxy {
 			this.lastEvent.sender = XDChangeSender.MouseClick;
 			this.pushUpdate();
 		}
-
-		//let z1: number, dObj: IDObject, zindex: number = -1;
-		//for (z1 = 0; z1 < this.doVisible.length; z1++) {
-		//	if (!this.doVisible[z1].checkPosition(l, t) ||
-		//		this.doVisible[z1].container.zindex < zindex) continue;
-		//	zindex = this.doVisible[z1].container.zindex;
-		//	dObj = this.doVisible[z1];
-		//}
-		//if (zindex > -1) {
-		//	dObj.owner.select(dObj, this.state);
-		//}
-		//this.pushUpdate();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -364,8 +352,8 @@ export class XDProxy {
 			r: number = -1;
 		for (z1 = 0; z1 < this.doVisible.length; z1++) {
 			if (!this.doVisible[z1].checkPosition(left, top) ||
-				this.doVisible[z1].container.zindex < zindex) continue;
-			zindex = this.doVisible[z1].container.zindex;
+				this.doVisible[z1].container.zIndex < zindex) continue;
+			zindex = this.doVisible[z1].container.zIndex;
 			r = z1;
 		}
 		return r;

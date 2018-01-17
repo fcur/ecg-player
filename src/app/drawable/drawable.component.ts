@@ -20,7 +20,7 @@ import {
 	SignalDrawingClient, CellDrawingClient,
 	GridCellDrawingClient, WavepointClient,
 	AnsDrawingClient, BeatsDrawingClient,
-	TargetRectangleClient
+	DemoRectangleClient
 } from "../model/drawingclient";
 import {
 	BeatsRangeDrawingObject, IDObject, ClPointDrawingObject,
@@ -52,7 +52,7 @@ export class DrawableComponent implements OnInit {
 	private _gridClient: GridCellDrawingClient;
 	private _beatsClient: BeatsDrawingClient;
 	private _cursorClient: CursorDrawingClient;
-	private _targRectClient: TargetRectangleClient;
+	private _demoRectClient: DemoRectangleClient;
 	private _zoomIntensity: number;
 	private _fileReader: FileReader;
 	private _hideFileDrop: boolean;
@@ -439,14 +439,15 @@ export class DrawableComponent implements OnInit {
 		this._gridClient = new GridCellDrawingClient();
 		this._beatsClient = new BeatsDrawingClient();
 		this._cursorClient = new CursorDrawingClient();
-		this._targRectClient = new TargetRectangleClient();
+		this._demoRectClient = new DemoRectangleClient();
 
 		this._signalClient.drawObjects = this.drawSignalObjects.bind(this);
 		this._gridClient.drawObjects = this.drawGridObjects.bind(this);
 		this._beatsClient.drawObjects = this.drawBeatsRangesObjects.bind(this);
 		this._cursorClient.drawObjects = this.drawCursorObjects.bind(this);
+		this._demoRectClient.drawObjects = this.drawDemoRect.bind(this);
 
-		this._dp.pushClients(this._gridClient, this._signalClient, this._beatsClient, this._cursorClient);
+		this._dp.pushClients(this._gridClient, this._signalClient, this._beatsClient, this._cursorClient, this._demoRectClient);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -531,7 +532,6 @@ export class DrawableComponent implements OnInit {
 		//this._ct.ctx.closePath();
 		this._ct.restoreState();
 	}
-
 
 	//-------------------------------------------------------------------------------------
 	private drawCursorObjects(objs: CursorDrawingObject[]) {
@@ -798,6 +798,25 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
+	private drawDemoRect(objs: XDrawingObject[]) {
+		let obj: XDrawingObject = objs[0];
+
+		this._ct.saveState();
+		//this._targRectClient
+		let a: XPoint = new XPoint(obj.container.minOx - this._dp.state.skipPx, obj.container.minOy),
+			b: XPoint = new XPoint(obj.container.maxOx - this._dp.state.skipPx, obj.container.minOy),
+			c: XPoint = new XPoint(obj.container.maxOx - this._dp.state.skipPx, obj.container.maxOy),
+			d: XPoint = new XPoint(obj.container.minOx - this._dp.state.skipPx, obj.container.maxOy);
+
+		this._mt.applyForPoints(a, b, c, d);
+		//console.log(a, b, c, d);
+		this._ct.ctx.strokeStyle = this._demoRectClient.strokeStyle;
+		this._ct.strokePointsPath(a, b, c, d);
+		this._ct.restoreState();
+
+	}
+
+	//-------------------------------------------------------------------------------------
 	private printState() {
 		let textSize: number = 15;
 		let text: string,
@@ -834,17 +853,15 @@ export class DrawableComponent implements OnInit {
 	}
 
 
-
-
 	//-------------------------------------------------------------------------------------
 	// TODO: add affine transform tests for rectangle
 	private drawTargeRectangle(cl: string) {
 		this._ct.saveState();
 		//this._targRectClient
-		let a: XPoint = new XPoint(this._targRectClient.figure.minOx, this._targRectClient.figure.minOy),
-			b: XPoint = new XPoint(this._targRectClient.figure.maxOx, this._targRectClient.figure.minOy),
-			c: XPoint = new XPoint(this._targRectClient.figure.maxOx, this._targRectClient.figure.maxOy),
-			d: XPoint = new XPoint(this._targRectClient.figure.minOx, this._targRectClient.figure.maxOy);
+		let a: XPoint = new XPoint(this._demoRectClient.figure.minOx, this._demoRectClient.figure.minOy),
+			b: XPoint = new XPoint(this._demoRectClient.figure.maxOx, this._demoRectClient.figure.minOy),
+			c: XPoint = new XPoint(this._demoRectClient.figure.maxOx, this._demoRectClient.figure.maxOy),
+			d: XPoint = new XPoint(this._demoRectClient.figure.minOx, this._demoRectClient.figure.maxOy);
 
 		this._mt.applyForPoints(a, b, c, d);
 		//console.log(a, b, c, d);

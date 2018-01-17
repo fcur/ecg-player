@@ -303,7 +303,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 				left = recLeftPos + Math.floor(curBeatLeft - (curBeatLeft - prewBeatLeft) / 2);
 				width = Math.floor((nextBeatLeft - prewBeatLeft) / 2);
 				drawObj.container = new XRectangle(left, 0, width, 0);
-				drawObj.container.zindex = this.zindex;
+				drawObj.container.zIndex = this.zindex;
 				drawObj.index = results.length;
 				results.push(drawObj);
 			}
@@ -821,7 +821,7 @@ export class WavepointClient extends XDrawingClient {
 // -------------------------------------------------------------------------------------------------
 // Target rectangle client
 // -------------------------------------------------------------------------------------------------
-export class TargetRectangleClient {
+export class DemoRectangleClient extends XDrawingClient {
 
 	public figure: XRectangle;
 
@@ -832,17 +832,30 @@ export class TargetRectangleClient {
 
 	public originX: number;
 	public originY: number;
+	public zIndex: number;
+	public strokeStyle: string;
+
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
+		super();
+		this.zIndex = Number.MAX_SAFE_INTEGER;
 		this.left = 120;
 		this.top = 123;
 		this.width = 321;
 		this.height = 123;
 		this.originX = 0;
 		this.originY = 0;
+		this.strokeStyle = "red";
 		this.figure = new XRectangle(this.left, this.top, this.width, this.height);
-
 	}
 
+	//-------------------------------------------------------------------------------------
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): XDrawingObject[] {
+		let obj: XDrawingObject = new XDrawingObject();
+		obj.owner = this;
+		obj.container = new XRectangle(this.left, this.top, this.width, this.height);
+		obj.container.zIndex = this.zIndex;
+		return [obj];
+	}
 }
