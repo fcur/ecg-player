@@ -164,6 +164,7 @@ export class XDProxy {
 
 	//-------------------------------------------------------------------------------------
 	public scrollDrawObjGroupsF3() {
+		//console.info("scrollDrawObjGroupsF3", this.state.skipPx);
 		// TODO
 		// movement < 0 >> scrolling forward, sort left, visible 
 		// movement > 0 >> scrolling back, sort right, visible
@@ -230,6 +231,7 @@ export class XDProxy {
 
 	//-------------------------------------------------------------------------------------
 	public rebuildDrawObjGroupsF3() {
+		//console.info("rebuildDrawObjGroupsF3");
 		// prepare groups of objects
 		this.projectDrawObjF3();
 		this.doVisible = [];
@@ -309,14 +311,13 @@ export class XDProxy {
 	//-------------------------------------------------------------------------------------
 	public pushUpdate() {
 		//let timeNow: number = Date.now();
-		//if (timeNow - this.lastEvent.timeStamp > 0) {
+		//if (timeNow - this.lastEvent.timeStamp > 300) {
 		//	this.lastEvent.timeStamp = timeNow;
 		//	this.lastEvent.count++;
 		//	this.onChangeState.emit(this.lastEvent);
 		//}
-
-		if (!this.lastEvent.notify) return;
-		this.lastEvent.count++;
+		//if (!this.lastEvent.notify) return;
+		//this.lastEvent.count++;
 		this.onChangeState.emit(this.lastEvent);
 	}
 
@@ -325,6 +326,7 @@ export class XDProxy {
 	public preformClick(event: MouseEvent | TouchEvent) {
 		//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseClick, event);
 		//this.onChangeState.emit(changes);
+		console.info("proxy: preformClick");
 		this.prepareCursor(event);
 		let z1: number, dObj: IDObject, zindex: number = -1;
 		let l: number = this.state.pointerX, t: number = this.state.pointerY;

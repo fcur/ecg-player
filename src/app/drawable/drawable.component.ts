@@ -138,23 +138,25 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:auxclick", ["$event"])
 	private onWindowAuxclick(event: MouseEvent) {
+		// right/center mouse click
 		event.preventDefault();
 		event.stopPropagation();
-		//console.info("window:auxclick", event);
+		console.info("window:auxclick", event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:click", ["$event"])
 	private onWindowClick(event: MouseEvent) {
+		console.info("window:click", event);
 		event.preventDefault();
 		event.stopPropagation();
-		//console.info("window:click", event);
+		this.onMouseClick(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:dblclick", ["$event"])
 	private onWindowDblclick(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
-		//console.info("window:dblclick", event);
+		console.info("window:dblclick", event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:touchcancel", ["$event"])
@@ -279,6 +281,11 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
+	private onMouseClick(event: any) {
+		this._dp.preformClick(event);
+	}
+
+	//-------------------------------------------------------------------------------------
 	private canvasPerformanceTest() {
 		let t0: number, t1: number, l0: number, l1: number;
 		t0 = performance.now();
@@ -339,7 +346,6 @@ export class DrawableComponent implements OnInit {
 		this._dp.forceDrRefresh();
 	}
 
-
 	//-------------------------------------------------------------------------------------
 	private onLoadFile(event: ProgressEvent) {
 		this._ds.parseJsonFile(JSON.parse(this._fileReader.result));
@@ -347,31 +353,10 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onStateChanges(v: XDPSEvent) {
-
-
-
 		this._ct.clear();
 		this.renderVisibleGroups();
 		this.drawCursotPosition();
-
-
-		//this._dp.scrollDrawObjGroupsF3();
-		//this._dp.refreshDrawings();
-
-		//console.info(v.info, v.timeStamp);
-		// refresh drawings
-		//this._ct.clear();
-		////this._ct.saveState();
-		////let state: XDrawingProxyState = this._dp.state;
-		////this._ct.ctx.rect(state.container.left, state.container.top, state.container.width, state.container.height);
-		////this._ct.ctx.stroke();
-		////this._ct.restoreState();
-		//for (let z: number = 0; z < change.objects.length; z++) {
-		//  if (!change.objects[z].owner.draw) continue;
-		//  change.objects[z].owner.draw(change.objects[z]);
-		//}
 	}
-
 
 	//-------------------------------------------------------------------------------------
 	private onWheelScroll(event: WheelEvent) {

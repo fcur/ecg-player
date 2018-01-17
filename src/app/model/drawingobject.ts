@@ -70,6 +70,9 @@ export interface IDObject {
 	updateState(dd: DrawingData, pd: XDProxyState);
 	/** Drawing object change type. */
 	changeType: number;
+	/** Check point in drawing object. */
+	checkPosition(left: number, top: number): boolean;
+
 }
 
 
@@ -114,6 +117,11 @@ export class XDrawingObject implements IDObject {
 		this.progress = 100;
 		this.hud = false;
 		this.changeType = XDOChangeType.None;
+	}
+
+	//-------------------------------------------------------------------------------------
+	public checkPosition(left: number, top: number): boolean {
+		return this.container.containsPoint(left, top);
 	}
 
 	//-------------------------------------------------------------------------------------
