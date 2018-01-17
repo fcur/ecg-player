@@ -69,6 +69,12 @@ export class DrawableComponent implements OnInit {
 
 	private _zoomAnimation: XAnimation;
 
+	private _mousemoveTime: number;
+	private _clickThreshold: number;
+	private _inDrag: boolean;
+	private _skipClick: boolean;
+
+
 	//----------------------------------------------------------------------------------------------
 	@Input("clip-canvas")
 	set clipCanvas(value: boolean) {
@@ -98,7 +104,7 @@ export class DrawableComponent implements OnInit {
 	@HostListener("window:mousemove", ["$event"])
 	private onWindowMousemove(event: MouseEvent) {
 		//console.info("window:mousemove", event);
-		//console.info(event);
+		this._skipClick = this._skipClick|| event.movementX != 0 && event.movementY != 0;
 		event.preventDefault();
 		event.stopPropagation();
 		this.onDragMove(event);
@@ -106,6 +112,7 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mousedown", ["$event"])
 	private onWindowMousedown(event: MouseEvent) {
+		this._skipClick = false;
 		//console.info("window:mousedown", event);
 		event.preventDefault();
 		event.stopPropagation();
@@ -146,6 +153,7 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:click", ["$event"])
 	private onWindowClick(event: MouseEvent) {
+		if (this._skipClick) return;
 		//console.info("window:click", event);
 		event.preventDefault();
 		event.stopPropagation();
@@ -200,17 +208,20 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:wheel", ["$event"]) onMouseWheel(event: WheelEvent) {
 		event.preventDefault();
-		this.onWheelScroll(event);
+		//this.onWheelScroll(event);
 	}
 
 	//-------------------------------------------------------------------------------------
 	constructor(private _el: ElementRef, private _ds: DataService) {
 		this._hideFileDrop = false;
+		this._skipClick = true;
+
 		this._clipCanvas = false;
 		this._pinBeatsToSignal = true;
 		this._loadDataSubs = null;
 		this._drawingScrollSubs = null;
 		this._threshold = 100;
+		this._clickThreshold = 300;
 		this._zoomIntensity = 0.2;
 		this._dp = new XDProxy();
 		this._mt = new XMatrixTool();
@@ -312,8 +323,11 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onDragEnd(event: any) {
-		if (!this._dp.canDragWaveform) return;
-		this._dp.stopWaveformDrag();
+		if (this._dp.canDragWaveform) {
+			this._dp.stopWaveformDrag();
+		} else {
+			this.onMouseClick(event);
+		}
 	}
 
 	//----------------------------------------------------------------------------------------------
@@ -802,6 +816,7 @@ export class DrawableComponent implements OnInit {
 		let obj: XDrawingObject = objs[0];
 
 		this._ct.saveState();
+		this._ct.clipRect(this._dp.state.container);
 		//this._targRectClient
 		let a: XPoint = new XPoint(obj.container.minOx - this._dp.state.skipPx, obj.container.minOy),
 			b: XPoint = new XPoint(obj.container.maxOx - this._dp.state.skipPx, obj.container.minOy),

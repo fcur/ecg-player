@@ -316,8 +316,8 @@ export class XDProxy {
 		//	this.lastEvent.count++;
 		//	this.onChangeState.emit(this.lastEvent);
 		//}
-		//if (!this.lastEvent.notify) return;
-		//this.lastEvent.count++;
+		if (!this.lastEvent.notify) return;
+		this.lastEvent.count++;
 		this.onChangeState.emit(this.lastEvent);
 	}
 
