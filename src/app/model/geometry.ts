@@ -2,11 +2,12 @@
 //-------------------------------------------------------------------------------------------------
 // Drawing primitive state
 //-------------------------------------------------------------------------------------------------
-export enum XDrawingPrimitiveState {
+export enum XDPrimitiveState {
 	Default = 0,
-	Activated,
+	Active,
 	Selected,
-	Hidden
+	Hidden,
+	AS
 }
 
 //-------------------------------------------------------------------------------------------------
@@ -14,7 +15,7 @@ export enum XDrawingPrimitiveState {
 //-------------------------------------------------------------------------------------------------
 export class XDrawingPrimitive {
 	zindex: number;
-	state: XDrawingPrimitiveState;
+	state: XDPrimitiveState;
 	//floatingX: boolean;
 	//floatingY: boolean;
 
@@ -28,7 +29,7 @@ export class XDrawingPrimitive {
 		this.zindex = 0;
 		//this.floatingX = false;
 		//this.floatingY = false;
-		this.state = XDrawingPrimitiveState.Default;
+		this.state = XDPrimitiveState.Default;
 	}
 
 }

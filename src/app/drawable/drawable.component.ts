@@ -11,7 +11,7 @@ import {
 	XDChangeType, XDCoordinates
 } from "../model/misc";
 import {
-	XDrawingPrimitive, XDrawingPrimitiveState, XLabel,
+	XDrawingPrimitive, XDPrimitiveState, XLabel,
 	XLine, XPeak, XPoint, XPolyline, XRectangle
 } from "../model/geometry";
 import {
@@ -146,7 +146,7 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:click", ["$event"])
 	private onWindowClick(event: MouseEvent) {
-		console.info("window:click", event);
+		//console.info("window:click", event);
 		event.preventDefault();
 		event.stopPropagation();
 		this.onMouseClick(event);
@@ -156,7 +156,7 @@ export class DrawableComponent implements OnInit {
 	private onWindowDblclick(event: MouseEvent) {
 		event.preventDefault();
 		event.stopPropagation();
-		console.info("window:dblclick", event);
+		//console.info("window:dblclick", event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:touchcancel", ["$event"])
@@ -597,6 +597,7 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private drawBeatsRangesObjects(objs: BeatsRangeDrawingObject[]) {
+
 		this._ct.saveState();
 		// draw beat ranges: drawObj.container for all channels
 		// draw beat peaks: drawObj.points for each channel
@@ -621,7 +622,7 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.font = `${textSize}px Roboto`;
 		this._ct.ctx.textBaseline = "middle";
 		this._ct.ctx.textAlign = "center";
-		this._ct.ctx.globalAlpha = 0.05;
+		//this._ct.ctx.globalAlpha = 0.05;
 		for (y = 0; y < objs.length; y++) {
 			beatRange = objs[y];
 
@@ -636,6 +637,16 @@ export class DrawableComponent implements OnInit {
 				this._ct.ctx.fillStyle = beatRange.index % 2 == 0 ?
 					this._beatsClient.backgroundColor1 :
 					this._beatsClient.backgroundColor2;
+				// TODO: combine different states with bitwise operations
+				if (beatRange.state === XDPrimitiveState.AS) {
+					this._ct.ctx.globalAlpha = 0.05 * 3;
+				} else if (beatRange.state === XDPrimitiveState.Active) {
+					this._ct.ctx.globalAlpha = 0.05 * 1.5;
+				} else if (beatRange.state === XDPrimitiveState.Selected) {
+					this._ct.ctx.globalAlpha = 0.05 * 2;
+				} else {
+					this._ct.ctx.globalAlpha = 0.05;
+				}
 
 				dx = beatRange.container.minOx - state.minPx;
 				left = cell.container.left + dx;
@@ -728,7 +739,7 @@ export class DrawableComponent implements OnInit {
 				leadCode = objs[z].leadCodes[y];
 				cellIndex = state.leadsCodes.indexOf(leadCode);
 				if (cellIndex < 0) continue;
-				renderCell = state.gridCells[cellIndex].container.state != XDrawingPrimitiveState.Hidden;
+				renderCell = state.gridCells[cellIndex].container.state != XDPrimitiveState.Hidden;
 				if (!renderCell) continue;
 
 				for (x = 0; x < objs[z].horizontal.length; x++) {
@@ -769,7 +780,7 @@ export class DrawableComponent implements OnInit {
 				leadCode = objs[z].leadCodes[y];
 				cellIndex = state.leadsCodes.indexOf(leadCode);
 				if (cellIndex < 0) continue;
-				renderCell = state.gridCells[cellIndex].container.state != XDrawingPrimitiveState.Hidden;
+				renderCell = state.gridCells[cellIndex].container.state != XDPrimitiveState.Hidden;
 				if (!renderCell) continue;
 
 				for (x = 0; x < objs[z].ox.length; x++) {

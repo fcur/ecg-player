@@ -19,7 +19,7 @@ import {
 	XDChangeType, XMatrixTool
 } from "./misc";
 import {
-	XDrawingPrimitive, XDrawingPrimitiveState, XLabel, XPeak,
+	XDrawingPrimitive, XDPrimitiveState, XLabel, XPeak,
 	XPoint, XLine, XRectangle, XPolyline
 } from "./geometry";
 
@@ -64,7 +64,7 @@ export interface IDrawingClient {
 
 	// add mouse/touch events handlers
 	select(obj: IDObject, st: XDProxyState);
-	hover(obj: IDObject, st: XDProxyState);
+	hover(v: boolean, obj: IDObject, st: XDProxyState);
 	drag(obj: IDObject, st: XDProxyState);
 }
 
@@ -120,7 +120,7 @@ export class XDrawingClient implements IDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public hover(obj: IDObject, st: XDProxyState) {
+	public hover(v: boolean, obj: IDObject, st: XDProxyState) {
 
 	}
 
@@ -315,12 +315,26 @@ export class BeatsDrawingClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public select(obj: IDObject, st: XDProxyState) {
-		console.info("handle click from client", obj, st);
+		// TODO: combine different states with bitwise operations
+		if (obj.state === XDPrimitiveState.Selected) {
+			obj.state = XDPrimitiveState.Default;
+		} else if (obj.state === XDPrimitiveState.AS) {
+			obj.state = XDPrimitiveState.Active;
+		} else if (obj.state === XDPrimitiveState.Active) {
+			obj.state = XDPrimitiveState.AS;
+		} else {
+			obj.state = XDPrimitiveState.Selected;
+		}
 	}
 
 	//-------------------------------------------------------------------------------------
-	public hover(obj: IDObject, st: XDProxyState) {
-
+	public hover(v: boolean, obj: IDObject, st: XDProxyState) {
+		// TODO: combine different states with bitwise operations
+		if (obj.state === XDPrimitiveState.Selected || obj.state === XDPrimitiveState.AS) {
+			obj.state = v ? XDPrimitiveState.AS : XDPrimitiveState.Selected;
+		} else {
+			obj.state = v ? XDPrimitiveState.Active : XDPrimitiveState.Default;
+		}
 	}
 
 	//-------------------------------------------------------------------------------------

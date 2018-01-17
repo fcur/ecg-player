@@ -2,7 +2,7 @@
 
 import { XDrawingClient, XDrawingMode } from "./drawingclient";
 import {
-	XDrawingPrimitive, XDrawingPrimitiveState, XLabel,
+	XDrawingPrimitive, XDPrimitiveState, XLabel,
 	XLine, XPeak, XPoint, XPolyline, XRectangle
 } from "./geometry";
 import {
@@ -72,7 +72,8 @@ export interface IDObject {
 	changeType: number;
 	/** Check point in drawing object. */
 	checkPosition(left: number, top: number): boolean;
-
+	/** Drawing object state. */
+	state: XDPrimitiveState;
 }
 
 
@@ -102,6 +103,13 @@ export class XDrawingObject implements IDObject {
 	public hud: boolean;
 	/** Drawing object change type. */
 	public changeType: number;
+
+	public set state(v: XDPrimitiveState) {
+		this.container.state = v;
+	}
+	public get state(): XDPrimitiveState {
+		return this.container.state;
+	}
 
 	//-------------------------------------------------------------------------------------
 	//public get isFloating(): boolean {
@@ -401,6 +409,11 @@ export class BeatsRangeDrawingObject extends XDrawingObject {
 		this.leadCodes = leads;
 		//this.polylines = new Array(leads.length);
 		this.points = new Array(leads.length);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public checkPosition(left: number, top: number): boolean {
+		return !this.container.checkHorizontalOverflow(left);
 	}
 }
 

@@ -27,7 +27,7 @@ import {
 } from "./ecgdata"
 import { Subscription, BehaviorSubject } from "rxjs";
 import {
-	XDrawingPrimitive, XDrawingPrimitiveState, XLabel,
+	XDrawingPrimitive, XDPrimitiveState, XLabel,
 	XLine, XPeak, XPoint, XPolyline, XRectangle
 } from "./geometry";
 
@@ -324,28 +324,51 @@ export class XDProxy {
 
 	//-------------------------------------------------------------------------------------
 	public preformClick(event: MouseEvent | TouchEvent) {
-		//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseClick, event);
-		//this.onChangeState.emit(changes);
-		console.info("proxy: preformClick");
-		this.prepareCursor(event);
-		let z1: number, dObj: IDObject, zindex: number = -1;
-		let l: number = this.state.pointerX, t: number = this.state.pointerY;
+		// TODO: merge results with 3X4 grid layot
+		//console.info("proxy: preformClick");
+		this.prepareCursor(event); // optional
+		let l: number = this.state.pointerX + this.state.skipPx,
+			t: number = this.state.pointerY;
 
-		for (z1 = 0; z1 < this.doVisible.length; z1++) {
-			if (!this.doVisible[z1].container.containsPoint(l, t) ||
-				this.doVisible[z1].container.zindex < zindex) continue;
-			zindex = this.doVisible[z1].container.zindex;
-			dObj = this.doVisible[z1];
+		let di: number = this.findDrawingObjectIndex(l, t);
+		if (di > -1) {
+			this.doVisible[di].owner.select(this.doVisible[di], this.state);
+			this.lastEvent.type = XDChangeType.Change;
+			this.lastEvent.sender = XDChangeSender.MouseClick;
+			this.pushUpdate();
 		}
-		if (zindex > -1) {
-			dObj.owner.select(dObj, this.state);
-		}
+
+		//let z1: number, dObj: IDObject, zindex: number = -1;
+		//for (z1 = 0; z1 < this.doVisible.length; z1++) {
+		//	if (!this.doVisible[z1].checkPosition(l, t) ||
+		//		this.doVisible[z1].container.zindex < zindex) continue;
+		//	zindex = this.doVisible[z1].container.zindex;
+		//	dObj = this.doVisible[z1];
+		//}
+		//if (zindex > -1) {
+		//	dObj.owner.select(dObj, this.state);
+		//}
+		//this.pushUpdate();
 	}
 
 	//-------------------------------------------------------------------------------------
 	public preformDbClick(event: MouseEvent) {
 		//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseDbClick, event);
 		//this.onChangeState.emit(changes);
+	}
+
+	//-------------------------------------------------------------------------------------
+	private findDrawingObjectIndex(left: number, top: number): number {
+		let z1: number,
+			zindex: number = -1,
+			r: number = -1;
+		for (z1 = 0; z1 < this.doVisible.length; z1++) {
+			if (!this.doVisible[z1].checkPosition(left, top) ||
+				this.doVisible[z1].container.zindex < zindex) continue;
+			zindex = this.doVisible[z1].container.zindex;
+			r = z1;
+		}
+		return r;
 	}
 
 
@@ -370,6 +393,13 @@ export class XDProxy {
 	public performCursorMove(event: any) {
 		if (!this.state.container) return;
 		this.moveCursor(event);
+		let l: number = this.state.pointerX + this.state.skipPx,
+			t: number = this.state.pointerY;
+
+		let di: number = this.findDrawingObjectIndex(l, t), z1: number;
+		for (z1 = 0; z1 < this.doVisible.length; z1++) {
+			this.doVisible[z1].owner.hover(z1 === di, this.doVisible[z1], this.state);
+		}
 
 		this.lastEvent.type = XDChangeType.ForceRefresh;
 		this.lastEvent.sender = XDChangeSender.MouseHover;

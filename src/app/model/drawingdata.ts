@@ -1,6 +1,6 @@
 
 import {
-	XDrawingPrimitive, XDrawingPrimitiveState,
+	XDrawingPrimitive, XDPrimitiveState,
 	XLabel, XLine, XPeak, XPoint, XPolyline,
 	XRectangle
 } from "./geometry";
