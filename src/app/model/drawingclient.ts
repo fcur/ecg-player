@@ -3,7 +3,8 @@ import {
 	WavepointDrawingObject, CursorDrawingObject, GridCellDrawingObject,
 	ClPointDrawingObject, CellDrawingObject, BeatsRangeDrawingObject,
 	SignalDrawingObject, PeakDrawingObject, WaveDrawingObject,
-	IDObject, XDOType, AnsDrawingObject, XDrawingObject
+	IDObject, XDOType, AnsDrawingObject, XDrawingObject,
+	DemoRectDrawingObject, XDOChangeType
 } from "./drawingobject";
 import {
 	EcgWavePoint, EcgWavePointType, EcgAnnotation, EcgSignal,
@@ -823,8 +824,12 @@ export class WavepointClient extends XDrawingClient {
 // -------------------------------------------------------------------------------------------------
 export class DemoRectangleClient extends XDrawingClient {
 
-	public figure: XRectangle;
+	/** Cursor inner thresold in pixels. */
+	private _cursThrInner: number;
+	/** Cursor outer thresold in pixels. */
+	private _cursThrOut: number;
 
+	public figure: XRectangle;
 	public left: number;
 	public top: number;
 	public width: number;
@@ -834,6 +839,7 @@ export class DemoRectangleClient extends XDrawingClient {
 	public originY: number;
 	public zIndex: number;
 	public strokeStyle: string;
+
 
 
 	//-------------------------------------------------------------------------------------
@@ -846,17 +852,24 @@ export class DemoRectangleClient extends XDrawingClient {
 		this.height = 123;
 		this.originX = 0;
 		this.originY = 0;
+		this._cursThrInner = 5;
+		this._cursThrOut = 5;
 		this.strokeStyle = "red";
 		this.figure = new XRectangle(this.left, this.top, this.width, this.height);
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): XDrawingObject[] {
-		let obj: XDrawingObject = new XDrawingObject();
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): DemoRectDrawingObject[] {
+		let obj: DemoRectDrawingObject = new DemoRectDrawingObject();
 		obj.owner = this;
 		obj.draggable = true;
 		obj.changeable = true;
-		obj.container = new XRectangle(this.left, this.top, this.width, this.height);
+		obj.figure = new XRectangle(this._cursThrOut, this._cursThrOut, this.width, this.height);
+		obj.container = new XRectangle(
+			this.left - this._cursThrOut,
+			this.top - this._cursThrOut,
+			this.width + this._cursThrOut,
+			this.height + this._cursThrOut);
 		obj.container.zIndex = this.zIndex;
 		return [obj];
 	}
@@ -868,7 +881,22 @@ export class DemoRectangleClient extends XDrawingClient {
 
 	//-------------------------------------------------------------------------------------
 	public hover(v: boolean, obj: IDObject, st: XDProxyState) {
+		if (!v) return;
+		let left: number = st.pointerX + st.skipPx;
+		let top: number = st.pointerY;
 
+		let onLeft: boolean = false,
+			onRight: boolean = false,
+			onTop: boolean = false,
+			onBottom: boolean = false,
+			c = obj.container;
+
+		onLeft = left - c.left < this._cursThrInner + this._cursThrOut;
+		onRight = c.right - left < this._cursThrInner + this._cursThrOut;
+		onTop = top - c.top < this._cursThrInner + this._cursThrOut;
+		onBottom = c.bottom - top < this._cursThrInner + this._cursThrOut;
+
+		//console.log(left, top, `l=${onLeft} r=${onRight} t=${onTop} b=${onBottom}`);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -877,7 +905,42 @@ export class DemoRectangleClient extends XDrawingClient {
 		// chech draggable && changeable flag
 		// find cursot position on container
 		// move (scroll container) or change position
-		obj.container.left += l;
-		obj.container.top += t;
+
+		let left: number = st.pointerX + st.skipPx;
+		let top: number = st.pointerY;
+
+		let onLeft: boolean = false,
+			onRight: boolean = false,
+			onTop: boolean = false,
+			onBottom: boolean = false,
+			c = obj.container;
+
+		onLeft = left - c.left < this._cursThrInner + this._cursThrOut;
+		onRight = c.right - left < this._cursThrInner + this._cursThrOut;
+		onTop = top - c.top < this._cursThrInner + this._cursThrOut;
+		onBottom = c.bottom - top < this._cursThrInner + this._cursThrOut;
+
+		//console.log(l, t);
+
+		if (!onLeft && !onRight && !onTop && !onBottom) {
+			c.left += l;
+			c.top += t;
+		} else {
+			if (onLeft) {
+				c.left += l;
+				c.width += -l;
+			} else if (onRight) {
+				c.width += l;
+			}
+
+			if (onTop) {
+				c.top += t;
+				c.height += -t;
+			} else if (onBottom) {
+				c.height += t;
+			}
+		}
+
+
 	}
 }

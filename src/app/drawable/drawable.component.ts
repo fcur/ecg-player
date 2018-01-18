@@ -25,9 +25,9 @@ import {
 import {
 	BeatsRangeDrawingObject, IDObject, ClPointDrawingObject,
 	GridCellDrawingObject, CursorDrawingObject, PeakDrawingObject,
-	XDOType, AnsDrawingObject, WaveDrawingObject,
+	WavepointDrawingObject, DemoRectDrawingObject, XDOChangeType,
 	CellDrawingObject, SignalDrawingObject, XDrawingObject,
-	WavepointDrawingObject
+	XDOType, AnsDrawingObject, WaveDrawingObject
 } from "../model/drawingobject";
 import {
 	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType, EcgParser,
@@ -826,16 +826,17 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private drawDemoRect(objs: XDrawingObject[]) {
-		let obj: XDrawingObject = objs[0];
+	private drawDemoRect(objs: DemoRectDrawingObject[]) {
+		let figure: XRectangle = objs[0].figure;
+		let parent: XRectangle = objs[0].container;
 
 		this._ct.saveState();
 		this._ct.clipRect(this._dp.state.container);
 		//this._targRectClient
-		let a: XPoint = new XPoint(obj.container.minOx - this._dp.state.minPx + this._dp.state.container.left, obj.container.minOy),
-			b: XPoint = new XPoint(obj.container.maxOx - this._dp.state.minPx + this._dp.state.container.left, obj.container.minOy),
-			c: XPoint = new XPoint(obj.container.maxOx - this._dp.state.minPx + this._dp.state.container.left, obj.container.maxOy),
-			d: XPoint = new XPoint(obj.container.minOx - this._dp.state.minPx + this._dp.state.container.left, obj.container.maxOy);
+		let a: XPoint = new XPoint(parent.minOx + figure.minOx - this._dp.state.minPx + this._dp.state.container.left, parent.minOy + figure.minOy + this._dp.state.container.top),
+			b: XPoint = new XPoint(parent.minOx + figure.maxOx - this._dp.state.minPx + this._dp.state.container.left, parent.minOy +figure.minOy + this._dp.state.container.top),
+			c: XPoint = new XPoint(parent.minOx + figure.maxOx - this._dp.state.minPx + this._dp.state.container.left, parent.minOy +figure.maxOy + this._dp.state.container.top),
+			d: XPoint = new XPoint(parent.minOx + figure.minOx - this._dp.state.minPx + this._dp.state.container.left, parent.minOy +figure.maxOy + this._dp.state.container.top);
 
 		this._mt.applyForPoints(a, b, c, d);
 		//console.log(a, b, c, d);

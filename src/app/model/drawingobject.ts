@@ -589,3 +589,16 @@ export class WaveDrawingObject extends WavepointDrawingObject {
 export class PeakDrawingObject extends WavepointDrawingObject {
 
 }
+
+// -------------------------------------------------------------------------------------------------
+// Demo rectangle drawing object
+// -------------------------------------------------------------------------------------------------
+export class DemoRectDrawingObject extends XDrawingObject {
+
+	public figure: XRectangle;
+
+	//-------------------------------------------------------------------------------------
+	public checkPosition(left: number, top: number): boolean {
+		return super.checkPosition(left, top);
+	}
+}
