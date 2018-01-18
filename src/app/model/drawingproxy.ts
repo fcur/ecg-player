@@ -89,21 +89,6 @@ export class XDProxy {
 		this.init();
 	}
 
-	//-------------------------------------------------------------------------------------
-	public startWaveformDrag(v: XPoint) {
-		this.lastEvent.previousState.dragPosition.rebuild(v.left, v.top);
-		this.lastEvent.currentState.dragPosition.rebuild(v.left, v.top);
-	}
-
-	//-------------------------------------------------------------------------------------
-	public updateWaveformDrag(endpoint: XPoint) {
-		let actionPoint: XPoint = this.state.dragPosition.subtract(endpoint);
-		this.updatePrevState();
-
-		this.lastEvent.currentState.scroll(actionPoint.left);
-		this.lastEvent.currentState.dragPosition.rebuild(endpoint.left, endpoint.top);
-	}
-
 	//-------------------------------------------------------------------------------------------------
 	public updatePrevState() {
 		// TODO: merge currnt&previous proxy states
@@ -114,32 +99,11 @@ export class XDProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public stopWaveformDrag() {
-		this.lastEvent.previousState.resetDrag();
-		this.lastEvent.currentState.resetDrag();
-	}
-
-	//-------------------------------------------------------------------------------------
 	public pushClients(...items: IDrawingClient[]) {
 		for (let z: number = 0; z < items.length; z++) {
 			this._clients.push(items[z]);
 		}
 		this.doCGroups = new Array(this._clients.length);
-	}
-
-	//-------------------------------------------------------------------------------------
-	public reset() {
-		//console.info("drawing proxy not implemented");
-	}
-
-	//-------------------------------------------------------------------------------------
-	public scroll(delta: number) {
-		this.state.scroll(delta);
-	}
-
-	//-------------------------------------------------------------------------------------
-	public get canDraw(): boolean {
-		return this.doCGroups.length > 0 || this.doHud.length > 0;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -158,9 +122,46 @@ export class XDProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public startDtag(v: XPoint) {
-		this.lastEvent.currentState.updateDragStart(v);
+	public reset() {
+		//console.info("drawing proxy not implemented");
 	}
+
+	//-------------------------------------------------------------------------------------
+	public scroll(delta: number) {
+		this.state.scroll(delta);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public get canDraw(): boolean {
+		return this.doCGroups.length > 0 || this.doHud.length > 0;
+	}
+
+	//-------------------------------------------------------------------------------------
+	public pushUpdate() {
+		//let timeNow: number = Date.now();
+		//if (timeNow - this.lastEvent.timeStamp > 300) {
+		//	this.lastEvent.timeStamp = timeNow;
+		//	this.lastEvent.count++;
+		//	this.onChangeState.emit(this.lastEvent);
+		//}
+		if (!this.lastEvent.notify) return;
+		this.lastEvent.count++;
+		this.onChangeState.emit(this.lastEvent);
+	}
+
+	//-------------------------------------------------------------------------------------
+	//public updateWaveformDrag(endpoint: XPoint) {
+	//	let actionPoint: XPoint = this.state.dragPosition.subtract(endpoint);
+	//	this.updatePrevState();
+	//	this.lastEvent.currentState.scroll(actionPoint.left);
+	//	this.lastEvent.currentState.dragPosition.rebuild(endpoint.left, endpoint.top);
+	//}
+
+
+	//-------------------------------------------------------------------------------------
+	//public startDtag(v: XPoint) {
+	//	this.lastEvent.currentState.updateDragStart(v);
+	//}
 
 	//-------------------------------------------------------------------------------------
 	public scrollDrawObjGroupsF3() {
@@ -309,21 +310,20 @@ export class XDProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public pushUpdate() {
-		//let timeNow: number = Date.now();
-		//if (timeNow - this.lastEvent.timeStamp > 300) {
-		//	this.lastEvent.timeStamp = timeNow;
-		//	this.lastEvent.count++;
-		//	this.onChangeState.emit(this.lastEvent);
-		//}
-		if (!this.lastEvent.notify) return;
-		this.lastEvent.count++;
-		this.onChangeState.emit(this.lastEvent);
+	public performDragStart(event: MouseEvent | TouchEvent) {
+		let v: XPoint = this.getEventPosition(event);
+		this.lastEvent.previousState.dragPosition.rebuild(v.left, v.top);
+		this.lastEvent.currentState.dragPosition.rebuild(v.left, v.top);
 	}
 
+	//-------------------------------------------------------------------------------------
+	public performDragStop() {
+		this.lastEvent.previousState.resetDrag();
+		this.lastEvent.currentState.resetDrag();
+	}
 
 	//-------------------------------------------------------------------------------------
-	public preformClick(event: MouseEvent | TouchEvent) {
+	public preformMouseClick(event: MouseEvent | TouchEvent) {
 		// TODO: merge results with 3X4 grid layot
 		//console.info("proxy: preformClick");
 		this.prepareCursor(event); // optional
@@ -359,26 +359,41 @@ export class XDProxy {
 		return r;
 	}
 
-
 	//-------------------------------------------------------------------------------------
-	public performScroll(event: any) {
+	public performDragMove(event: MouseEvent | TouchEvent) {
 		if (!this.state.container) return;
 
-		this.moveCursor(event);
-		this.lastEvent.type = XDChangeType.Scroll;
-		this.lastEvent.sender = XDChangeSender.Drag;
+		let endpoint: XPoint = this.getEventPosition(event);
+		let actionPoint: XPoint = this.state.dragPosition.subtract(endpoint);
+		this.updatePrevState();
+		this.lastEvent.currentState.dragPosition.rebuild(endpoint.left, endpoint.top);
+		// detect drawing object under cursor
+		//  for non draggable objects
+		let l: number = this.state.pointerX + this.state.skipPx,
+			t: number = this.state.pointerY;
 
-		// scroll data
-		if (this.scrollWaveform) {
-			this.scrollDrawObjGroupsF3();
+		let di: number = this.findDrawingObjectIndex(l, t), z1: number;
+		let target: IDObject = di > -1 ? this.doVisible[di] : null;
+		if (target != null && (target.draggable || target.changeable)) {
+			this.lastEvent.type = XDChangeType.Change;
+			this.doVisible[di].owner.drag(actionPoint.left, this.doVisible[di], this.state);
+		} else {
+			this.lastEvent.currentState.scroll(actionPoint.left);
+			this.moveCursor(event);
+			this.lastEvent.type = XDChangeType.Scroll;
+			// scroll data
+			if (this.scrollWaveform) {
+				this.scrollDrawObjGroupsF3();
+			}
 		}
-
+		//this.updateWaveformDrag(this.getEventPosition(event));
+		this.lastEvent.sender = XDChangeSender.Drag;
 		this.pushUpdate();
 		//this.onPrepareDrawings.emit([]);
 	}
 
 	//-------------------------------------------------------------------------------------
-	public performCursorMove(event: any) {
+	public performCursorMove(event: MouseEvent | TouchEvent) {
 		if (!this.state.container) return;
 		this.moveCursor(event);
 		let l: number = this.state.pointerX + this.state.skipPx,
@@ -395,6 +410,19 @@ export class XDProxy {
 		//this.onPrepareDrawings.emit([]);
 	}
 
+	//----------------------------------------------------------------------------------------------
+	private getEventPosition(event: any): XPoint {
+		// TODO: handle device pixel ratio
+		let left: number = 0, top: number = 0;
+		if (event.clientX) {
+			left = event.clientX;
+			top = event.clientY;
+		} else if (event.touches && event.touches[0]) {
+			left = event.touches[0].clientX;
+			top = event.touches[0].clientY;
+		}
+		return new XPoint(left, top);
+	}
 
 
 

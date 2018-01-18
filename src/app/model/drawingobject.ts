@@ -36,9 +36,10 @@ export enum XDOType {
 // Drawing change type
 // -------------------------------------------------------------------------------------------------
 export enum XDOChangeType {
+	Top,
 	None,
 	Left,
-	Top,
+	Move,
 	Width,
 	Height
 }
@@ -74,6 +75,11 @@ export interface IDObject {
 	checkPosition(left: number, top: number): boolean;
 	/** Drawing object state. */
 	state: XDPrimitiveState;
+	/** Enable drag (move).*/
+	draggable: boolean;
+	/** Enable container changes (left, top, width, height). */
+	changeable: boolean;
+
 }
 
 
@@ -103,6 +109,10 @@ export class XDrawingObject implements IDObject {
 	public hud: boolean;
 	/** Drawing object change type. */
 	public changeType: number;
+	/** Enable drag (move).*/
+	draggable: boolean;
+	/** Enable container changes (left, top, width, height). */
+	changeable: boolean;
 
 	public set state(v: XDPrimitiveState) {
 		this.container.state = v;
@@ -124,6 +134,8 @@ export class XDrawingObject implements IDObject {
 		this.hidden = true;
 		this.progress = 100;
 		this.hud = false;
+		this.draggable = false;
+		this.changeable = false;
 		this.changeType = XDOChangeType.None;
 	}
 

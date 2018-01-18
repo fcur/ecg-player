@@ -157,7 +157,8 @@ export class DrawableComponent implements OnInit {
 		//console.info("window:click", event);
 		event.preventDefault();
 		event.stopPropagation();
-		this.onMouseClick(event);
+		//this.onMouseClick(event);
+		this._dp.preformMouseClick(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:dblclick", ["$event"])
@@ -277,24 +278,23 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onDragStart(event: any) {
-		this._dp.startWaveformDrag(this.getEventPosition(event));
+		this._dp.performDragStart(event);
 		//this._dp.state.dragPosition = this.getEventPosition(event);
 	}
 
 	//-------------------------------------------------------------------------------------
 	private onDragMove(event: any) {
 		if (this._dp.state.canDrag) {
-			this._dp.updateWaveformDrag(this.getEventPosition(event));
-			this._dp.performScroll(event);
+			this._dp.performDragMove(event);
 		} else {
 			this._dp.performCursorMove(event);
 		}
 	}
 
 	//-------------------------------------------------------------------------------------
-	private onMouseClick(event: any) {
-		this._dp.preformClick(event);
-	}
+	//private onMouseClick(event: any) {
+	//	this._dp.preformClick(event);
+	//}
 
 	//-------------------------------------------------------------------------------------
 	private canvasPerformanceTest() {
@@ -324,25 +324,13 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private onDragEnd(event: any) {
 		if (this._dp.canDragWaveform) {
-			this._dp.stopWaveformDrag();
+			this._dp.performDragStop();
 		} else {
-			this.onMouseClick(event);
+			this._dp.preformMouseClick(event);
 		}
 	}
 
-	//----------------------------------------------------------------------------------------------
-	private getEventPosition(event: any): XPoint {
-		// TODO: handle device pixel ratio
-		let left: number = 0, top: number = 0;
-		if (event.clientX) {
-			left = event.clientX;
-			top = event.clientY;
-		} else if (event.touches && event.touches[0]) {
-			left = event.touches[0].clientX;
-			top = event.touches[0].clientY;
-		}
-		return new XPoint(left, top);
-	}
+
 
 	//-------------------------------------------------------------------------------------
 	private onReceiveData(v: EcgRecord[]) {
