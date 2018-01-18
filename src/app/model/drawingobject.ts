@@ -67,6 +67,8 @@ export interface IDObject {
 	progress: number;
 	/** Head-up display / part of user innterface. */
 	hud: boolean;
+	/** Always update state. */
+	alwaysUpdate: boolean;
 	/** Update drawing object proxy state. */
 	updateState(dd: DrawingData, pd: XDProxyState);
 	/** Drawing object change type. */
@@ -107,6 +109,8 @@ export class XDrawingObject implements IDObject {
 	public progress: number;
 	/** Head-up display / part of user innterface. */
 	public hud: boolean;
+	/** Always update state. */
+	public alwaysUpdate: boolean;
 	/** Drawing object change type. */
 	public changeType: number;
 	/** Enable drag (move).*/
@@ -134,6 +138,7 @@ export class XDrawingObject implements IDObject {
 		this.hidden = true;
 		this.progress = 100;
 		this.hud = false;
+		this.alwaysUpdate = false;
 		this.draggable = false;
 		this.changeable = false;
 		this.changeType = XDOChangeType.None;

@@ -8,7 +8,7 @@ import {
 	XDCell, XDChangeSender, XDGridMode,
 	XDPSEvent, XDProxyState, XCanvasTool,
 	XMatrixTool, XAnimation, XAnimationType,
-	XDChangeType, XDCoordinates
+	XDChangeType, XDCoordinates, CursorType
 } from "../model/misc";
 import {
 	XDrawingPrimitive, XDPrimitiveState, XLabel,
@@ -355,6 +355,31 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onStateChanges(v: XDPSEvent) {
+		switch (v.cursor) {
+			case CursorType.Default:
+				this._el.nativeElement.style.cursor = "default";
+				break;
+			case CursorType.AllScroll:
+				this._el.nativeElement.style.cursor = "default";
+				break;
+			case CursorType.EResize:
+				this._el.nativeElement.style.cursor = "default";
+				break;
+			case CursorType.NResize:
+				this._el.nativeElement.style.cursor = "default";
+				break;
+			case CursorType.Move:
+				this._el.nativeElement.style.cursor = "default";
+				break;
+			case CursorType.Pointer:
+				this._el.nativeElement.style.cursor = "default";
+				break;
+
+			default:
+				this._el.nativeElement.style.cursor = "default";
+		}
+
+
 		this._ct.clear();
 		this.renderVisibleGroups();
 		this.drawCursotPosition();

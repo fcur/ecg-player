@@ -321,7 +321,7 @@ export class XDProxy {
 		if (!this.state.container) return;
 
 		let endpoint: XPoint = this.getEventPosition(event);
-		let actionPoint: XPoint = this.state.dragPosition.subtract(endpoint);
+		let move: XPoint = this.state.dragPosition.subtract(endpoint);
 		this.updatePrevState();
 		this.lastEvent.currentState.dragPosition.rebuild(endpoint.left, endpoint.top);
 		this.moveCursor(event);
@@ -334,9 +334,11 @@ export class XDProxy {
 		let target: IDObject = di > -1 ? this.doVisible[di] : null;
 		if (target != null && (target.draggable || target.changeable)) {
 			this.lastEvent.type = XDChangeType.Change;
-			this.doVisible[di].owner.drag(actionPoint.left, this.doVisible[di], this.state);
+			// change DO position/size
+			target.owner.drag(move.left, move.top, target, this.state, this.drawingData);
+			this.forceUpdate();
 		} else {
-			this.lastEvent.currentState.scroll(actionPoint.left);
+			this.lastEvent.currentState.scroll(move.left);
 			this.lastEvent.type = XDChangeType.Scroll;
 			// scroll data
 			if (this.scrollWaveform) {
@@ -446,6 +448,16 @@ export class XDProxy {
 			this.doVisible[z1].updateState(this.drawingData, this.state);
 		}
 	}
+
+	//-------------------------------------------------------------------------------------
+	private forceUpdate() {
+		let z1: number;
+		for (z1 = 0; z1 < this.doVisible.length; z1++) {
+			if (!this.doVisible[z1].alwaysUpdate) continue;
+			this.doVisible[z1].updateState(this.drawingData, this.state);
+		}
+	}
+
 
 
 }

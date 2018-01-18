@@ -65,7 +65,7 @@ export interface IDrawingClient {
 	// add mouse/touch events handlers
 	select(obj: IDObject, st: XDProxyState);
 	hover(v: boolean, obj: IDObject, st: XDProxyState);
-	drag(v: number, obj: IDObject, st: XDProxyState);
+	drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData);
 }
 
 
@@ -125,7 +125,7 @@ export class XDrawingClient implements IDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public drag(v: number, obj: IDObject, st: XDProxyState) {
+	public drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData) {
 
 	}
 }
@@ -338,7 +338,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public drag(v: number, obj: IDObject, st: XDProxyState) {
+	public drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData) {
 
 	}
 
@@ -872,11 +872,12 @@ export class DemoRectangleClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public drag(v: number, obj: IDObject, st: XDProxyState) {
+	public drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData) {
 		// TODO check object body and borders
 		// chech draggable && changeable flag
 		// find cursot position on container
 		// move (scroll container) or change position
-		obj.container.left += v;
+		obj.container.left += l;
+		obj.container.top += t;
 	}
 }

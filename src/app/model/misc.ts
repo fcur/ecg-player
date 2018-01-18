@@ -83,6 +83,19 @@ export enum XDChangeType {
 	Change
 }
 
+// -------------------------------------------------------------------------------------------------
+// Drawing change type
+// -------------------------------------------------------------------------------------------------
+export enum CursorType {
+	Default,
+	AllScroll,
+	EResize,
+	NResize,
+	Move,
+	Pointer
+}
+
+
 
 // -------------------------------------------------------------------------------------------------
 // Drawing change event object
@@ -95,6 +108,7 @@ export class XDPSEvent {
 
 	public sender: XDChangeSender;
 	public type: XDChangeType;
+	public cursor: CursorType;
 	public timeStamp: number;
 	public count: number;
 
@@ -119,6 +133,7 @@ export class XDPSEvent {
 	//-------------------------------------------------------------------------------------------------
 	public reset() {
 		this.count = 0;
+		this.cursor = CursorType.Default;
 		this._currentState = new XDProxyState();
 		this._previousState = new XDProxyState();
 		this.timeStamp = Date.now();
