@@ -806,10 +806,10 @@ export class DrawableComponent implements OnInit {
 		this._ct.saveState();
 		this._ct.clipRect(this._dp.state.container);
 		//this._targRectClient
-		let a: XPoint = new XPoint(obj.container.minOx - this._dp.state.skipPx, obj.container.minOy),
-			b: XPoint = new XPoint(obj.container.maxOx - this._dp.state.skipPx, obj.container.minOy),
-			c: XPoint = new XPoint(obj.container.maxOx - this._dp.state.skipPx, obj.container.maxOy),
-			d: XPoint = new XPoint(obj.container.minOx - this._dp.state.skipPx, obj.container.maxOy);
+		let a: XPoint = new XPoint(obj.container.minOx - this._dp.state.minPx + this._dp.state.container.left, obj.container.minOy),
+			b: XPoint = new XPoint(obj.container.maxOx - this._dp.state.minPx + this._dp.state.container.left, obj.container.minOy),
+			c: XPoint = new XPoint(obj.container.maxOx - this._dp.state.minPx + this._dp.state.container.left, obj.container.maxOy),
+			d: XPoint = new XPoint(obj.container.minOx - this._dp.state.minPx + this._dp.state.container.left, obj.container.maxOy);
 
 		this._mt.applyForPoints(a, b, c, d);
 		//console.log(a, b, c, d);

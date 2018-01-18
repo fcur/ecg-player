@@ -317,6 +317,39 @@ export class XDProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
+	public performDragMove(event: MouseEvent | TouchEvent) {
+		if (!this.state.container) return;
+
+		let endpoint: XPoint = this.getEventPosition(event);
+		let actionPoint: XPoint = this.state.dragPosition.subtract(endpoint);
+		this.updatePrevState();
+		this.lastEvent.currentState.dragPosition.rebuild(endpoint.left, endpoint.top);
+		this.moveCursor(event);
+		// detect drawing object under cursor
+		//  for non draggable objects
+		let l: number = this.state.pointerX + this.state.skipPx,
+			t: number = this.state.pointerY;
+
+		let di: number = this.findDrawingObjectIndex(l, t), z1: number;
+		let target: IDObject = di > -1 ? this.doVisible[di] : null;
+		if (target != null && (target.draggable || target.changeable)) {
+			this.lastEvent.type = XDChangeType.Change;
+			this.doVisible[di].owner.drag(actionPoint.left, this.doVisible[di], this.state);
+		} else {
+			this.lastEvent.currentState.scroll(actionPoint.left);
+			this.lastEvent.type = XDChangeType.Scroll;
+			// scroll data
+			if (this.scrollWaveform) {
+				this.scrollDrawObjGroupsF3();
+			}
+		}
+		//this.updateWaveformDrag(this.getEventPosition(event));
+		this.lastEvent.sender = XDChangeSender.Drag;
+		this.pushUpdate();
+		//this.onPrepareDrawings.emit([]);
+	}
+
+	//-------------------------------------------------------------------------------------
 	public performDragStop() {
 		this.lastEvent.previousState.resetDrag();
 		this.lastEvent.currentState.resetDrag();
@@ -357,39 +390,6 @@ export class XDProxy {
 			r = z1;
 		}
 		return r;
-	}
-
-	//-------------------------------------------------------------------------------------
-	public performDragMove(event: MouseEvent | TouchEvent) {
-		if (!this.state.container) return;
-
-		let endpoint: XPoint = this.getEventPosition(event);
-		let actionPoint: XPoint = this.state.dragPosition.subtract(endpoint);
-		this.updatePrevState();
-		this.lastEvent.currentState.dragPosition.rebuild(endpoint.left, endpoint.top);
-		// detect drawing object under cursor
-		//  for non draggable objects
-		let l: number = this.state.pointerX + this.state.skipPx,
-			t: number = this.state.pointerY;
-
-		let di: number = this.findDrawingObjectIndex(l, t), z1: number;
-		let target: IDObject = di > -1 ? this.doVisible[di] : null;
-		if (target != null && (target.draggable || target.changeable)) {
-			this.lastEvent.type = XDChangeType.Change;
-			this.doVisible[di].owner.drag(actionPoint.left, this.doVisible[di], this.state);
-		} else {
-			this.lastEvent.currentState.scroll(actionPoint.left);
-			this.moveCursor(event);
-			this.lastEvent.type = XDChangeType.Scroll;
-			// scroll data
-			if (this.scrollWaveform) {
-				this.scrollDrawObjGroupsF3();
-			}
-		}
-		//this.updateWaveformDrag(this.getEventPosition(event));
-		this.lastEvent.sender = XDChangeSender.Drag;
-		this.pushUpdate();
-		//this.onPrepareDrawings.emit([]);
 	}
 
 	//-------------------------------------------------------------------------------------
