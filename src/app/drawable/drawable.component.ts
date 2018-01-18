@@ -330,8 +330,6 @@ export class DrawableComponent implements OnInit {
 		}
 	}
 
-
-
 	//-------------------------------------------------------------------------------------
 	private onReceiveData(v: EcgRecord[]) {
 		if (!v || !Array.isArray(v) || v.length === 0) return;
@@ -360,26 +358,29 @@ export class DrawableComponent implements OnInit {
 				this._el.nativeElement.style.cursor = "default";
 				break;
 			case CursorType.AllScroll:
-				this._el.nativeElement.style.cursor = "default";
+				this._el.nativeElement.style.cursor = "all-scroll";
 				break;
 			case CursorType.EResize:
-				this._el.nativeElement.style.cursor = "default";
+				this._el.nativeElement.style.cursor = "e-resize";
 				break;
 			case CursorType.NResize:
-				this._el.nativeElement.style.cursor = "default";
+				this._el.nativeElement.style.cursor = "n-resize";
 				break;
 			case CursorType.Move:
-				this._el.nativeElement.style.cursor = "default";
+				this._el.nativeElement.style.cursor = "move";
 				break;
 			case CursorType.Pointer:
-				this._el.nativeElement.style.cursor = "default";
+				this._el.nativeElement.style.cursor = "pointer";
 				break;
-
+			case CursorType.Grab:
+				this._el.nativeElement.style.cursor = "grab";
+				break;
+			case CursorType.Grabing:
+				this._el.nativeElement.style.cursor = "grabbing";
+				break;
 			default:
 				this._el.nativeElement.style.cursor = "default";
 		}
-
-
 		this._ct.clear();
 		this.renderVisibleGroups();
 		this.drawCursotPosition();

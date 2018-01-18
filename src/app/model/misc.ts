@@ -92,7 +92,9 @@ export enum CursorType {
 	EResize,
 	NResize,
 	Move,
-	Pointer
+	Pointer,
+	Grab,
+	Grabing
 }
 
 

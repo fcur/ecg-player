@@ -2,7 +2,7 @@ import { EventEmitter } from "@angular/core";
 import {
 	XDPSEvent, XDProxyState, XDChangeSender, XAnimation,
 	XAnimationType, XCanvasTool, XDCell, XDChangeType,
-	XDCoordinates, XDGridMode, XMatrixTool
+	XDCoordinates, XDGridMode, XMatrixTool, CursorType
 } from "./misc";
 import {
 	BeatsDrawingClient, IDrawingClient, SignalDrawingClient,
@@ -314,6 +314,8 @@ export class XDProxy {
 		let v: XPoint = this.getEventPosition(event);
 		this.lastEvent.previousState.dragPosition.rebuild(v.left, v.top);
 		this.lastEvent.currentState.dragPosition.rebuild(v.left, v.top);
+		this.lastEvent.cursor = CursorType.Grab;
+		this.pushUpdate();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -334,12 +336,14 @@ export class XDProxy {
 		let target: IDObject = di > -1 ? this.doVisible[di] : null;
 		if (target != null && (target.draggable || target.changeable)) {
 			this.lastEvent.type = XDChangeType.Change;
+			this.lastEvent.cursor = CursorType.Move;
 			// change DO position/size
 			target.owner.drag(move.left, move.top, target, this.state, this.drawingData);
 			this.forceUpdate();
 		} else {
 			this.lastEvent.currentState.scroll(move.left);
 			this.lastEvent.type = XDChangeType.Scroll;
+			this.lastEvent.cursor = CursorType.AllScroll;
 			// scroll data
 			if (this.scrollWaveform) {
 				this.scrollDrawObjGroupsF3();
@@ -353,8 +357,10 @@ export class XDProxy {
 
 	//-------------------------------------------------------------------------------------
 	public performDragStop() {
+		this.lastEvent.cursor = CursorType.Grab;
 		this.lastEvent.previousState.resetDrag();
 		this.lastEvent.currentState.resetDrag();
+		this.pushUpdate();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -402,12 +408,14 @@ export class XDProxy {
 			t: number = this.state.pointerY;
 
 		let di: number = this.findDrawingObjectIndex(l, t), z1: number;
+		let draggable: boolean = di > -1 ? this.doVisible[di].draggable : false;
 		for (z1 = 0; z1 < this.doVisible.length; z1++) {
 			this.doVisible[z1].owner.hover(z1 === di, this.doVisible[z1], this.state);
 		}
 
 		this.lastEvent.type = XDChangeType.ForceRefresh;
 		this.lastEvent.sender = XDChangeSender.MouseHover;
+		this.lastEvent.cursor = draggable ? CursorType.Move : (di > -1 ? CursorType.Pointer : CursorType.Grab);
 		this.pushUpdate();
 		//this.onPrepareDrawings.emit([]);
 	}
