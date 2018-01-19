@@ -17,7 +17,7 @@ import {
 	XDPSEvent, XDChangeSender, XDCoordinates,
 	XDGridMode, XAnimation, XAnimationType,
 	XDProxyState, XCanvasTool, XDCell,
-	XDChangeType, XMatrixTool
+	XDChangeType, XMatrixTool, CursorType
 } from "./misc";
 import {
 	XDrawingPrimitive, XDPrimitiveState, XLabel, XPeak,
@@ -852,8 +852,8 @@ export class DemoRectangleClient extends XDrawingClient {
 		this.height = 123;
 		this.originX = 0;
 		this.originY = 0;
-		this._cursThrInner = 2;
-		this._cursThrOut = 5;
+		this._cursThrInner = 1;
+		this._cursThrOut = 1;
 		this.strokeStyle = "red";
 		this.figure = new XRectangle(this.left, this.top, this.width, this.height);
 	}
@@ -875,12 +875,12 @@ export class DemoRectangleClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public select(obj: IDObject, st: XDProxyState) {
+	public select(obj: DemoRectDrawingObject, st: XDProxyState) {
 
 	}
 
 	//-------------------------------------------------------------------------------------
-	public hover(v: boolean, obj: IDObject, st: XDProxyState) {
+	public hover(v: boolean, obj: DemoRectDrawingObject, st: XDProxyState) {
 		if (!v) return;
 		let left: number = st.pointerX + st.skipPx;
 		let top: number = st.pointerY;
@@ -896,54 +896,150 @@ export class DemoRectangleClient extends XDrawingClient {
 		onTop = top - c.top < this._cursThrInner + this._cursThrOut;
 		onBottom = c.bottom - top < this._cursThrInner + this._cursThrOut;
 
+		// prepare changeState
+		let changeType: number = 0;
+		if (onLeft) changeType |= XDOChangeType.Left;
+		if (onRight) changeType |= XDOChangeType.Width;
+		if (onTop) changeType |= XDOChangeType.Top;
+		if (onBottom) changeType |= XDOChangeType.Height;
 
-		if (onLeft || onRight || onTop || onBottom) {
-			console.log(`${onLeft ? " left" : ""}${onRight ? " right" : ""}${onTop ? " top" : ""}${onBottom ? " bottom" : ""}`);
+		if (!onLeft && !onRight && !onTop && !onBottom) changeType |= XDOChangeType.Move;
+		// parse changeState
+		let stateText: string;
+		switch (changeType) {
+			case XDOChangeType.Default:
+				stateText = "default";
+				break;
+			case XDOChangeType.Left:
+				st.cursor = CursorType.EResize;
+				stateText = "left";
+				break;
+			case XDOChangeType.Width:
+				st.cursor = CursorType.EResize;
+				stateText = "right";
+				break;
+			case XDOChangeType.Top:
+				st.cursor = CursorType.NResize;
+				stateText = "top";
+				break;
+			case XDOChangeType.Height:
+				st.cursor = CursorType.NResize;
+				stateText = "bottom";
+				break;
+			case XDOChangeType.Left | XDOChangeType.Top:
+				st.cursor = CursorType.NwResize;
+				stateText = "left-top";
+				break;
+			case XDOChangeType.Width | XDOChangeType.Top:
+				st.cursor = CursorType.NeResize;
+				stateText = "right-top";
+				break;
+			case XDOChangeType.Left | XDOChangeType.Height:
+				st.cursor = CursorType.NeResize;
+				stateText = "left-bottom";
+				break;
+			case XDOChangeType.Width | XDOChangeType.Height:
+				st.cursor = CursorType.NwResize;
+				stateText = "right-bottom";
+				break;
+			case XDOChangeType.Move:
+				stateText = "move";
+				break;
+			default:
+				stateText = "none";
 		}
-		
+		obj.changeType = changeType;
+		//console.log(stateText);
+
+		//if (onLeft || onRight || onTop || onBottom) {
+		//	console.log(`${onLeft ? " left" : ""}${onRight ? " right" : ""}${onTop ? " top" : ""}${onBottom ? " bottom" : ""}`);
+		//}
+
 	}
 
 	//-------------------------------------------------------------------------------------
 	public drag(l: number, t: number, obj: DemoRectDrawingObject, st: XDProxyState, allData: DrawingData) {
-		// TODO check object body and borders
-		// chech draggable && changeable flag
-		// find cursot position on container
-		// move (scroll container) or change position
-
-		let left: number = st.pointerX + st.skipPx;
-		let top: number = st.pointerY;
-
-		let onLeft: boolean = false,
-			onRight: boolean = false,
-			onTop: boolean = false,
-			onBottom: boolean = false,
+		let stop: number = 0,
+			mask: number = 1,
 			c = obj.container,
-			f: XRectangle = obj.figure;
+			f: XRectangle = obj.figure,
+			ct: number = obj.changeType;
 
-		onLeft = left - c.left < this._cursThrInner + this._cursThrOut;
-		onRight = c.right - left < this._cursThrInner + this._cursThrOut;
-		onTop = top - c.top < this._cursThrInner + this._cursThrOut;
-		onBottom = c.bottom - top < this._cursThrInner + this._cursThrOut;
-
-		//console.log(l, t);
-
-		if (!onLeft && !onRight && !onTop && !onBottom) {
-			c.left += l; //f.left += l;
-			c.top += t; //f.top += t;
-		} else {
-			if (onLeft) {
-				c.left += l; //f.left += l;
-				c.width += -l; f.width += -l;
-			} else if (onRight) {
-				c.width += l; f.width += l;
+		while (ct != 0 && stop < 20) {
+			stop++;
+			switch (ct & mask) {
+				case XDOChangeType.Default:
+					break;
+				case XDOChangeType.Left:
+					c.left += l;
+					c.width += -l; f.width += -l;
+					break;
+				case XDOChangeType.Width:
+					c.width += l; f.width += l;
+					break;
+				case XDOChangeType.Top:
+					c.top += t;
+					c.height += -t; f.height += -t;
+					break;
+				case XDOChangeType.Height:
+					c.height += t; f.height += t;
+					break;
+				case XDOChangeType.Move:
+					c.left += l;
+					c.top += t;
+					break;
 			}
-
-			if (onTop) {
-				c.top += t; //f.top += t;
-				c.height += -t; f.height += -t;
-			} else if (onBottom) {
-				c.height += t; f.height += t;
-			}
+			ct &= ~mask;
+			mask <<= 1;
 		}
+
+		//switch (obj.changeType) {
+		//	case XDOChangeType.Default:
+		//		break;
+		//	case XDOChangeType.Left:
+		//		c.left += l;
+		//		c.width += -l; f.width += -l;
+		//		break;
+		//	case XDOChangeType.Width:
+		//		c.width += l; f.width += l;
+		//		//st.cursor = CursorType.EResize;
+		//		break;
+		//	case XDOChangeType.Top:
+		//		c.top += t;
+		//		c.height += -t; f.height += -t;
+		//		break;
+		//	case XDOChangeType.Height:
+		//		c.height += t; f.height += t;
+		//		break;
+		//	case XDOChangeType.Left | XDOChangeType.Top:
+		//		c.left += l;
+		//		c.width += -l; f.width += -l;
+
+		//		c.top += t;
+		//		c.height += -t; f.height += -t;
+		//		break;
+		//	case XDOChangeType.Width | XDOChangeType.Top:
+		//		c.width += l; f.width += l;
+
+		//		c.top += t;
+		//		c.height += -t; f.height += -t;
+		//		break;
+		//	case XDOChangeType.Left | XDOChangeType.Height:
+		//		c.left += l;
+		//		c.width += -l; f.width += -l;
+
+		//		c.height += t; f.height += t;
+		//		break;
+		//	case XDOChangeType.Width | XDOChangeType.Height:
+		//		c.width += l; f.width += l;
+
+		//		c.height += t; f.height += t;
+		//		break;
+		//	case XDOChangeType.Move:
+		//		c.left += l;
+		//		c.top += t;
+		//		break;
+		//}
+
 	}
 }

@@ -360,6 +360,12 @@ export class DrawableComponent implements OnInit {
 			case CursorType.AllScroll:
 				this._el.nativeElement.style.cursor = "all-scroll";
 				break;
+			case CursorType.NeResize:
+				this._el.nativeElement.style.cursor = "ne-resize";
+				break;
+			case CursorType.NwResize:
+				this._el.nativeElement.style.cursor = "nw-resize";
+				break;
 			case CursorType.EResize:
 				this._el.nativeElement.style.cursor = "e-resize";
 				break;
@@ -834,25 +840,28 @@ export class DrawableComponent implements OnInit {
 
 		this._ct.saveState();
 		this._ct.clipRect(this._dp.state.container);
+		this._ct.ctx.translate(this._dp.state.container.left, this._dp.state.container.top);
+
+		//this._ct.ctx.beginPath();
+		//this._ct.makeLine(0, 0, this._demoRectClient.left, this._demoRectClient.top);
+		//this._ct.ctx.stroke();
 
 		//this._targRectClient
 		let fa: XPoint = new XPoint(p.minOx + f.minOx - l, p.minOy + f.minOy),
 			fb: XPoint = new XPoint(p.minOx + f.maxOx - l, p.minOy + f.minOy),
 			fc: XPoint = new XPoint(p.minOx + f.maxOx - l, p.minOy + f.maxOy),
-			fd: XPoint = new XPoint(p.minOx + f.minOx - l, p.minOy + f.maxOy),
-
-			pa: XPoint = new XPoint(p.minOx - l, p.minOy),
-			pb: XPoint = new XPoint(p.maxOx - l, p.minOy),
-			pc: XPoint = new XPoint(p.maxOx - l, p.maxOy),
-			pd: XPoint = new XPoint(p.minOx - l, p.maxOy);
-
+			fd: XPoint = new XPoint(p.minOx + f.minOx - l, p.minOy + f.maxOy);
 		//this._mt.applyForPoints(fa, fb, fc, fd); // zoom not connected
 		//console.log(a, b, c, d);
 		this._ct.ctx.strokeStyle = this._demoRectClient.strokeStyle;
 		this._ct.strokePointsPath(fa, fb, fc, fd);
 
-		this._ct.ctx.strokeStyle = "blue";
-		this._ct.strokePointsPath(pa, pb, pc, pd);
+		let pa: XPoint = new XPoint(p.minOx - l, p.minOy),
+			pb: XPoint = new XPoint(p.maxOx - l, p.minOy),
+			pc: XPoint = new XPoint(p.maxOx - l, p.maxOy),
+			pd: XPoint = new XPoint(p.minOx - l, p.maxOy);
+		//this._ct.ctx.strokeStyle = "blue";
+		//this._ct.strokePointsPath(pa, pb, pc, pd);
 		this._ct.restoreState();
 
 	}

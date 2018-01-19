@@ -343,7 +343,7 @@ export class XDProxy {
 
 		if (target != null && (target.draggable || target.changeable)) {
 			this.lastEvent.type = XDChangeType.Change;
-			this.lastEvent.cursor = CursorType.Move;
+			//this.lastEvent.cursor = CursorType.Move;
 			// change DO position/size
 			target.owner.drag(move.left, move.top, target, this.state, this.drawingData);
 			this.forceUpdate();
@@ -421,7 +421,6 @@ export class XDProxy {
 		let l: number = this.state.pointerX + this.state.skipPx,
 			t: number = this.state.pointerY;
 		//console.log(l, t);
-
 		let di: number = this.findDrawingObjectIndex(l, t),
 			z1: number = 0,
 			target: IDObject = null,
@@ -435,16 +434,13 @@ export class XDProxy {
 			this.lastEvent.currentState.target = null;
 		}
 
-
+		this.lastEvent.cursor = draggable ? CursorType.Move : (di > -1 ? CursorType.Pointer : CursorType.Grab);
 		for (; z1 < this.doVisible.length; z1++) {
 			this.doVisible[z1].owner.hover(z1 === di, this.doVisible[z1], this.state);
 		}
 
-
-
 		this.lastEvent.type = XDChangeType.ForceRefresh;
 		this.lastEvent.sender = XDChangeSender.MouseHover;
-		this.lastEvent.cursor = draggable ? CursorType.Move : (di > -1 ? CursorType.Pointer : CursorType.Grab);
 		this.pushUpdate();
 	}
 

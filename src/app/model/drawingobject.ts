@@ -36,12 +36,12 @@ export enum XDOType {
 // Drawing change type
 // -------------------------------------------------------------------------------------------------
 export enum XDOChangeType {
-	Top,
-	None,
-	Left,
-	Move,
-	Width,
-	Height
+	Default = 0,
+	Top = 2,
+	Left = 4,
+	Move = 16,
+	Width = 32,
+	Height = 64
 }
 
 
@@ -142,7 +142,7 @@ export class XDrawingObject implements IDObject {
 		this.alwaysUpdate = false;
 		this.draggable = false;
 		this.changeable = false;
-		this.changeType = XDOChangeType.None;
+		this.changeType = XDOChangeType.Default;
 	}
 
 	//-------------------------------------------------------------------------------------

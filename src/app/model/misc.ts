@@ -94,7 +94,9 @@ export enum CursorType {
 	Move,
 	Pointer,
 	Grab,
-	Grabing
+	Grabing,
+	NeResize,
+	NwResize
 }
 
 
@@ -108,10 +110,8 @@ export class XDPSEvent {
 	private _currentState: XDProxyState;
 	private _previousState: XDProxyState;
 
-	public sender: XDChangeSender;
-	public type: XDChangeType;
-	public cursor: CursorType;
-	public timeStamp: number;
+
+
 	public count: number;
 
 	//-------------------------------------------------------------------------------------------------
@@ -126,6 +126,38 @@ export class XDPSEvent {
 	public get previousState(): XDProxyState {
 		return this._previousState;
 	}
+	//-------------------------------------------------------------------------------------------------
+	public get sender(): XDChangeSender {
+		return this._currentState.sender;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public set sender(v: XDChangeSender) {
+		this._currentState.sender = v;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get type(): XDChangeType {
+		return this._currentState.type;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public set type(v: XDChangeType) {
+		this._currentState.type = v;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get cursor(): CursorType {
+		return this._currentState.cursor;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public set cursor(v: CursorType) {
+		this._currentState.cursor = v;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get timeStamp(): number {
+		return this._currentState.timeStamp;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public set timeStamp(v: number) {
+		this._currentState.timeStamp = v;
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	constructor() {
@@ -134,10 +166,10 @@ export class XDPSEvent {
 
 	//-------------------------------------------------------------------------------------------------
 	public reset() {
-		this.count = 0;
-		this.cursor = CursorType.Default;
 		this._currentState = new XDProxyState();
 		this._previousState = new XDProxyState();
+		this.count = 0;
+		this.cursor = CursorType.Default;
 		this.timeStamp = Date.now();
 	}
 
@@ -296,6 +328,12 @@ export class XDProxyState {
 	/** Last scroll movement delta. */
 	public movDelta: number;
 
+	public sender: XDChangeSender;
+	public type: XDChangeType;
+	public cursor: CursorType;
+	public timeStamp: number;
+
+
 	// TODO: add surface dimentions getter
 
 	//-------------------------------------------------------------------------------------------------
@@ -370,7 +408,7 @@ export class XDProxyState {
 	public resetDrag() {
 		this._dragPosition.rebuild(-1, -1);
 		if (this.target) {
-			this.target.changeType = XDOChangeType.None;
+			this.target.changeType = XDOChangeType.Default;
 		}
 		this.target = null;
 	}
@@ -390,6 +428,7 @@ export class XDProxyState {
 
 	//-------------------------------------------------------------------------------------------------
 	public savePointerPosition(x: number, y: number) {
+		//console.log(x, y);
 		this.pointerX = x;
 		this.pointerY = y;
 	}
