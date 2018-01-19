@@ -852,8 +852,8 @@ export class DemoRectangleClient extends XDrawingClient {
 		this.height = 123;
 		this.originX = 0;
 		this.originY = 0;
-		this._cursThrInner = 5;
-		this._cursThrOut = 2;
+		this._cursThrInner = 2;
+		this._cursThrOut = 5;
 		this.strokeStyle = "red";
 		this.figure = new XRectangle(this.left, this.top, this.width, this.height);
 	}
@@ -868,8 +868,8 @@ export class DemoRectangleClient extends XDrawingClient {
 		obj.container = new XRectangle(
 			this.left - this._cursThrOut,
 			this.top - this._cursThrOut,
-			this.width + this._cursThrOut,
-			this.height + this._cursThrOut);
+			this.width + this._cursThrOut * 2,
+			this.height + this._cursThrOut * 2);
 		obj.container.zIndex = this.zIndex;
 		return [obj];
 	}
@@ -896,7 +896,11 @@ export class DemoRectangleClient extends XDrawingClient {
 		onTop = top - c.top < this._cursThrInner + this._cursThrOut;
 		onBottom = c.bottom - top < this._cursThrInner + this._cursThrOut;
 
-		//console.log(left, top, `l=${onLeft} r=${onRight} t=${onTop} b=${onBottom}`);
+
+		if (onLeft || onRight || onTop || onBottom) {
+			console.log(`${onLeft ? " left" : ""}${onRight ? " right" : ""}${onTop ? " top" : ""}${onBottom ? " bottom" : ""}`);
+		}
+		
 	}
 
 	//-------------------------------------------------------------------------------------

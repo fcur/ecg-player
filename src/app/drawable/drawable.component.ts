@@ -104,7 +104,7 @@ export class DrawableComponent implements OnInit {
 	@HostListener("window:mousemove", ["$event"])
 	private onWindowMousemove(event: MouseEvent) {
 		//console.info("window:mousemove", event);
-		this._skipClick = this._skipClick|| event.movementX != 0 && event.movementY != 0;
+		this._skipClick = this._skipClick || event.movementX != 0 && event.movementY != 0;
 		event.preventDefault();
 		event.stopPropagation();
 		this.onDragMove(event);
@@ -834,16 +834,25 @@ export class DrawableComponent implements OnInit {
 
 		this._ct.saveState();
 		this._ct.clipRect(this._dp.state.container);
-		//this._targRectClient
-		let a: XPoint = new XPoint(p.minOx + f.minOx - l + this._dp.state.container.left, p.minOy + f.minOy + this._dp.state.container.top),
-			b: XPoint = new XPoint(p.minOx + f.maxOx - l + this._dp.state.container.left, p.minOy +f.minOy + this._dp.state.container.top),
-			c: XPoint = new XPoint(p.minOx + f.maxOx - l + this._dp.state.container.left, p.minOy +f.maxOy + this._dp.state.container.top),
-			d: XPoint = new XPoint(p.minOx + f.minOx - l + this._dp.state.container.left, p.minOy +f.maxOy + this._dp.state.container.top);
 
-		this._mt.applyForPoints(a, b, c, d);
+		//this._targRectClient
+		let fa: XPoint = new XPoint(p.minOx + f.minOx - l, p.minOy + f.minOy),
+			fb: XPoint = new XPoint(p.minOx + f.maxOx - l, p.minOy + f.minOy),
+			fc: XPoint = new XPoint(p.minOx + f.maxOx - l, p.minOy + f.maxOy),
+			fd: XPoint = new XPoint(p.minOx + f.minOx - l, p.minOy + f.maxOy),
+
+			pa: XPoint = new XPoint(p.minOx - l, p.minOy),
+			pb: XPoint = new XPoint(p.maxOx - l, p.minOy),
+			pc: XPoint = new XPoint(p.maxOx - l, p.maxOy),
+			pd: XPoint = new XPoint(p.minOx - l, p.maxOy);
+
+		//this._mt.applyForPoints(fa, fb, fc, fd); // zoom not connected
 		//console.log(a, b, c, d);
 		this._ct.ctx.strokeStyle = this._demoRectClient.strokeStyle;
-		this._ct.strokePointsPath(a, b, c, d);
+		this._ct.strokePointsPath(fa, fb, fc, fd);
+
+		this._ct.ctx.strokeStyle = "blue";
+		this._ct.strokePointsPath(pa, pb, pc, pd);
 		this._ct.restoreState();
 
 	}

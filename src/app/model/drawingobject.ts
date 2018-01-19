@@ -55,6 +55,7 @@ export interface IDObject {
 	owner: XDrawingClient;
 	/** Object type. */
 	type: XDOType;
+
 	/** Container of drawing object (required). */
 	container: XRectangle;
 	/** Drawing object assigned cell index. -1: fill cells container */

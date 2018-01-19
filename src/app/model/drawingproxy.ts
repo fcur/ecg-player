@@ -420,6 +420,7 @@ export class XDProxy {
 		this.moveCursor(event);
 		let l: number = this.state.pointerX + this.state.skipPx,
 			t: number = this.state.pointerY;
+		//console.log(l, t);
 
 		let di: number = this.findDrawingObjectIndex(l, t),
 			z1: number = 0,
@@ -434,9 +435,12 @@ export class XDProxy {
 			this.lastEvent.currentState.target = null;
 		}
 
+
 		for (; z1 < this.doVisible.length; z1++) {
 			this.doVisible[z1].owner.hover(z1 === di, this.doVisible[z1], this.state);
 		}
+
+
 
 		this.lastEvent.type = XDChangeType.ForceRefresh;
 		this.lastEvent.sender = XDChangeSender.MouseHover;

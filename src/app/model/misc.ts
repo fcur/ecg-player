@@ -7,7 +7,7 @@ import {
 	CursorDrawingObject, GridCellDrawingObject, PeakDrawingObject,
 	XDOType, AnsDrawingObject, BeatsRangeDrawingObject,
 	CellDrawingObject, ClPointDrawingObject, XDrawingObject,
-	IDObject
+	IDObject, DemoRectDrawingObject, XDOChangeType
 } from "./drawingobject";
 import {
 	BeatsDrawingClient, IDrawingClient, ClickablePointDrawingClient,
@@ -369,6 +369,9 @@ export class XDProxyState {
 	//-------------------------------------------------------------------------------------------------
 	public resetDrag() {
 		this._dragPosition.rebuild(-1, -1);
+		if (this.target) {
+			this.target.changeType = XDOChangeType.None;
+		}
 		this.target = null;
 	}
 
