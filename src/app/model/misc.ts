@@ -263,7 +263,8 @@ export class XDProxyState {
 
 	public screen: XRectangle;
 	public canvas: XRectangle;
-
+	/** Target drawing object under cursor. */
+	public target: IDObject;
 	/** Pixels in millimeter MUL coefficient. */
 	public apxmm: number;
 	/** Maximum declared sample value. */
@@ -340,6 +341,7 @@ export class XDProxyState {
 	constructor() {
 		this._dragPosition = new XPoint(-1, -1);
 		this.devMode = true;
+		this.target = null;
 		this.leadsCodes = [];
 		this.onScrollBs = new BehaviorSubject(NaN);
 		this.timestamp = Date.now();            // drawing proxy state creation time
@@ -449,7 +451,7 @@ export class XDProxyState {
 	}
 
 
-	
+
 
 }
 

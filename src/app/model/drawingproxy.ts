@@ -40,8 +40,7 @@ export class XDProxy {
 
 	public drawingData: DrawingData;
 	public onChangeState: EventEmitter<XDPSEvent>;
-
-	//public onPrepareDrawings: EventEmitter<IDObject[][]>;
+	
 	//public drawingObjects: IDrawingObject[];
 	private _clients: IDrawingClient[]; // F2, F3
 
@@ -91,11 +90,13 @@ export class XDProxy {
 
 	//-------------------------------------------------------------------------------------------------
 	public updatePrevState() {
+		let p: XDProxyState = this.lastEvent.previousState;
+		let c: XDProxyState = this.lastEvent.currentState;
+
 		// TODO: merge currnt&previous proxy states
-		this.lastEvent.previousState.skipPx = this.lastEvent.currentState.skipPx;
-		this.lastEvent.previousState.dragPosition.rebuild(
-			this.lastEvent.currentState.dragPosition.left,
-			this.lastEvent.currentState.dragPosition.top);
+		p.skipPx = c.skipPx;
+		p.dragPosition.rebuild(c.dragPosition.left, c.dragPosition.top);
+		p.target = c.target;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -118,7 +119,6 @@ export class XDProxy {
 		this.doHidRight = [];
 		this.drawingData = new DrawingData();
 		this.onChangeState = new EventEmitter<XDPSEvent>();
-		//this.onPrepareDrawings = new EventEmitter<IDObject[][]>();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -312,7 +312,8 @@ export class XDProxy {
 	//-------------------------------------------------------------------------------------
 	public performDragStart(event: MouseEvent | TouchEvent) {
 		let v: XPoint = this.getEventPosition(event);
-		this.lastEvent.previousState.dragPosition.rebuild(v.left, v.top);
+		this.updatePrevState();
+		//this.lastEvent.previousState.dragPosition.rebuild(v.left, v.top);
 		this.lastEvent.currentState.dragPosition.rebuild(v.left, v.top);
 		this.lastEvent.cursor = CursorType.Grab;
 		this.pushUpdate();
@@ -343,7 +344,7 @@ export class XDProxy {
 		} else {
 			this.lastEvent.currentState.scroll(move.left);
 			this.lastEvent.type = XDChangeType.Scroll;
-			this.lastEvent.cursor = CursorType.AllScroll;
+			this.lastEvent.cursor = CursorType.EResize;
 			// scroll data
 			if (this.scrollWaveform) {
 				this.scrollDrawObjGroupsF3();
@@ -352,7 +353,6 @@ export class XDProxy {
 		//this.updateWaveformDrag(this.getEventPosition(event));
 		this.lastEvent.sender = XDChangeSender.Drag;
 		this.pushUpdate();
-		//this.onPrepareDrawings.emit([]);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -403,13 +403,25 @@ export class XDProxy {
 	//-------------------------------------------------------------------------------------
 	public performCursorMove(event: MouseEvent | TouchEvent) {
 		if (!this.state.container) return;
+		this.updatePrevState();
 		this.moveCursor(event);
 		let l: number = this.state.pointerX + this.state.skipPx,
 			t: number = this.state.pointerY;
 
-		let di: number = this.findDrawingObjectIndex(l, t), z1: number;
-		let draggable: boolean = di > -1 ? this.doVisible[di].draggable : false;
-		for (z1 = 0; z1 < this.doVisible.length; z1++) {
+		let di: number = this.findDrawingObjectIndex(l, t),
+			z1: number = 0,
+			target: IDObject = null,
+			draggable: boolean = false;
+
+		if (di > -1) {
+			target = this.doVisible[di];
+			draggable = target.draggable;
+			this.lastEvent.currentState.target = target;
+		} else {
+			this.lastEvent.currentState.target = null;
+		}
+
+		for (; z1 < this.doVisible.length; z1++) {
 			this.doVisible[z1].owner.hover(z1 === di, this.doVisible[z1], this.state);
 		}
 
@@ -417,7 +429,6 @@ export class XDProxy {
 		this.lastEvent.sender = XDChangeSender.MouseHover;
 		this.lastEvent.cursor = draggable ? CursorType.Move : (di > -1 ? CursorType.Pointer : CursorType.Grab);
 		this.pushUpdate();
-		//this.onPrepareDrawings.emit([]);
 	}
 
 	//----------------------------------------------------------------------------------------------
@@ -433,9 +444,6 @@ export class XDProxy {
 		}
 		return new XPoint(left, top);
 	}
-
-
-
 
 	//-------------------------------------------------------------------------------------
 	private prepareCursor(event: any) {
