@@ -124,7 +124,7 @@ export class DrawableComponent implements OnInit {
 		//console.info("window:mouseleave", event);
 		event.preventDefault();
 		event.stopPropagation();
-		this.onDragEnd(event);
+		//this.onDragEnd(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mouseout", ["$event"])
@@ -132,7 +132,7 @@ export class DrawableComponent implements OnInit {
 		//console.info("window:mouseout", event);
 		event.preventDefault();
 		event.stopPropagation();
-		this.onDragEnd(event);
+		//this.onDragEnd(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mouseup", ["$event"])
@@ -158,7 +158,7 @@ export class DrawableComponent implements OnInit {
 		event.preventDefault();
 		event.stopPropagation();
 		//this.onMouseClick(event);
-		this._dp.preformMouseClick(event);
+		this._dp.performMouseClick(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:dblclick", ["$event"])
@@ -326,7 +326,7 @@ export class DrawableComponent implements OnInit {
 		if (this._dp.canDragWaveform) {
 			this._dp.performDragStop();
 		} else {
-			this._dp.preformMouseClick(event);
+			this._dp.performMouseClick(event);
 		}
 	}
 
@@ -827,16 +827,18 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private drawDemoRect(objs: DemoRectDrawingObject[]) {
-		let figure: XRectangle = objs[0].figure;
-		let parent: XRectangle = objs[0].container;
+		let f: XRectangle = objs[0].figure;
+		let p: XRectangle = objs[0].container;
+		let l: number = this._dp.state.minPx;
+		let t: number = this._dp.state.container.top;
 
 		this._ct.saveState();
 		this._ct.clipRect(this._dp.state.container);
 		//this._targRectClient
-		let a: XPoint = new XPoint(parent.minOx + figure.minOx - this._dp.state.minPx + this._dp.state.container.left, parent.minOy + figure.minOy + this._dp.state.container.top),
-			b: XPoint = new XPoint(parent.minOx + figure.maxOx - this._dp.state.minPx + this._dp.state.container.left, parent.minOy +figure.minOy + this._dp.state.container.top),
-			c: XPoint = new XPoint(parent.minOx + figure.maxOx - this._dp.state.minPx + this._dp.state.container.left, parent.minOy +figure.maxOy + this._dp.state.container.top),
-			d: XPoint = new XPoint(parent.minOx + figure.minOx - this._dp.state.minPx + this._dp.state.container.left, parent.minOy +figure.maxOy + this._dp.state.container.top);
+		let a: XPoint = new XPoint(p.minOx + f.minOx - l + this._dp.state.container.left, p.minOy + f.minOy + this._dp.state.container.top),
+			b: XPoint = new XPoint(p.minOx + f.maxOx - l + this._dp.state.container.left, p.minOy +f.minOy + this._dp.state.container.top),
+			c: XPoint = new XPoint(p.minOx + f.maxOx - l + this._dp.state.container.left, p.minOy +f.maxOy + this._dp.state.container.top),
+			d: XPoint = new XPoint(p.minOx + f.minOx - l + this._dp.state.container.left, p.minOy +f.maxOy + this._dp.state.container.top);
 
 		this._mt.applyForPoints(a, b, c, d);
 		//console.log(a, b, c, d);

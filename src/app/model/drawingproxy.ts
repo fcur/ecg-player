@@ -329,12 +329,18 @@ export class XDProxy {
 		this.lastEvent.currentState.dragPosition.rebuild(endpoint.left, endpoint.top);
 		this.moveCursor(event);
 		// detect drawing object under cursor
-		//  for non draggable objects
-		let l: number = this.state.pointerX + this.state.skipPx,
-			t: number = this.state.pointerY;
 
-		let di: number = this.findDrawingObjectIndex(l, t), z1: number;
-		let target: IDObject = di > -1 ? this.doVisible[di] : null;
+		let target: IDObject = this.state.target, z1: number;
+
+		if (target == null) {
+			let di: number = this.findDrawingObjectIndex(
+				this.state.pointerX + this.state.skipPx,
+				this.state.pointerY);
+			console.info("grab new rectangle");
+			target = di > -1 ? this.doVisible[di] : null;
+		}
+		
+
 		if (target != null && (target.draggable || target.changeable)) {
 			this.lastEvent.type = XDChangeType.Change;
 			this.lastEvent.cursor = CursorType.Move;
@@ -355,8 +361,10 @@ export class XDProxy {
 		this.pushUpdate();
 	}
 
+
 	//-------------------------------------------------------------------------------------
 	public performDragStop() {
+		this.updatePrevState(); // optional
 		this.lastEvent.cursor = CursorType.Grab;
 		this.lastEvent.previousState.resetDrag();
 		this.lastEvent.currentState.resetDrag();
@@ -364,16 +372,21 @@ export class XDProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public preformMouseClick(event: MouseEvent | TouchEvent) {
+	public performMouseClick(event: MouseEvent | TouchEvent) {
 		// TODO: merge results with 3X4 grid layot
 		//console.info("proxy: preformClick");
 		this.prepareCursor(event); // optional
-		let l: number = this.state.pointerX + this.state.skipPx,
-			t: number = this.state.pointerY;
+		let target: IDObject = this.state.target;
 
-		let di: number = this.findDrawingObjectIndex(l, t);
-		if (di > -1) {
-			this.doVisible[di].owner.select(this.doVisible[di], this.state);
+		if (target == null) {
+			let di: number = this.findDrawingObjectIndex(
+				this.state.pointerX + this.state.skipPx,
+				this.state.pointerY);
+			target = di > -1 ? this.doVisible[di] : null;
+		}
+
+		if (target != null) {
+			target.owner.select(target, this.state);
 			this.lastEvent.type = XDChangeType.Change;
 			this.lastEvent.sender = XDChangeSender.MouseClick;
 			this.pushUpdate();

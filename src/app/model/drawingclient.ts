@@ -853,7 +853,7 @@ export class DemoRectangleClient extends XDrawingClient {
 		this.originX = 0;
 		this.originY = 0;
 		this._cursThrInner = 5;
-		this._cursThrOut = 5;
+		this._cursThrOut = 2;
 		this.strokeStyle = "red";
 		this.figure = new XRectangle(this.left, this.top, this.width, this.height);
 	}
@@ -900,7 +900,7 @@ export class DemoRectangleClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData) {
+	public drag(l: number, t: number, obj: DemoRectDrawingObject, st: XDProxyState, allData: DrawingData) {
 		// TODO check object body and borders
 		// chech draggable && changeable flag
 		// find cursot position on container
@@ -913,7 +913,8 @@ export class DemoRectangleClient extends XDrawingClient {
 			onRight: boolean = false,
 			onTop: boolean = false,
 			onBottom: boolean = false,
-			c = obj.container;
+			c = obj.container,
+			f: XRectangle = obj.figure;
 
 		onLeft = left - c.left < this._cursThrInner + this._cursThrOut;
 		onRight = c.right - left < this._cursThrInner + this._cursThrOut;
@@ -923,24 +924,22 @@ export class DemoRectangleClient extends XDrawingClient {
 		//console.log(l, t);
 
 		if (!onLeft && !onRight && !onTop && !onBottom) {
-			c.left += l;
-			c.top += t;
+			c.left += l; //f.left += l;
+			c.top += t; //f.top += t;
 		} else {
 			if (onLeft) {
-				c.left += l;
-				c.width += -l;
+				c.left += l; //f.left += l;
+				c.width += -l; f.width += -l;
 			} else if (onRight) {
-				c.width += l;
+				c.width += l; f.width += l;
 			}
 
 			if (onTop) {
-				c.top += t;
-				c.height += -t;
+				c.top += t; //f.top += t;
+				c.height += -t; f.height += -t;
 			} else if (onBottom) {
-				c.height += t;
+				c.height += t; f.height += t;
 			}
 		}
-
-
 	}
 }
