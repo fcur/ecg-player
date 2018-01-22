@@ -11,7 +11,7 @@ import {
 } from "./drawingobject";
 import {
 	BeatsDrawingClient, IDrawingClient, ClickablePointDrawingClient,
-	CursorDrawingClient, GridCellDrawingClient, XDrawingClient,
+	CursorDrawingClient, GridClient, XDrawingClient,
 	XDrawingMode, AnsDrawingClient, SignalDrawingClient,
 	WavepointClient, CellDrawingClient
 } from "./drawingclient";
@@ -241,7 +241,7 @@ export class XDPSEvent {
 // -------------------------------------------------------------------------------------------------
 // Drawing proxy grid cell
 // -------------------------------------------------------------------------------------------------
-export class XDCell {
+export class XWCell {
 	/** Cell relative size & position.*/
 	public container: XRectangle;
 	/** Cell index. */
@@ -250,6 +250,8 @@ export class XDCell {
 	public cellRowIndex: number;
 	/** Cell COLUMN index. */
 	public cellColumnIndex: number;
+
+	public density: XWDensity;
 
 	/** Cell assigned lead code. */
 	public lead: EcgLeadCode;
@@ -313,7 +315,7 @@ export class XDProxyState {
 	/** Maximum sample value in microvolts from input signal. */
 	public signalScale: number;
 	/** Surface grid cells array. Position on canvas. */
-	public gridCells: XDCell[];
+	//public gridCells: XWCell[];
 	/**  Surface grid cells mode.*/
 	public gridMode: XDGridMode;
 	/** Cursor pointer X. */
@@ -324,8 +326,7 @@ export class XDProxyState {
 	public clientY: number;
 	public mouseX: number;
 	public mouseY: number;
-	public leadsCodes: EcgLeadCode[];
-	public onScrollBs: BehaviorSubject<number>;
+	//public onScrollBs: BehaviorSubject<number>;
 	/** Last scroll movement delta. */
 	public movDelta: number;
 
@@ -333,7 +334,10 @@ export class XDProxyState {
 	public type: XDChangeType;
 	public cursor: CursorType;
 	public timeStamp: number;
-
+	/** Waveform cells lead codes.*/
+	public leadsCodes: EcgLeadCode[];
+	/** Waveform cells lead captions.*/
+	public leadsCaptions: string[];
 
 	// TODO: add surface dimentions getter
 
@@ -382,14 +386,14 @@ export class XDProxyState {
 		this.devMode = true;
 		this.target = null;
 		this.leadsCodes = [];
-		this.onScrollBs = new BehaviorSubject(NaN);
+		//this.onScrollBs = new BehaviorSubject(NaN);
 		this.timestamp = Date.now();            // drawing proxy state creation time
 		this.scale = 1;                         // default scale = 1   
 		this.apxmm = 3;                         // for default dpi
 		this.signalScale = 5000;                // from input signal
 		this.signalMicrovoltsClip = 5000;       // from settings
 		this.maxSample = 32767;                 // from input signal
-		this.gridCells = [];
+		//this.gridCells = [];
 		this._skipPx = 0;
 		this.limitPx = 0;
 		this.signalSamplesClip = Math.floor(this.maxSample * this.signalMicrovoltsClip / this.signalScale);
@@ -440,59 +444,59 @@ export class XDProxyState {
 
 		this.movDelta = delta;
 		this._skipPx = Math.max(Math.floor(this._skipPx - delta), 0);
-		if (!Number.isInteger(this.onScrollBs.value) || this._skipPx != this.onScrollBs.value)
-			this.onScrollBs.next(this._skipPx);
+		//if (!Number.isInteger(this.onScrollBs.value) || this._skipPx != this.onScrollBs.value)
+		//	this.onScrollBs.next(this._skipPx);
 	}
 
 	//-------------------------------------------------------------------------------------------------
 	/** Returns signal cells by row index. */
-	public getGridRowCells(ri: number): XDCell[] {
+	public getGridRowCells(ri: number): XWCell[] {
 		console.info("getGridRowCells not implemented.")
 		return [];
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public prepareGridCells(leads: EcgLeadCode[], leadLabels: string[]) {
-		if (!Array.isArray(leads) || !Array.isArray(leadLabels)) return;
-		if (leads.length === 3) this.gridMode = XDGridMode.LEADS3CH111;
-		else if (leads.length === 12) this.gridMode = XDGridMode.Leads12R3C4;
+	//public prepareGridCells(leads: EcgLeadCode[], leadLabels: string[]) {
+	//	if (!Array.isArray(leads) || !Array.isArray(leadLabels)) return;
+	//	if (leads.length === 3) this.gridMode = XDGridMode.LEADS3CH111;
+	//	else if (leads.length === 12) this.gridMode = XDGridMode.Leads12R3C4;
 
-		// prepare grid
-		let rwCount: number = 3;
-		let clCount: number = leads.length / rwCount;
-		let space: number = 10;
-		let aviableHeight: number = this.container.height - (rwCount - 1) * space;
-		let aviableWidth: number = this.container.width - (clCount - 1) * space;
-		let cellHeight: number = Math.floor(aviableHeight / rwCount);
-		let cellWidth: number = Math.floor(aviableWidth / clCount);
-		let signalHeight: number = Math.floor(cellHeight / 2);
-		let cellLeft: number, cellTop: number, z: number, y: number;
-		let cellContainer: XRectangle;
-		cellLeft = this.container.left;
-		let ci: number; // column indx
-		this.leadsCodes = leads; // show all leads
-		// TODO: merge leads & grid schema
-		this.gridCells = new Array(leads.length);
-		for (z = 0, cellTop = this.container.top, ci = 0; z < leads.length; z++ , ci++) {
-			for (y = 0; y < rwCount; y++ , z++) {
-				this.gridCells[z] = new XDCell();
-				this.gridCells[z].index = z;
-				this.gridCells[z].cellRowIndex = y;
-				this.gridCells[z].cellColumnIndex = ci;
-				this.gridCells[z].container = new XRectangle(cellLeft, cellTop, cellWidth, cellHeight);
-				this.gridCells[z].lead = leads[z];
-				this.gridCells[z].leadLabel = leadLabels[z];
-				// prepare mul coefficients
-				this.gridCells[z].sampleValueToPixel = Math.floor((signalHeight / this.signalSamplesClip) * XDCell.FLOATING_MUL) / XDCell.FLOATING_MUL;
-				this.gridCells[z].microvoltsToPixel = Math.floor((signalHeight / this.signalMicrovoltsClip) * XDCell.FLOATING_MUL) / XDCell.FLOATING_MUL;
-				//console.info(this.gridCells[z].sampleValueToPixel, this.gridCells[z].microvoltsToPixel, signalHeight);
-				cellTop = this.gridCells[z].container.maxOy + space;
-				//console.info("z:", this.gridCells[z].index, "row:", this.gridCells[z].cellRowIndex, "column:", this.gridCells[z].cellColumnIndex);
-			}
-			cellLeft += cellWidth + space;
-		}
-		this.limitPx = this.gridCells[0].container.width;
-	}
+	//	// prepare grid
+	//	let rwCount: number = 3;
+	//	let clCount: number = leads.length / rwCount;
+	//	let space: number = 10;
+	//	let aviableHeight: number = this.container.height - (rwCount - 1) * space;
+	//	let aviableWidth: number = this.container.width - (clCount - 1) * space;
+	//	let cellHeight: number = Math.floor(aviableHeight / rwCount);
+	//	let cellWidth: number = Math.floor(aviableWidth / clCount);
+	//	let signalHeight: number = Math.floor(cellHeight / 2);
+	//	let cellLeft: number, cellTop: number, z: number, y: number;
+	//	let cellContainer: XRectangle;
+	//	cellLeft = this.container.left;
+	//	let ci: number; // column indx
+	//	this.leadsCodes = leads; // show all leads
+	//	// TODO: merge leads & grid schema
+	//	this.gridCells = new Array(leads.length);
+	//	for (z = 0, cellTop = this.container.top, ci = 0; z < leads.length; z++ , ci++) {
+	//		for (y = 0; y < rwCount; y++ , z++) {
+	//			this.gridCells[z] = new XWCell();
+	//			this.gridCells[z].index = z;
+	//			this.gridCells[z].cellRowIndex = y;
+	//			this.gridCells[z].cellColumnIndex = ci;
+	//			this.gridCells[z].container = new XRectangle(cellLeft, cellTop, cellWidth, cellHeight);
+	//			this.gridCells[z].lead = leads[z];
+	//			this.gridCells[z].leadLabel = leadLabels[z];
+	//			// prepare mul coefficients
+	//			this.gridCells[z].sampleValueToPixel = Math.floor((signalHeight / this.signalSamplesClip) * XWCell.FLOATING_MUL) / XWCell.FLOATING_MUL;
+	//			this.gridCells[z].microvoltsToPixel = Math.floor((signalHeight / this.signalMicrovoltsClip) * XWCell.FLOATING_MUL) / XWCell.FLOATING_MUL;
+	//			//console.info(this.gridCells[z].sampleValueToPixel, this.gridCells[z].microvoltsToPixel, signalHeight);
+	//			cellTop = this.gridCells[z].container.maxOy + space;
+	//			//console.info("z:", this.gridCells[z].index, "row:", this.gridCells[z].cellRowIndex, "column:", this.gridCells[z].cellColumnIndex);
+	//		}
+	//		cellLeft += cellWidth + space;
+	//	}
+	//	this.limitPx = this.gridCells[0].container.width;
+	//}
 
 
 
@@ -928,3 +932,183 @@ export enum XAnimationType {
 	QuintEaseOut
 }
 
+//-------------------------------------------------------------------------------------------------
+// Waveform density type enumeration
+//-------------------------------------------------------------------------------------------------
+export enum XWDensityUnit {
+	Default,
+	Millimeters,
+	Percents
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Waveform density
+//-------------------------------------------------------------------------------------------------
+export class XWDensity {
+
+	static LOWX_LABEL = "s";
+	static LOWY_LABEL = "mV";
+
+	public dxStepList: number[];
+	public dyStepList: number[];
+	public dxStepIndex: number;
+	public dyStepIndex: number;
+
+	public scrollLock: boolean;
+	public units: XWDensityUnit;
+
+
+	public dxMinIndex: number;
+	public dyMinIndex: number;
+
+	public dxMaxIndex: number;
+	public dyMaxIndex: number;
+
+	public dxDefIndex: number;
+	public dyDefIndex: number;
+
+	//-------------------------------------------------------------------------------------
+	public get unitLabel(): string {
+		let label: string = "";
+		switch (this.units) {
+			case XWDensityUnit.Millimeters:
+				label = "mm";
+				break;
+			case XWDensityUnit.Percents:
+				label = "%";
+				break;
+			default:
+				label = "px";
+		}
+		return label;
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	constructor() {
+		this.reset();
+		this.prepareStepList();
+		this.resetDxStepIndex();
+		this.resetDyStepIndex();
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public getDxStep(i: number): number {
+		return (2 ** i);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public getDyStep(i: number): number {
+		return (2 ** i);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public reset() {
+		this.units = XWDensityUnit.Percents;
+		this.scrollLock = false;
+		this.dxMinIndex = -2
+		this.dxMaxIndex = 4;
+		this.dyMinIndex = -2;
+		this.dyMaxIndex = 2;
+		this.dxDefIndex = 0;
+		this.dyDefIndex = 0;
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public getStepLabel(dx: boolean = true, i: number): string {
+		let v: number = dx ? this.dxStepList[i] : this.dyStepList[i];
+		if (this.units === XWDensityUnit.Percents) {
+			v *= 100;
+		}
+		return v.toString();
+	}
+
+	//-------------------------------------------------------------------------------------
+	public resetDxStepIndex() {
+		this.dxStepIndex = this.dxStepList.indexOf(this.getDxStep(this.dxDefIndex));
+	}
+
+	//-------------------------------------------------------------------------------------
+	public resetDyStepIndex() {
+		this.dyStepIndex = this.dyStepList.indexOf(this.getDyStep(this.dyDefIndex));
+	}
+
+	//-------------------------------------------------------------------------------------
+	public prepareStepList() {
+		this.resetDxStepList();
+		this.resetDyStepList();
+	}
+
+	//-------------------------------------------------------------------------------------
+	public resetDxStepList() {
+		let z: number;
+		this.dxStepList = new Array();
+		for (z = this.dxMinIndex; z <= this.dxMaxIndex; z++) {
+			this.dxStepList.push(this.getDxStep(z));
+		}
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	public resetDyStepList() {
+		let z: number;
+		this.dyStepList = new Array();
+		for (z = this.dyMinIndex; z <= this.dyMaxIndex; z++) {
+			this.dyStepList.push(this.getDyStep(z));
+		}
+	}
+
+}
+
+
+//-------------------------------------------------------------------------------------------------
+// Waveform layout
+//-------------------------------------------------------------------------------------------------
+export class XWLayout {
+	/** Pixels in millimeter MUL coefficient. */
+	public apxmm: number;
+	/** Waveform cells. */
+	public cells: XWCell[];
+
+	/** Surface relative size & position.*/
+	public container: XRectangle;
+	/** Maximum sample value in microvolts from input signal. */
+	public signalScale: number;
+	/** Maximum/minimum visible (calculated) sample value in microvolts. */
+	public signalMcrVoltsClip: number;
+	/** Maximum declared sample value. */
+	public maxSample: number;
+	/** Maximum/minimum visible (calculated) sample value. */
+	public signalSamplesClip: number;
+
+	//-------------------------------------------------------------------------------------------------
+	constructor() {
+		this.signalScale = 5000;				// from input signal
+		this.signalMcrVoltsClip = 5000;			// from settings
+		this.maxSample = 32767;					// from input signal
+		this.signalSamplesClip = Math.floor(this.maxSample * this.signalMcrVoltsClip / this.signalScale);
+		this.cells = [];
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public rebuild(cont: XRectangle[], mode: XDGridMode = XDGridMode.LEADS1CH1) {
+		if (!Array.isArray(cont)) return;
+
+		this.cells = new Array(cont.length);
+
+		for (let z: number = 0; z < cont.length; z++) {
+			this.cells[z] = new XWCell();
+			this.cells[z].container = cont[z];
+			this.cells[z].sampleValueToPixel = Math.floor(((cont[z].height / 2) / this.signalSamplesClip) * XWCell.FLOATING_MUL) / XWCell.FLOATING_MUL;
+			this.cells[z].microvoltsToPixel = Math.floor(((cont[z].height / 2) / this.signalMcrVoltsClip) * XWCell.FLOATING_MUL) / XWCell.FLOATING_MUL;
+			//this.cells[z].lead = leadsCodes[z];
+
+		}
+
+	}
+
+
+}

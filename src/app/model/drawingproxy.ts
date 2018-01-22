@@ -1,14 +1,15 @@
 import { EventEmitter } from "@angular/core";
 import {
 	XDPSEvent, XDProxyState, XDChangeSender, XAnimation,
-	XAnimationType, XCanvasTool, XDCell, XDChangeType,
-	XDCoordinates, XDGridMode, XMatrixTool, CursorType
+	XAnimationType, XCanvasTool, XWCell, XDChangeType,
+	XDCoordinates, XDGridMode, XMatrixTool, CursorType,
+	XWDensity, XWLayout, XWDensityUnit
 } from "./misc";
 import {
 	BeatsDrawingClient, IDrawingClient, SignalDrawingClient,
 	XDrawingClient, XDrawingMode, AnsDrawingClient,
 	CellDrawingClient, ClickablePointDrawingClient,
-	CursorDrawingClient, GridCellDrawingClient,
+	CursorDrawingClient, GridClient,
 	WavepointClient
 } from "./drawingclient";
 import {
@@ -37,7 +38,7 @@ import {
 export class XDProxy {
 
 	public lastEvent: XDPSEvent;
-
+	public layout: XWLayout;
 	public drawingData: DrawingData;
 	public onChangeState: EventEmitter<XDPSEvent>;
 	
@@ -118,6 +119,7 @@ export class XDProxy {
 		this.doHidLeft = [];
 		this.doHidRight = [];
 		this.drawingData = new DrawingData();
+		this.layout = new XWLayout();
 		this.onChangeState = new EventEmitter<XDPSEvent>();
 	}
 
@@ -186,6 +188,7 @@ export class XDProxy {
 		this.doVisible.length = 0;
 		this.doHidLeft.length = 0;
 		this.doHidRight.length = 0;
+
 
 		for (z = 0; z < this.doAll.length; z++) {
 			minOx = this.doAll[z].container.minOx;

@@ -16,7 +16,7 @@ import {
 import {
 	XDPSEvent, XDChangeSender, XDCoordinates,
 	XDGridMode, XAnimation, XAnimationType,
-	XDProxyState, XCanvasTool, XDCell,
+	XDProxyState, XCanvasTool, XWCell,
 	XDChangeType, XMatrixTool, CursorType
 } from "./misc";
 import {
@@ -349,19 +349,74 @@ export class BeatsDrawingClient extends XDrawingClient {
 // -------------------------------------------------------------------------------------------------
 // Grid cell drawing glient
 // -------------------------------------------------------------------------------------------------
-export class GridCellDrawingClient extends XDrawingClient {
+export class GridClient extends XDrawingClient {
+	private _gridMode: XDGridMode;
 
-	color: string;
-	opacity: number;
-	lineJoin: string;
-	borderColor: string;
-	borderOpacity: number;
-	axisColor: string;
-	axisOpacity: number;
+
+	public color: string;
+	public opacity: number;
+	public lineJoin: string;
+	public borderColor: string;
+	public borderOpacity: number;
+	public axisColor: string;
+	public axisOpacity: number;
+
+
+
+	/** Rows count. */
+	public rwc: number;
+	/** Columns count. */
+	public clc: number;
+	/** Rows margin. */
+	public rm: number;
+	/** Columns margin. */
+	public cm: number;
+	/** Layout margin. */
+	public lm: number;
+	/** Grid cells containers. */
+	public cells: XRectangle[];
+
+	//-------------------------------------------------------------------------------------
+	get gridMode(): XDGridMode {
+		return this._gridMode;
+	}
+	//-------------------------------------------------------------------------------------
+	set gridMode(layout: XDGridMode) {
+		this._gridMode = layout;
+		this.rwc = 0;
+		this.clc = 0;
+		if (layout === XDGridMode.LEADS3CH111 ||
+			layout === XDGridMode.LEADS3CH211 ||
+			layout === XDGridMode.LEADS3CH121 ||
+			layout === XDGridMode.LEADS3CH112) {
+			this.clc = 1;
+			this.rwc = 3;
+		} else if (layout === XDGridMode.LEADS2CH11 ||
+			layout === XDGridMode.LEADS2CH21 ||
+			layout === XDGridMode.LEADS2CH12) {
+			this.clc = 1;
+			this.rwc = 2;
+		} else if (layout === XDGridMode.LEADS1CH1) {
+			this.clc = 1;
+			this.rwc = 1;
+		} else if (layout === XDGridMode.Leads12R3C4) {
+			this.rwc = 3;
+			this.clc = 4;
+		} else if (layout === XDGridMode.Leads15R3C5) {
+			this.rwc = 3;
+			this.clc = 5;
+		}
+	}
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
+		this.cells = [];
+		this.gridMode = XDGridMode.LEADS3CH111;
+		this.rm = 10;
+		this.lm = 20;
+		this.cm = 10;
+
 		this.color = "#00c12e";
 		this.opacity = 0.5;
 		this.borderColor = "#ddd";
@@ -375,6 +430,31 @@ export class GridCellDrawingClient extends XDrawingClient {
 		this.afterDraw = this.afterDrawGrid.bind(this);
 		this.createDrawingObject = this.createGridDrawingObject.bind(this);
 	}
+
+	//-------------------------------------------------------------------------------------
+	public rebuildCells(w: number, h: number): XRectangle[] {
+		let cellIndex: number,
+			rowIndex: number,
+			cellLeft: number = 0,
+			cellTop: number = 0,
+			cellHeight: number = Math.floor((h - (this.rwc - 1) * this.rm) / this.rwc),
+			cellWidth: number = Math.floor((w - (this.clc - 1) * this.cm) / this.clc),
+			signalHeight: number = Math.floor(cellHeight / 2);
+
+		this.cells = new Array(this.rwc * this.clc);
+
+		for (cellIndex = 0, cellTop = 0; cellIndex < this.cells.length; cellIndex++) {
+			for (rowIndex = 0; rowIndex < this.rwc; rowIndex++ , cellIndex++) {
+				this.cells[cellIndex] = new XRectangle(
+					cellLeft, cellTop, cellWidth, cellHeight
+				)
+				cellTop = this.cells[cellIndex].maxOy + this.rm;
+			}
+			cellLeft += cellWidth + this.cm;
+		}
+		return this.cells;
+	}
+
 
 	//-------------------------------------------------------------------------------------
 	public drawGrid() {
@@ -467,19 +547,19 @@ export class GridCellDrawingClient extends XDrawingClient {
 				//drawObj.polylines[z] = new XPolyline(recData.signal[leadCode]);
 			}
 
-			drawObj.ox = new Array(ps.gridCells.length);
-			drawObj.horizontal = new Array(ps.gridCells.length);
-			drawObj.vertical = new Array(ps.gridCells.length);
+			drawObj.ox = new Array(this.cells.length);
+			drawObj.horizontal = new Array(this.cells.length);
+			drawObj.vertical = new Array(this.cells.length);
 
 			// TODO: grab borders & axis lisnes from client getter(width, height, layout)
-			for (z = 0; z < ps.gridCells.length; z++) {
-				container = ps.gridCells[z].container;
+			for (z = 0; z < this.cells.length; z++) {
+				container = this.cells[z];
 
-				left = ps.gridCells[z].container.left - ps.container.left;
-				top = ps.gridCells[z].container.top;
-				height = ps.gridCells[z].container.height;
-				axisTop = ps.gridCells[z].container.top + ps.gridCells[z].container.hHeight;
-				axisTop = ps.gridCells[z].container.midOy;
+				left = container.left - ps.container.left;
+				top = container.top;
+				height = container.height;
+				axisTop = container.top + container.hHeight;
+				axisTop = container.midOy;
 
 				drawObj.horizontal[z] = [
 					// top
@@ -777,11 +857,11 @@ export class CursorDrawingClient extends XDrawingClient {
 		//obj.container = new XRectangle(ps.pointerX - this.clientHalfWidth, 0, this.clientHalfWidth * 2, ps.container.height);
 		obj.container = new XRectangle(ps.minPx, 0, ps.limitPx, ps.container.height);
 
-		let lineHeight: number = ps.gridCells[ps.gridCells.length - 1].container.maxOy -
-			ps.gridCells[0].container.minOy;
+		let lineHeight: number = ps.container.maxOy -
+			ps.container.minOy;
 
 		obj.lines = [new XLine(new XPoint(ps.pointerX, 0), new XPoint(ps.pointerX, lineHeight))];
-		obj.points = new Array(ps.gridCells.length);
+		obj.points = new Array(ps.leadsCodes.length);
 		// TODO move to state getter
 		let header: RecordProjection = dd.getHeader(ps.skipPx + ps.pointerX, ps.sampleRate);
 		let z: number,
@@ -789,9 +869,11 @@ export class CursorDrawingClient extends XDrawingClient {
 			left: number,
 			signal: XPoint[];
 
+
+
 		left = ps.pointerX; // merge with 12ch grid layout
-		for (z = 0; z < ps.gridCells.length; z++) {
-			signal = dd.data[ps.sampleRate][header.id].signal[ps.gridCells[z].lead];
+		for (z = 0; z < ps.leadsCodes.length; z++) {
+			signal = dd.data[ps.sampleRate][header.id].signal[ps.leadsCodes[z]];
 			if (!Array.isArray(signal) || signal.length === 0) continue;
 			top = signal[ps.skipPx + ps.pointerX].top;
 			obj.points[z] = new XPoint(left, top);
@@ -846,8 +928,8 @@ export class DemoRectangleClient extends XDrawingClient {
 	constructor() {
 		super();
 		this.zIndex = Number.MAX_SAFE_INTEGER;
-		this.left = 120;
-		this.top = 123;
+		this.left = 95;
+		this.top = 36;
 		this.width = 321;
 		this.height = 123;
 		this.originX = 0;

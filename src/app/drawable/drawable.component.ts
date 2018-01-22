@@ -5,10 +5,11 @@ import {
 import { XDProxy } from "../model/drawingproxy"
 import { DataService } from "../service/data.service"
 import {
-	XDCell, XDChangeSender, XDGridMode,
+	XWCell, XDChangeSender, XDGridMode,
 	XDPSEvent, XDProxyState, XCanvasTool,
 	XMatrixTool, XAnimation, XAnimationType,
-	XDChangeType, XDCoordinates, CursorType
+	XDChangeType, XDCoordinates, CursorType,
+	XWDensity, XWDensityUnit, XWLayout
 } from "../model/misc";
 import {
 	XDrawingPrimitive, XDPrimitiveState, XLabel,
@@ -18,7 +19,7 @@ import {
 	ClickablePointDrawingClient, CursorDrawingClient,
 	XDrawingClient, XDrawingMode, IDrawingClient,
 	SignalDrawingClient, CellDrawingClient,
-	GridCellDrawingClient, WavepointClient,
+	GridClient, WavepointClient,
 	AnsDrawingClient, BeatsDrawingClient,
 	DemoRectangleClient
 } from "../model/drawingclient";
@@ -49,7 +50,7 @@ export class DrawableComponent implements OnInit {
 
 	private _dp: XDProxy;
 	private _signalClient: SignalDrawingClient;
-	private _gridClient: GridCellDrawingClient;
+	private _gridClient: GridClient;
 	private _beatsClient: BeatsDrawingClient;
 	private _cursorClient: CursorDrawingClient;
 	private _demoRectClient: DemoRectangleClient;
@@ -399,38 +400,41 @@ export class DrawableComponent implements OnInit {
 		// Normalize wheel to +1 or -1
 		let wheel: number = event.wheelDelta / 120;
 
-		let prewZoom: number = this._cursorClient.zoomStep;
-		this._cursorClient.zoomIndex += wheel;
-		if (this._cursorClient.zoomIndex < 0 || this._cursorClient.zoomIndex >= this._cursorClient.zoomSteps.length)
-			this._cursorClient.zoomIndex = this._cursorClient.zoomSteps.indexOf(1);
 
-		let localDelta: number = this._cursorClient.zoomStep - prewZoom;
-		let localZoom: number = prewZoom;
 
-		this._zoomAnimation = new XAnimation();
-		this._zoomAnimation.length = 400;
 
-		this._zoomAnimation.animation = (progress: number) => {
-			this._cursorClient.zoom = prewZoom + progress * localDelta;
-			this._mt.scale(this._cursorClient.zoom, this._cursorClient.zoom);
-			this._ct.clear();
-			this.renderVisibleGroups();
-			this.drawCursotPosition();
-			this.drawTargeRectangle("red"); //control
-			this.drawTargeRectangle("blue");
-		};
+		//let prewZoom: number = this._cursorClient.zoomStep;
+		//this._cursorClient.zoomIndex += wheel;
+		//if (this._cursorClient.zoomIndex < 0 || this._cursorClient.zoomIndex >= this._cursorClient.zoomSteps.length)
+		//	this._cursorClient.zoomIndex = this._cursorClient.zoomSteps.indexOf(1);
 
-		this._zoomAnimation.animationEnd = () => {
-			this._cursorClient.zoom = this._cursorClient.zoomStep;
-			this._mt.scale(this._cursorClient.zoom, this._cursorClient.zoom);
-			this._zoomAnimation = null;
-			this._ct.clear();
-			this.renderVisibleGroups();
-			this.drawCursotPosition();
-			//this.drawTargeRectangle("red"); //control
-			this.drawTargeRectangle("blue");
-		};
-		this._zoomAnimation.start();
+		//let localDelta: number = this._cursorClient.zoomStep - prewZoom;
+		//let localZoom: number = prewZoom;
+
+		//this._zoomAnimation = new XAnimation();
+		//this._zoomAnimation.length = 400;
+
+		//this._zoomAnimation.animation = (progress: number) => {
+		//	this._cursorClient.zoom = prewZoom + progress * localDelta;
+		//	this._mt.scale(this._cursorClient.zoom, this._cursorClient.zoom);
+		//	this._ct.clear();
+		//	this.renderVisibleGroups();
+		//	this.drawCursotPosition();
+		//	this.drawTargeRectangle("red"); //control
+		//	this.drawTargeRectangle("blue");
+		//};
+
+		//this._zoomAnimation.animationEnd = () => {
+		//	this._cursorClient.zoom = this._cursorClient.zoomStep;
+		//	this._mt.scale(this._cursorClient.zoom, this._cursorClient.zoom);
+		//	this._zoomAnimation = null;
+		//	this._ct.clear();
+		//	this.renderVisibleGroups();
+		//	this.drawCursotPosition();
+		//	//this.drawTargeRectangle("red"); //control
+		//	this.drawTargeRectangle("blue");
+		//};
+		//this._zoomAnimation.start();
 	}
 
 
@@ -457,7 +461,6 @@ export class DrawableComponent implements OnInit {
 		this.printState();
 	}
 
-
 	//-------------------------------------------------------------------------------------
 	private onReceiveDObjects(p: IDObject[][]) {
 		this._ct.clear();
@@ -470,7 +473,7 @@ export class DrawableComponent implements OnInit {
 	private prepareClients() {
 		// prepare clients
 		this._signalClient = new SignalDrawingClient();
-		this._gridClient = new GridCellDrawingClient();
+		this._gridClient = new GridClient();
 		this._beatsClient = new BeatsDrawingClient();
 		this._cursorClient = new CursorDrawingClient();
 		this._demoRectClient = new DemoRectangleClient();
@@ -488,7 +491,15 @@ export class DrawableComponent implements OnInit {
 	private prepareGrid() {
 		let leads: EcgLeadCode[] = this._ds.leads;
 		let leadsLabels: string[] = this._ds.getLeadCodesLabels(leads);
-		this._dp.state.prepareGridCells(leads, leadsLabels);
+
+		let cc: XRectangle[] = this._gridClient.rebuildCells(
+			this._dp.state.container.width, this._dp.state.container.height);
+
+		this._dp.layout.rebuild(cc, this._gridClient.gridMode);
+		this._dp.state.leadsCodes = leads;
+		this._dp.state.leadsCaptions = leadsLabels;
+		//this._dp.state.prepareGridCells(leads, leadsLabels);
+		this._dp.state.limitPx = cc[0].width;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -528,6 +539,7 @@ export class DrawableComponent implements OnInit {
 			dy: number,
 			top: number,
 			left: number,
+			cell: XWCell,
 			points: XPoint[];
 
 		this._ct.saveState();
@@ -535,25 +547,28 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.beginPath();
 		for (z = 0; z < objs.length; z++) {
 
-			for (y = 0; y < state.leadsCodes.length; y++) {
-				x = objs[z].leadCodes.indexOf(state.leadsCodes[y]);
+			for (y = 0; y < this._dp.state.leadsCodes.length; y++) {
+				x = objs[z].leadCodes.indexOf(this._dp.state.leadsCodes[y]);
+				
 				if (x < 0) continue;
+
+				cell = this._dp.layout.cells[y];
 				points = objs[z].polylines[x].points;
 				//console.info(points.length);
 				// calc start position
 				// TODO: check {start+length < points.length}
 				w = state.minPx - objs[z].container.left;
 				dx = objs[z].container.left + points[w].left - state.minPx;
-				dy = Math.floor(points[w].top * state.gridCells[y].microvoltsToPixel + shift);
-				left = dx + state.gridCells[y].container.left + 0.5;
-				top = dy + state.gridCells[y].container.midOy + 0.5;
+				dy = Math.floor(points[w].top * cell.microvoltsToPixel + shift);
+				left = dx + cell.container.left + 0.5;
+				top = dy + cell.container.midOy + 0.5;
 				this._ct.ctx.moveTo(left, top);
 				w++;
 				for (c = 1; w < points.length, c < state.limitPx; w++ , c++) {
 					dx = objs[z].container.left + points[w].left - state.minPx;
-					dy = Math.floor(points[w].top * state.gridCells[y].microvoltsToPixel) + shift;
-					left = dx + state.gridCells[y].container.left + 0.5;
-					top = dy + state.gridCells[y].container.midOy + 0.5;
+					dy = Math.floor(points[w].top * cell.microvoltsToPixel) + shift;
+					left = dx + cell.container.left + 0.5;
+					top = dy + cell.container.midOy + 0.5;
 					this._ct.ctx.lineTo(left, top);
 				}
 			}
@@ -589,11 +604,11 @@ export class DrawableComponent implements OnInit {
 		let testShift: number = 0;
 		this._ct.ctx.beginPath();
 		this._ct.ctx.fillStyle = this._cursorClient.pointColor;
-		for (let z: number = 0; z < state.gridCells.length; z++) {
+		for (let z: number = 0; z < this._dp.layout.cells.length; z++) {
 			// cell index = point index
 			left = state.container.left + obj.points[z].left + 0.5;
-			dy = Math.floor(obj.points[z].top * state.gridCells[z].microvoltsToPixel);
-			top = dy + state.gridCells[z].container.midOy + testShift + 0.5;
+			dy = Math.floor(obj.points[z].top * this._dp.layout.cells[z].microvoltsToPixel);
+			top = dy + this._dp.layout.cells[z].container.midOy + testShift + 0.5;
 			this._ct.makeCircle(left, top, this._cursorClient.pointRadius);
 		}
 		this._ct.ctx.closePath();
@@ -644,7 +659,7 @@ export class DrawableComponent implements OnInit {
 			top: number,
 			left: number,
 			point: XPoint,
-			cell: XDCell,
+			cell: XWCell,
 			beatRange: BeatsRangeDrawingObject;
 
 		let shift: number = 0;
@@ -667,7 +682,7 @@ export class DrawableComponent implements OnInit {
 			for (x = 0; x < beatRange.leadCodes.length; x++) {
 				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
 				if (w < 0) continue;
-				cell = state.gridCells[w];
+				cell = this._dp.layout.cells[w];
 				this._ct.ctx.fillStyle = beatRange.index % 2 == 0 ?
 					this._beatsClient.backgroundColor1 :
 					this._beatsClient.backgroundColor2;
@@ -706,7 +721,7 @@ export class DrawableComponent implements OnInit {
 			for (x = 0; x < beatRange.leadCodes.length; x++) {
 				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
 				if (w < 0) continue;
-				cell = state.gridCells[w];
+				cell = this._dp.layout.cells[w];
 
 				point = beatRange.points[x];
 				dx = point.left - state.minPx;
@@ -773,7 +788,7 @@ export class DrawableComponent implements OnInit {
 				leadCode = objs[z].leadCodes[y];
 				cellIndex = state.leadsCodes.indexOf(leadCode);
 				if (cellIndex < 0) continue;
-				renderCell = state.gridCells[cellIndex].container.state != XDPrimitiveState.Hidden;
+				renderCell = this._dp.layout.cells[cellIndex].container.state != XDPrimitiveState.Hidden;
 				if (!renderCell) continue;
 
 				for (x = 0; x < objs[z].horizontal.length; x++) {
@@ -814,7 +829,7 @@ export class DrawableComponent implements OnInit {
 				leadCode = objs[z].leadCodes[y];
 				cellIndex = state.leadsCodes.indexOf(leadCode);
 				if (cellIndex < 0) continue;
-				renderCell = state.gridCells[cellIndex].container.state != XDPrimitiveState.Hidden;
+				renderCell = this._dp.layout.cells[cellIndex].container.state != XDPrimitiveState.Hidden;
 				if (!renderCell) continue;
 
 				for (x = 0; x < objs[z].ox.length; x++) {
@@ -882,14 +897,14 @@ export class DrawableComponent implements OnInit {
 		// min pixels
 		text = `${this._dp.state.minPx}`;
 		textWidth = this._ct.ctx.measureText(text).width;
-		left = this._dp.state.gridCells[0].container.left + textWidth / 2;
-		top = this._dp.state.gridCells[0].container.top - textSize;
+		left = this._dp.layout.cells[0].container.left + textWidth / 2;
+		top = this._dp.layout.cells[0].container.top - textSize;
 		this._ct.ctx.fillText(text, left, top);
 		// max pixels
 		text = `${this._dp.state.maxPx}`;
 		textWidth = this._ct.ctx.measureText(text).width;
-		left = this._dp.state.gridCells[0].container.maxOx - textWidth / 2;
-		top = this._dp.state.gridCells[0].container.top - textSize;
+		left = this._dp.layout.cells[0].container.maxOx - textWidth / 2;
+		top = this._dp.layout.cells[0].container.top - textSize;
 		this._ct.ctx.fillText(text, left, top);
 
 		// size

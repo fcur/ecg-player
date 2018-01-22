@@ -14,7 +14,7 @@ import {
 	RecordProjection
 } from "./drawingdata";
 import {
-	XCanvasTool, XDCell, XDPSEvent,
+	XCanvasTool, XWCell, XDPSEvent,
 	XDChangeSender, XDGridMode,
 	XDProxyState, XDCoordinates
 } from "./misc";
@@ -289,17 +289,16 @@ export class CursorDrawingObject extends XDrawingObject {
 	//-------------------------------------------------------------------------------------
 	public updateState(dd: DrawingData, ps: XDProxyState) {
 		this.container.rebuild(ps.minPx, 0, ps.limitPx, ps.container.height);
-		let lineHeight: number = ps.gridCells[ps.gridCells.length - 1].container.maxOy -
-			ps.gridCells[0].container.minOy;
+		let lineHeight: number = ps.container.maxOy - ps.container.minOy;
 
 		this.lines = [new XLine(new XPoint(ps.pointerX, 0), new XPoint(ps.pointerX, lineHeight))];
-		this.points = new Array(ps.gridCells.length);
+		this.points = new Array(ps.leadsCodes.length);
 
 		// TODO move to state getter
 		let header: RecordProjection = dd.getHeader(ps.skipPx + ps.pointerX, ps.sampleRate);
 		let signalPoints: XPoint[];
-		for (let z: number = 0; z < ps.gridCells.length; z++) {
-			signalPoints = dd.data[ps.sampleRate][header.id].signal[ps.gridCells[z].lead];
+		for (let z: number = 0; z < ps.leadsCodes.length; z++) {
+			signalPoints = dd.data[ps.sampleRate][header.id].signal[ps.leadsCodes[z]];
 			this.points[z] = new XPoint(ps.pointerX, signalPoints[ps.skipPx + ps.pointerX].top);
 		}
 	}
