@@ -105,7 +105,7 @@ export enum CursorType {
 // Drawing change event object
 // -------------------------------------------------------------------------------------------------
 export class XDPSEvent {
-	private _threshold: number = 3000;
+	private _threshold: number;
 
 	private _currentState: XDProxyState;
 	private _previousState: XDProxyState;
@@ -166,6 +166,7 @@ export class XDPSEvent {
 
 	//-------------------------------------------------------------------------------------------------
 	public reset() {
+		this._threshold = 25;
 		this._currentState = new XDProxyState();
 		this._previousState = new XDProxyState();
 		this.count = 0;
@@ -180,7 +181,7 @@ export class XDPSEvent {
 	//}
 
 	//-------------------------------------------------------------------------------------------------
-	public notify(): boolean {
+	public get notify(): boolean {
 		let t: number = Date.now();
 		let r: boolean = t - this.timeStamp > this._threshold;
 		if (r) this.timeStamp = t;
