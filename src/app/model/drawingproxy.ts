@@ -287,19 +287,6 @@ export class XDProxy {
 	}
 
 	//-------------------------------------------------------------------------------------
-	//private prepareFloatingObjects(left: number, top: number) {
-	//  for (let z: number = 0; z < this.drawingObjects.length; z++) {
-	//    if (!(this.drawingObjects[z] as XDrawingObject).isFloating) continue;
-
-	//    let signalObjects: XDrawingObject[] = this.findSignal(this.state.skipPx + left, this.state);
-	//    (this.drawingObjects[z] as XDrawingObject).floatTo(
-	//      this.state.skipPx + left,
-	//      this.state.container.top + top,
-	//      signalObjects);
-	//  }
-	//}
-
-	//-------------------------------------------------------------------------------------
 	// Action emmiters
 	//-------------------------------------------------------------------------------------
 
