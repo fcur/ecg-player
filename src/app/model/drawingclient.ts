@@ -59,7 +59,7 @@ export interface IDrawingClient {
 	/** Client groups drawing method(required). */
 	drawObjects: Function;
 	/** Prepare drawing objects. */
-	prepareAllDrawings(data: DrawingData, state: XDProxyState): IDObject[];
+	prepareAllDrawings(data: DrawingData, state: XDProxyState, wl: XWLayout): IDObject[];
 	/** Draw client drawing objects. */
 	render(obj: IDObject[], st: XDProxyState, ct: XCanvasTool);
 
@@ -105,7 +105,7 @@ export class XDrawingClient implements IDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(data: DrawingData, state: XDProxyState): IDObject[] {
+	public prepareAllDrawings(data: DrawingData, state: XDProxyState, wl: XWLayout): IDObject[] {
 		return [];
 	}
 
@@ -167,7 +167,7 @@ export class AnsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(data: DrawingData, state: XDProxyState): AnsDrawingObject[] {
+	public prepareAllDrawings(data: DrawingData, state: XDProxyState, wl: XWLayout): AnsDrawingObject[] {
 		console.info("AnsDrawingClient.prepareAllDrawings", "not implemented");
 		return [];
 	}
@@ -235,7 +235,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): BeatsRangeDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): BeatsRangeDrawingObject[] {
 		// TODO: add drawings merge method (example: signal for other leads)
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) ||
 			!dd.data.hasOwnProperty(ps.sampleRate) ||
@@ -486,7 +486,7 @@ export class GridClient extends XDrawingClient {
 	 * @param dd drawing data
 	 * @param ps proxy state
 	 */
-	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): GridCellDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): GridCellDrawingObject[] {
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 		// TODO: merge record leads count & proxy state grid layout
 		// Add grid layouts presets to client
@@ -640,7 +640,7 @@ export class SignalDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): SignalDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): SignalDrawingObject[] {
 		// TODO: add drawings merge method (example: signal for other leads)
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
@@ -852,7 +852,7 @@ export class CursorDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): CursorDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): CursorDrawingObject[] {
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
 		let obj: CursorDrawingObject = new CursorDrawingObject();
@@ -897,7 +897,7 @@ export class WavepointClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): WavepointDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): WavepointDrawingObject[] {
 		return [];
 	}
 }
@@ -944,7 +944,7 @@ export class DemoRectangleClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): DemoRectDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): DemoRectDrawingObject[] {
 		let obj: DemoRectDrawingObject = new DemoRectDrawingObject();
 		obj.owner = this;
 		obj.draggable = true;
@@ -967,19 +967,13 @@ export class DemoRectangleClient extends XDrawingClient {
 	//-------------------------------------------------------------------------------------
 	public hover(v: boolean, obj: DemoRectDrawingObject, st: XDProxyState, wl: XWLayout) {
 		if (!v) return;
-		let left: number = st.pointerX + st.skipPx;
-		let top: number = st.pointerY;
-
-		let onLeft: boolean = false,
-			onRight: boolean = false,
-			onTop: boolean = false,
-			onBottom: boolean = false,
+		let left: number = st.pointerX + st.skipPx,
+			top: number = st.pointerY,
 			c = obj.container;
-
-		onLeft = left - c.left < this._cursThrInner + this._cursThrOut;
-		onRight = c.right - left < this._cursThrInner + this._cursThrOut;
-		onTop = top - c.top < this._cursThrInner + this._cursThrOut;
-		onBottom = c.bottom - top < this._cursThrInner + this._cursThrOut;
+		let onLeft: boolean = left - c.left < this._cursThrInner + this._cursThrOut,
+			onRight: boolean = c.right - left < this._cursThrInner + this._cursThrOut,
+			onTop: boolean = top - c.top < this._cursThrInner + this._cursThrOut,
+			onBottom: boolean = c.bottom - top < this._cursThrInner + this._cursThrOut;
 
 		// prepare changeState
 		let changeType: number = 0;
@@ -1077,54 +1071,5 @@ export class DemoRectangleClient extends XDrawingClient {
 			ct &= ~mask;
 			mask <<= 1;
 		}
-
-		//switch (obj.changeType) {
-		//	case XDOChangeType.Default:
-		//		break;
-		//	case XDOChangeType.Left:
-		//		c.left += l;
-		//		c.width += -l; f.width += -l;
-		//		break;
-		//	case XDOChangeType.Width:
-		//		c.width += l; f.width += l;
-		//		//st.cursor = CursorType.EResize;
-		//		break;
-		//	case XDOChangeType.Top:
-		//		c.top += t;
-		//		c.height += -t; f.height += -t;
-		//		break;
-		//	case XDOChangeType.Height:
-		//		c.height += t; f.height += t;
-		//		break;
-		//	case XDOChangeType.Left | XDOChangeType.Top:
-		//		c.left += l;
-		//		c.width += -l; f.width += -l;
-
-		//		c.top += t;
-		//		c.height += -t; f.height += -t;
-		//		break;
-		//	case XDOChangeType.Width | XDOChangeType.Top:
-		//		c.width += l; f.width += l;
-
-		//		c.top += t;
-		//		c.height += -t; f.height += -t;
-		//		break;
-		//	case XDOChangeType.Left | XDOChangeType.Height:
-		//		c.left += l;
-		//		c.width += -l; f.width += -l;
-
-		//		c.height += t; f.height += t;
-		//		break;
-		//	case XDOChangeType.Width | XDOChangeType.Height:
-		//		c.width += l; f.width += l;
-
-		//		c.height += t; f.height += t;
-		//		break;
-		//	case XDOChangeType.Move:
-		//		c.left += l;
-		//		c.top += t;
-		//		break;
-		//}
-
 	}
 }
