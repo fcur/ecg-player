@@ -492,8 +492,7 @@ export class DrawableComponent implements OnInit {
 		let leads: EcgLeadCode[] = this._ds.leads;
 		let leadsLabels: string[] = this._ds.getLeadCodesLabels(leads);
 
-		let cc: XRectangle[] = this._gridClient.rebuildCells(
-			this._dp.state.container.width, this._dp.state.container.height);
+		let cc: XRectangle[] = this._gridClient.rebuildCells(this._dp.state.container);
 
 		this._dp.layout.rebuild(cc, this._gridClient.gridMode);
 		this._dp.state.leadsCodes = leads;
@@ -648,7 +647,7 @@ export class DrawableComponent implements OnInit {
 	private drawBeatsRangesObjects(objs: BeatsRangeDrawingObject[]) {
 
 		this._ct.saveState();
-		this._ct.clipRect(this._dp.state.container);// TODO remove
+		//this._ct.clipRect(this._dp.state.container);// TODO remove
 		// draw beat ranges: drawObj.container for all channels
 		// draw beat peaks: drawObj.points for each channel
 		let z: number,

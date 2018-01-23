@@ -435,23 +435,23 @@ export class GridClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public rebuildCells(w: number, h: number): XRectangle[] {
+	public rebuildCells(c: XRectangle): XRectangle[] {
 		let cellIndex: number,
 			rowIndex: number,
 			cellLeft: number = 0,
 			cellTop: number = 0,
-			cellHeight: number = Math.floor((h - (this.rwc - 1) * this.rm) / this.rwc),
-			cellWidth: number = Math.floor((w - (this.clc - 1) * this.cm) / this.clc),
+			cellHeight: number = Math.floor((c.height - (this.rwc - 1) * this.rm) / this.rwc),
+			cellWidth: number = Math.floor((c.width - (this.clc - 1) * this.cm) / this.clc),
 			signalHeight: number = Math.floor(cellHeight / 2);
 
 		this.cells = new Array(this.rwc * this.clc);
 
-		for (cellIndex = 0, cellTop = 0; cellIndex < this.cells.length; cellIndex++) {
+		for (cellIndex = 0, cellLeft = c.left, cellTop = c.top; cellIndex < this.cells.length; cellIndex++) {
 			for (rowIndex = 0; rowIndex < this.rwc; rowIndex++ , cellIndex++) {
 				this.cells[cellIndex] = new XRectangle(
 					cellLeft, cellTop, cellWidth, cellHeight
-				)
-				cellTop = this.cells[cellIndex].maxOy + this.rm;
+				);
+				cellTop += cellHeight + this.rm;
 			}
 			cellLeft += cellWidth + this.cm;
 		}
