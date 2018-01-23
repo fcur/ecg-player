@@ -335,7 +335,7 @@ export class XDProxy {
 			this.lastEvent.type = XDChangeType.Change;
 			//this.lastEvent.cursor = CursorType.Move;
 			// change DO position/size
-			target.owner.drag(move.left, move.top, target, this.state, this.drawingData);
+			target.owner.drag(move.left, move.top, target, this.state, this.drawingData, this.layout);
 			this.forceUpdate();
 		} else {
 			this.lastEvent.currentState.scroll(move.left);
@@ -376,7 +376,7 @@ export class XDProxy {
 		}
 
 		if (target != null) {
-			target.owner.select(target, this.state);
+			target.owner.select(target, this.state, this.layout);
 			this.lastEvent.type = XDChangeType.Change;
 			this.lastEvent.sender = XDChangeSender.MouseClick;
 			this.pushUpdate();
@@ -426,7 +426,7 @@ export class XDProxy {
 
 		this.lastEvent.cursor = draggable ? CursorType.Move : (di > -1 ? CursorType.Pointer : CursorType.Grab);
 		for (; z1 < this.doVisible.length; z1++) {
-			this.doVisible[z1].owner.hover(z1 === di, this.doVisible[z1], this.state);
+			this.doVisible[z1].owner.hover(z1 === di, this.doVisible[z1], this.state, this.layout);
 		}
 
 		this.lastEvent.type = XDChangeType.ForceRefresh;

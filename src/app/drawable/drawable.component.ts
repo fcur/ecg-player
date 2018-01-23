@@ -648,6 +648,7 @@ export class DrawableComponent implements OnInit {
 	private drawBeatsRangesObjects(objs: BeatsRangeDrawingObject[]) {
 
 		this._ct.saveState();
+		this._ct.clipRect(this._dp.state.container);// TODO remove
 		// draw beat ranges: drawObj.container for all channels
 		// draw beat peaks: drawObj.points for each channel
 		let z: number,

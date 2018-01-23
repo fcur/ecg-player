@@ -50,6 +50,18 @@ export class DrawingData {
 	}
 
 	//-------------------------------------------------------------------------------------
+	/**
+	 * Check data for sample rate.
+	 * @param v sample rate
+	 */
+	public haveData(v: number): boolean {
+		return this.headers.hasOwnProperty(v) &&
+			this.data.hasOwnProperty(v) &&
+			this.data[v] != null;
+	}
+
+
+	//-------------------------------------------------------------------------------------
 	public getHeaders(minPx: number, maxPx: number, sampleRate: number): RecordProjection[] {
 		if (!this.headers.hasOwnProperty(sampleRate)) return [];
 

@@ -14,9 +14,9 @@ import {
 	DrawingData, RecordDrawingData, RecordProjection
 } from "./drawingdata";
 import {
-	XDPSEvent, XDChangeSender, XDCoordinates,
-	XDGridMode, XAnimation, XAnimationType,
-	XDProxyState, XCanvasTool, XWCell,
+	XDGridMode, XAnimation, XAnimationType, XWDensityUnit,
+	XDPSEvent, XDChangeSender, XDCoordinates, XWLayout,
+	XDProxyState, XCanvasTool, XWCell, XWDensity,
 	XDChangeType, XMatrixTool, CursorType
 } from "./misc";
 import {
@@ -64,9 +64,9 @@ export interface IDrawingClient {
 	render(obj: IDObject[], st: XDProxyState, ct: XCanvasTool);
 
 	// add mouse/touch events handlers
-	select(obj: IDObject, st: XDProxyState);
-	hover(v: boolean, obj: IDObject, st: XDProxyState);
-	drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData);
+	select(obj: IDObject, st: XDProxyState, wl: XWLayout);
+	hover(v: boolean, obj: IDObject, st: XDProxyState, wl: XWLayout);
+	drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData, wl: XWLayout);
 }
 
 
@@ -116,17 +116,17 @@ export class XDrawingClient implements IDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public select(obj: IDObject, st: XDProxyState) {
+	public select(obj: IDObject, st: XDProxyState, wl: XWLayout) {
 
 	}
 
 	//-------------------------------------------------------------------------------------
-	public hover(v: boolean, obj: IDObject, st: XDProxyState) {
+	public hover(v: boolean, obj: IDObject, st: XDProxyState, wl: XWLayout) {
 
 	}
 
 	//-------------------------------------------------------------------------------------
-	public drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData) {
+	public drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData, wl: XWLayout) {
 
 	}
 }
@@ -237,7 +237,10 @@ export class BeatsDrawingClient extends XDrawingClient {
 	//-------------------------------------------------------------------------------------
 	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState): BeatsRangeDrawingObject[] {
 		// TODO: add drawings merge method (example: signal for other leads)
-		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
+		if (!dd.headers.hasOwnProperty(ps.sampleRate) ||
+			!dd.data.hasOwnProperty(ps.sampleRate) ||
+			!dd.data[ps.sampleRate]) return [];
+		//if (dd.haveData(ps.sampleRate)) return [];
 
 		let recData: RecordDrawingData,
 			recProj: RecordProjection,
@@ -315,7 +318,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public select(obj: IDObject, st: XDProxyState) {
+	public select(obj: IDObject, st: XDProxyState, wwl: XWLayout) {
 		// TODO: combine different states with bitwise operations
 		if (obj.state === XDPrimitiveState.Selected) {
 			obj.state = XDPrimitiveState.Default;
@@ -329,7 +332,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public hover(v: boolean, obj: IDObject, st: XDProxyState) {
+	public hover(v: boolean, obj: IDObject, st: XDProxyState, wwl: XWLayout) {
 		// TODO: combine different states with bitwise operations
 		if (obj.state === XDPrimitiveState.Selected || obj.state === XDPrimitiveState.AS) {
 			obj.state = v ? XDPrimitiveState.AS : XDPrimitiveState.Selected;
@@ -339,7 +342,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData) {
+	public drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData, wwl: XWLayout) {
 
 	}
 
@@ -957,12 +960,12 @@ export class DemoRectangleClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public select(obj: DemoRectDrawingObject, st: XDProxyState) {
+	public select(obj: DemoRectDrawingObject, st: XDProxyState, wl: XWLayout) {
 
 	}
 
 	//-------------------------------------------------------------------------------------
-	public hover(v: boolean, obj: DemoRectDrawingObject, st: XDProxyState) {
+	public hover(v: boolean, obj: DemoRectDrawingObject, st: XDProxyState, wl: XWLayout) {
 		if (!v) return;
 		let left: number = st.pointerX + st.skipPx;
 		let top: number = st.pointerY;
@@ -1040,7 +1043,7 @@ export class DemoRectangleClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public drag(l: number, t: number, obj: DemoRectDrawingObject, st: XDProxyState, allData: DrawingData) {
+	public drag(l: number, t: number, obj: DemoRectDrawingObject, st: XDProxyState, allData: DrawingData, wl: XWLayout) {
 		let stop: number = 0,
 			mask: number = 1,
 			c = obj.container,
