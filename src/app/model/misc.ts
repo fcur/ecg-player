@@ -254,9 +254,9 @@ export class XWCell {
 	public density: XWDensity;
 
 	/** Cell assigned lead code. */
-	public lead: EcgLeadCode;
+	//public lead: EcgLeadCode;
 	/** Cell assigned lead text. */
-	public leadLabel: string;
+	//public leadLabel: string;
 	/** Cell signal inversion. */
 	public invert: boolean;
 
@@ -267,7 +267,7 @@ export class XWCell {
 	/** Cell signal height to pixels.  */
 	public vhp: number;
 
-	static FLOATING_MUL: number = 100000;
+	static FM: number = 100000;
 
 }
 
@@ -301,23 +301,23 @@ export class XDProxyState {
 	/** Target drawing object under cursor. */
 	public target: IDObject;
 	/** Pixels in millimeter MUL coefficient. */
-	public apxmm: number;
+	//public apxmm: number;
 	/** Maximum declared sample value. */
 	public maxSample: number;
 	/** Maximum/minimum visible (calculated) sample value in microvolts. */
-	public signalMicrovoltsClip: number; // signalClip
+	//public signalMicrovoltsClip: number; // signalClip
 	/** Maximum/minimum visible (calculated) sample value. */
-	public signalSamplesClip: number;
+	//public signalSamplesClip: number;
 	/** Signal sample rate.*/
 	public sampleRate: number;
 	/** Enable development mode.*/
 	public devMode: boolean;
 	/** Maximum sample value in microvolts from input signal. */
-	public signalScale: number;
+	//public signalScale: number;
 	/** Surface grid cells array. Position on canvas. */
 	//public gridCells: XWCell[];
 	/**  Surface grid cells mode.*/
-	public gridMode: XDGridMode;
+	//public gridMode: XDGridMode;
 	/** Cursor pointer X. */
 	public pointerX: number;
 	/** Cursor pointer Y. */
@@ -389,15 +389,15 @@ export class XDProxyState {
 		//this.onScrollBs = new BehaviorSubject(NaN);
 		this.timestamp = Date.now();            // drawing proxy state creation time
 		this.scale = 1;                         // default scale = 1   
-		this.apxmm = 3;                         // for default dpi
-		this.signalScale = 5000;                // from input signal
-		this.signalMicrovoltsClip = 5000;       // from settings
+		//this.apxmm = 3;                         // for default dpi
+		//this.signalScale = 5000;                // from input signal
+		//this.signalMicrovoltsClip = 5000;       // from settings
 		this.maxSample = 32767;                 // from input signal
 		//this.gridCells = [];
 		this._skipPx = 0;
 		this.limitPx = 0;
-		this.signalSamplesClip = Math.floor(this.maxSample * this.signalMicrovoltsClip / this.signalScale);
-		this.gridMode = XDGridMode.EMPTY;
+		//this.signalSamplesClip = Math.floor(this.maxSample * this.signalMicrovoltsClip / this.signalScale);
+		//this.gridMode = XDGridMode.EMPTY;
 		this.resetPointer();
 	}
 
@@ -950,14 +950,16 @@ export class XWDensity {
 	static LOWX_LABEL = "s";
 	static LOWY_LABEL = "mV";
 
+	public _dxStepIndex: number;
+	public _dyStepIndex: number;
+
+
 	public dxStepList: number[];
 	public dyStepList: number[];
-	public dxStepIndex: number;
-	public dyStepIndex: number;
+
 
 	public scrollLock: boolean;
 	public units: XWDensityUnit;
-
 
 	public dxMinIndex: number;
 	public dyMinIndex: number;
@@ -983,7 +985,33 @@ export class XWDensity {
 		}
 		return label;
 	}
+	//-------------------------------------------------------------------------------------
+	public get dxStepIndex(): number {
+		return this._dxStepIndex;
+	}
+	//-------------------------------------------------------------------------------------
+	public set dxStepIndex(v: number) {
+		if (!Number.isInteger(v) || v < 0 || v > this.dxStepList.length) {
+			this.resetDxStepIndex();
+			return;
+		}
+		this._dxStepIndex = v;
 
+	}
+	//-------------------------------------------------------------------------------------
+	public get dyStepIndex(): number {
+		return this._dyStepIndex;
+	}
+	//-------------------------------------------------------------------------------------
+	public set dyStepIndex(v: number) {
+		if (!Number.isInteger(v) || v < 0 || v > this.dyStepList.length) {
+			this.resetDyStepIndex();
+			return;
+		}
+		this._dyStepIndex = v;
+
+	}
+	//-------------------------------------------------------------------------------------
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
@@ -1009,7 +1037,7 @@ export class XWDensity {
 		this.units = XWDensityUnit.Percents;
 		this.scrollLock = false;
 		this.dxMinIndex = -2
-		this.dxMaxIndex = 4;
+		this.dxMaxIndex = 2;
 		this.dyMinIndex = -2;
 		this.dyMaxIndex = 2;
 		this.dxDefIndex = 0;
@@ -1102,8 +1130,8 @@ export class XWLayout {
 		for (let z: number = 0; z < cont.length; z++) {
 			this.cells[z] = new XWCell();
 			this.cells[z].container = cont[z];
-			this.cells[z].sampleValueToPixel = Math.floor(((cont[z].height / 2) / this.signalSamplesClip) * XWCell.FLOATING_MUL) / XWCell.FLOATING_MUL;
-			this.cells[z].microvoltsToPixel = Math.floor(((cont[z].height / 2) / this.signalMcrVoltsClip) * XWCell.FLOATING_MUL) / XWCell.FLOATING_MUL;
+			this.cells[z].sampleValueToPixel = Math.floor(((cont[z].height / 2) / this.signalSamplesClip) * XWCell.FM) / XWCell.FM;
+			this.cells[z].microvoltsToPixel = Math.floor(((cont[z].height / 2) / this.signalMcrVoltsClip) * XWCell.FM) / XWCell.FM;
 			//this.cells[z].lead = leadsCodes[z];
 
 		}

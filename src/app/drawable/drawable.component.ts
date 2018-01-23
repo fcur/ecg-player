@@ -908,7 +908,7 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.fillText(text, left, top);
 
 		// size
-		text = `${Math.floor(this._ct.width)}X${Math.floor(this._ct.height)}  W=${this._dp.state.limitPx}  H=${this._dp.state.signalScale}`;
+		text = `${Math.floor(this._ct.width)}X${Math.floor(this._ct.height)}  W=${this._dp.state.limitPx}  H=${this._dp.layout.signalScale}`;
 		textWidth = this._ct.ctx.measureText(text).width;
 		left = this._ct.width / 2;
 		top = this._ct.height - textSize;
