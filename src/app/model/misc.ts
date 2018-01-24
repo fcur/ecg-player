@@ -256,9 +256,9 @@ export class XWCell {
 	/** Cell index. */
 	public index: number;
 	/** Cell ROW index. */
-	public cellRowIndex: number;
+	public rowIndex: number;
 	/** Cell COLUMN index. */
-	public cellColumnIndex: number;
+	public colIndex: number;
 	/** Cell visiblity(hidden). */
 	public hidden: boolean;
 	/** Cell density object. */
@@ -1300,6 +1300,7 @@ export class XWLayout {
 	public rebuild(c: XRectangle, sss: number = 0, osr: number = 0) {
 
 		let cellIndex: number,
+			colIndex: number,
 			rowIndex: number,
 			cellLeft: number,
 			cellTop: number,
@@ -1309,14 +1310,20 @@ export class XWLayout {
 			signalHeight: number = Math.floor(cellHeight / 2);
 
 		this.cells = new Array(this.rwc * this.clc);
+		this._rowsCells = new Array(this.rwc);
+		this._columsCells = new Array(this.clc);
 
-		for (cellIndex = 0, cellLeft = c.left, cellTop = c.top; cellIndex < this.cells.length; cellIndex++) {
+		for (cellIndex = 0, colIndex = 0, cellLeft = c.left, cellTop = c.top; cellIndex < this.cells.length; cellIndex++ , colIndex++) {
+			this._columsCells[colIndex] = new Array(this.rwc);
+
 			for (rowIndex = 0; rowIndex < this.rwc; rowIndex++ , cellIndex++) {
-				cell = new XWCell();
+				if (!Array.isArray(this._rowsCells[rowIndex]))
+					this._rowsCells[rowIndex] = new Array(this.clc);
 
+				cell = new XWCell();
 				cell.index = cellIndex;
-				cell.cellRowIndex = rowIndex;
-				cell.cellColumnIndex = cellIndex % rowIndex;
+				cell.rowIndex = rowIndex;
+				cell.colIndex = colIndex;
 				cell.container = new XRectangle(cellLeft, cellTop, cellWidth, cellHeight);
 				cell.density.dxStepIndex = this._dxStepIndex;
 				cell.density.dyStepIndex = this._dyStepIndex;
@@ -1324,12 +1331,12 @@ export class XWLayout {
 				cell.prepareDyStepList(this.signalScale, this.maxSample, sss);
 
 				this.cells[cellIndex] = cell;
-
+				this._rowsCells[rowIndex][colIndex] = cell;
+				this._columsCells[colIndex][rowIndex] = cell;
 				cellTop += cellHeight + this.rm;
 			}
 			cellLeft += cellWidth + this.cm;
 		}
-
 	}
 
 	//-------------------------------------------------------------------------------------------------
