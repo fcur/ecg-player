@@ -493,14 +493,11 @@ export class DrawableComponent implements OnInit {
 	private prepareGrid() {
 		let leads: EcgLeadCode[] = this._ds.leads;
 		let leadsLabels: string[] = this._ds.getLeadCodesLabels(leads);
-
-		let cc: XRectangle[] = this._gridClient.rebuildCells(this._dp.state.container);
-
-		this._dp.layout.rebuild(cc, this._gridClient.gridMode);
+		this._dp.layout.rebuild(this._dp.state.container);
 		this._dp.state.leadsCodes = leads;
 		this._dp.state.leadsCaptions = leadsLabels;
 		//this._dp.state.prepareGridCells(leads, leadsLabels);
-		this._dp.state.limitPx = cc[0].width;
+		this._dp.state.limitPx = this._dp.layout.cellWidth;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -533,7 +530,7 @@ export class DrawableComponent implements OnInit {
 		// x - polyline index
 		let z: number,
 			y: number,
-			x: number,
+			polInd: number,
 			w: number,
 			c: number,
 			dx: number,
@@ -541,6 +538,7 @@ export class DrawableComponent implements OnInit {
 			top: number,
 			left: number,
 			cell: XWCell,
+			lead: EcgLeadCode,
 			points: XPoint[];
 
 		this._ct.saveState();
@@ -549,12 +547,15 @@ export class DrawableComponent implements OnInit {
 		for (z = 0; z < objs.length; z++) {
 
 			for (y = 0; y < this._dp.state.leadsCodes.length; y++) {
-				x = objs[z].leadCodes.indexOf(this._dp.state.leadsCodes[y]);
+				lead = this._dp.state.leadsCodes[y];
 
-				if (x < 0) continue;
+				polInd = objs[z].leadCodes.indexOf(this._dp.state.leadsCodes[y]);
+
+				if (polInd < 0) continue;
+				if (y >= this._dp.layout.cells.length) break;
 
 				cell = this._dp.layout.cells[y];
-				points = objs[z].polylines[x].points;
+				points = objs[z].polylines[polInd].points;
 				//console.info(points.length);
 				// calc start position
 				// TODO: check {start+length < points.length}
