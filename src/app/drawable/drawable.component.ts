@@ -334,10 +334,12 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private onReceiveData(v: EcgRecord[]) {
 		if (!v || !Array.isArray(v) || v.length === 0) return;
+		let osr: number = this._ds.ecgrecords[0].sampleRateForCls;
 		// save sample rate in state
-		this._dp.state.sampleRate = this._ds.ecgrecords[0].sampleRateForCls;
+		this._dp.state.sampleRate = osr;
+		this._dp.layout.prepareStepList(5000, osr);
 		// save original sample rate
-		this._dp.drawingData.originalSampleRate = this._ds.ecgrecords[0].sampleRateForCls;
+		this._dp.drawingData.originalSampleRate = osr;
 		this._dp.drawingData.recordHeaders = this._ds.ecgrecords;
 		// on real project we receive data in other place
 		this._dp.drawingData.projection = this._ds.ecgrecords;
@@ -548,7 +550,7 @@ export class DrawableComponent implements OnInit {
 
 			for (y = 0; y < this._dp.state.leadsCodes.length; y++) {
 				x = objs[z].leadCodes.indexOf(this._dp.state.leadsCodes[y]);
-				
+
 				if (x < 0) continue;
 
 				cell = this._dp.layout.cells[y];
