@@ -337,7 +337,7 @@ export class DrawableComponent implements OnInit {
 		let osr: number = this._ds.ecgrecords[0].sampleRateForCls;
 		// save sample rate in state
 		this._dp.state.sampleRate = osr;
-		this._dp.layout.prepareStepList(5000, osr);
+		this._dp.layout.prepareStepList(5000, osr, 32767);
 		// save original sample rate
 		this._dp.drawingData.originalSampleRate = osr;
 		this._dp.drawingData.recordHeaders = this._ds.ecgrecords;
@@ -403,7 +403,7 @@ export class DrawableComponent implements OnInit {
 		let wheel: number = event.wheelDelta / 120;
 
 
-
+		this._dp.layout.resetMicrVoltCoef(1, wheel > 0);
 
 		//let prewZoom: number = this._cursorClient.zoomStep;
 		//this._cursorClient.zoomIndex += wheel;

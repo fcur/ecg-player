@@ -250,6 +250,7 @@ export class XWCell {
 	private _pxPerSmpList: number[];
 	private _dxStepLabelsList: string[];
 	private _dyStepLabelsList: string[];
+	private _mcrvToPixZ: number;
 
 	/** Cell relative size & position.*/
 	public container: XRectangle;
@@ -272,6 +273,10 @@ export class XWCell {
 	public get sampleValueToPixel(): number { return this._smpValToPixList[this.density.dyStepIndex]; }
 	/** Microvolts value to pixel convertion MUL coefficient. pixels = millivolts * coef */
 	public get microvoltsToPixel(): number { return this._mcrvToPixList[this.density.dyStepIndex]; }
+	public get mcrvToPixList(): number[] { return this._mcrvToPixList; }
+	public get microvoltsToPixelZ(): number { return this._mcrvToPixZ; }
+	public set microvoltsToPixelZ(v: number) { this._mcrvToPixZ = v; }
+
 	/** Millivolts value to pixel convertion MUL coefficient. pixels = microvolts * coef */
 	public get millivoltsToPixel(): number { return this._mcrvToPixList[this.density.dyStepIndex] * 1000; }
 	/** Count of pixels into microvolts value. */
@@ -293,6 +298,8 @@ export class XWCell {
 	public get dxStepIndex(): number { return this.density.dxStepIndex; }
 	public get dyStepIndex(): number { return this.density.dyStepIndex; }
 
+
+
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		// TODO: add init method
@@ -302,7 +309,6 @@ export class XWCell {
 	//-------------------------------------------------------------------------------------
 	public reset() {
 		this.density = new XWDensity();
-
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -1236,23 +1242,37 @@ export class XWLayout {
 		return 0;
 	}
 
+	//-------------------------------------------------------------------------------------
+	public resetMicrVoltCoef(p: number, up: boolean) {
+		let pv: number = this.cells[0].microvoltsToPixel;
+		let pi: number = this.cells[0].density.dyStepIndex;
+		let ni: number = up ?
+			Math.min(this.cells[0].density.dyMaxIndex, pv + 1) :
+			Math.max(this.cells[0].density.dyMinIndex, pv - 1);
+		let nv: number = this.cells[0].mcrvToPixList[ni];
+		let v: number = pv + (nv - pv) * p;
+
+
+		for (let z: number = 0; z < this.cells.length; z++) {
+			this.cells[z].microvoltsToPixelZ = v;
+		}
+	}
 
 	//-------------------------------------------------------------------------------------
 	get gridMode(): XDGridMode {
 		return this._gridMode;
 	}
 
-
 	/** Surface relative size & position.*/
 	public container: XRectangle;
 	/** Maximum sample value in microvolts from input signal. */
 	public signalScale: number;
 	/** Maximum/minimum visible (calculated) sample value in microvolts. */
-	public signalMcrVoltsClip: number;
+	public microVoltsClip: number;
 	/** Maximum declared sample value. */
-	public maxSample: number;
-	/** Maximum/minimum visible (calculated) sample value. */
-	public signalSamplesClip: number;
+	public maxSampleVal: number;
+	/** Original signal sample rate. */
+	public sampleRate: number;
 
 	//-------------------------------------------------------------------------------------
 	set gridMode(layout: XDGridMode) {
@@ -1289,16 +1309,14 @@ export class XWLayout {
 		this.rm = 10;
 		this.lm = 20;
 		this.cm = 10;
-		this.signalScale = 5000;				// from input signal
-		this.signalMcrVoltsClip = 5000;			// from settings
-		this.maxSample = 32767;					// from input signal
-		this.signalSamplesClip = Math.floor(this.maxSample * this.signalMcrVoltsClip / this.signalScale);
+		this.microVoltsClip = 5000; // from settings
+		this.maxSampleVal = 32767; // from input signal
+		this.sampleRate = 175;// from input signal
 		this.cells = [];
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public rebuild(c: XRectangle, sss: number = 0, osr: number = 0) {
-
+	public rebuild(c: XRectangle) {
 		let cellIndex: number,
 			colIndex: number,
 			rowIndex: number,
@@ -1327,9 +1345,6 @@ export class XWLayout {
 				cell.container = new XRectangle(cellLeft, cellTop, cellWidth, cellHeight);
 				cell.density.dxStepIndex = this._dxStepIndex;
 				cell.density.dyStepIndex = this._dyStepIndex;
-				cell.prepareDxStepList(osr);
-				cell.prepareDyStepList(this.signalScale, this.maxSample, sss);
-
 				this.cells[cellIndex] = cell;
 				this._rowsCells[rowIndex][colIndex] = cell;
 				this._columsCells[colIndex][rowIndex] = cell;
@@ -1340,10 +1355,13 @@ export class XWLayout {
 	}
 
 	//-------------------------------------------------------------------------------------------------
-	public prepareStepList(sss: number = 0, osr: number = 0) {
+	public prepareStepList(sss: number, osr: number, msv: number) {
+		this.maxSampleVal = msv;
+		this.signalScale = sss;
+		this.sampleRate = osr;
 		for (let z: number = 0; z < this.cells.length; z++) {
 			this.cells[z].prepareDxStepList(osr);
-			this.cells[z].prepareDyStepList(this.signalScale, this.maxSample, sss);
+			this.cells[z].prepareDyStepList(this.microVoltsClip, this.maxSampleVal, sss);
 		}
 	}
 
