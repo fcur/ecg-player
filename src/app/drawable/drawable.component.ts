@@ -35,6 +35,7 @@ import {
 	EcgAnnotation, EcgAnnotationCode, EcgLeadCode
 } from "../model/ecgdata";
 import { Subscription, BehaviorSubject } from "rxjs";
+import {LiteResampler } from "../model/literesampler";
 
 @Component({
 	selector: 'app-drawable',

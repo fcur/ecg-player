@@ -10,6 +10,7 @@ import {
 	EcgAnnotationCode, EcgLeadCode, EcgWavePoint,
 	EcgWavePointType
 } from "./ecgdata";
+import { LiteResampler } from "./literesampler";
 
 
 // -------------------------------------------------------------------------------------------------

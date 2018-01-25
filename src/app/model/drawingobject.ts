@@ -18,6 +18,7 @@ import {
 	XDChangeSender, XDGridMode,
 	XDProxyState, XDCoordinates
 } from "./misc";
+import { LiteResampler } from "./literesampler";
 
 // -------------------------------------------------------------------------------------------------
 // Drawing object type

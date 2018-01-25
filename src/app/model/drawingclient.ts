@@ -23,6 +23,7 @@ import {
 	XDrawingPrimitive, XDPrimitiveState, XLabel, XPeak,
 	XPoint, XLine, XRectangle, XPolyline
 } from "./geometry";
+import { LiteResampler } from "./literesampler";
 
 // -------------------------------------------------------------------------------------------------
 // Drawing mode

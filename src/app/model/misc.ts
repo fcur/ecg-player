@@ -20,6 +20,7 @@ import {
 	XLabel, XLine, XPeak, XPoint, XPolyline,
 	XRectangle
 } from "./geometry";
+import { LiteResampler } from "./literesampler";
 import { ElementRef } from "@angular/core";
 
 

@@ -31,6 +31,7 @@ import {
 	XDrawingPrimitive, XDPrimitiveState, XLabel,
 	XLine, XPeak, XPoint, XPolyline, XRectangle
 } from "./geometry";
+import { LiteResampler } from "./literesampler";
 
 // -------------------------------------------------------------------------------------------------
 // DrawingProxy
