@@ -41,7 +41,7 @@ export class XDProxy {
 	public layout: XWLayout;
 	public drawingData: DrawingData;
 	public onChangeState: EventEmitter<XDPSEvent>;
-	
+
 	//public drawingObjects: IDrawingObject[];
 	private _clients: IDrawingClient[]; // F2, F3
 
@@ -65,6 +65,9 @@ export class XDProxy {
 	public get state(): XDProxyState {
 		return this.lastEvent.currentState;
 	}
+	public get pstate(): XDProxyState {
+		return this.lastEvent.previousState;
+	}
 	//-------------------------------------------------------------------------------------
 	public get canDragWaveform(): boolean {
 		return this.lastEvent.currentState.canDrag;
@@ -82,7 +85,10 @@ export class XDProxy {
 	public get scrollWaveform(): boolean {
 		return this.lastEvent.previousState.minPx != this.lastEvent.currentState.minPx;
 	}
-
+	//-------------------------------------------------------------------------------------
+	public get activeZoom(): boolean {
+		return this.state ? this.state.activeZoom : false;
+	}
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		//console.info("DrawingProxy constructor");
@@ -295,12 +301,14 @@ export class XDProxy {
 
 	//-------------------------------------------------------------------------------------
 	public forceDrRefresh() {
+		this.updatePrevState();
 		this.lastEvent.type = XDChangeType.ForceRefresh;
 		this.pushUpdate();
 	}
 
 	//-------------------------------------------------------------------------------------
 	public performDragStart(event: MouseEvent | TouchEvent) {
+		if (this.state.activeZoom) return;
 		let v: XPoint = this.getEventPosition(event);
 		this.updatePrevState();
 		//this.lastEvent.previousState.dragPosition.rebuild(v.left, v.top);
@@ -329,7 +337,7 @@ export class XDProxy {
 			console.info("grab new rectangle");
 			target = di > -1 ? this.doVisible[di] : null;
 		}
-		
+
 
 		if (target != null && (target.draggable || target.changeable)) {
 			this.lastEvent.type = XDChangeType.Change;
@@ -363,6 +371,7 @@ export class XDProxy {
 
 	//-------------------------------------------------------------------------------------
 	public performMouseClick(event: MouseEvent | TouchEvent) {
+		if (this.state.activeZoom) return;
 		// TODO: merge results with 3X4 grid layot
 		//console.info("proxy: preformClick");
 		this.prepareCursor(event); // optional
@@ -385,9 +394,45 @@ export class XDProxy {
 
 	//-------------------------------------------------------------------------------------
 	public preformDbClick(event: MouseEvent) {
+		if (this.state.activeZoom) return;
 		//let changes: XDrawingChange = this.collectChanges(XDrawingChangeSender.MouseDbClick, event);
 		//this.onChangeState.emit(changes);
 	}
+
+	//-------------------------------------------------------------------------------------
+	/**
+	 * Perform zoom on proxy data & layout.
+	 * @param zf zoom factor (true=zoom-in, false=zoom-out)
+	 * @param zx zoom on OX axis / pixels, milliseconds
+	 * @param zy zoom on OY axis / microvolts
+	 */
+	public performZoom(zf: boolean, zx: boolean = false, zy: boolean = false) {
+		// TODO: check row & layout type
+		if (this.doVisible.length === 0 || (!zx && !zy) || this.state.activeZoom) return;
+
+		let animation: XAnimation = new XAnimation();
+		animation.length = 200;
+
+		this.state.type = zx && zy ? XDChangeType.ZoomXY : (
+			zx ? XDChangeType.ZoomX :
+				XDChangeType.ZoomY
+		);
+
+		animation.animation = (progress: number) => {
+			this.layout.resetMicrVoltCoef(progress, zf);
+			if (zy) this.layout.resetMicrVoltCoef(progress, zf);
+			this.pushUpdate();
+		};
+
+		animation.animationEnd = () => {
+			this.state.type = XDChangeType.ForceRefresh;
+			if (zy) this.layout.updateMicrVoltCoef(zf);
+			this.pushUpdate();
+		};
+		animation.start();
+	}
+
+
 
 	//-------------------------------------------------------------------------------------
 	private findDrawingObjectIndex(left: number, top: number): number {

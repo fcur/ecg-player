@@ -210,7 +210,7 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:wheel", ["$event"]) onMouseWheel(event: WheelEvent) {
 		event.preventDefault();
-		//this.onWheelScroll(event);
+		this.onWheelScroll(event);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -397,13 +397,17 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onWheelScroll(event: WheelEvent) {
-		// Skip animation
-		if (this._zoomAnimation != null) return;
 		// Normalize wheel to +1 or -1
 		let wheel: number = event.wheelDelta / 120;
+		let zx: boolean = false, zy: boolean = true;
+		this._dp.performZoom(wheel > 0, zx, zy);
+
+		// Skip animation
+		//if (this._zoomAnimation != null) return;
 
 
-		this._dp.layout.resetMicrVoltCoef(1, wheel > 0);
+
+		//this._dp.layout.resetMicrVoltCoef(1, wheel > 0);
 
 		//let prewZoom: number = this._cursorClient.zoomStep;
 		//this._cursorClient.zoomIndex += wheel;
@@ -538,6 +542,7 @@ export class DrawableComponent implements OnInit {
 			top: number,
 			left: number,
 			cell: XWCell,
+			mcrVtstoPx: number,
 			lead: EcgLeadCode,
 			points: XPoint[];
 
@@ -555,20 +560,22 @@ export class DrawableComponent implements OnInit {
 				if (y >= this._dp.layout.cells.length) break;
 
 				cell = this._dp.layout.cells[y];
+				mcrVtstoPx = this._dp.activeZoom ? cell.microvoltsToPixelZ : cell.microvoltsToPixel;
+
 				points = objs[z].polylines[polInd].points;
 				//console.info(points.length);
 				// calc start position
 				// TODO: check {start+length < points.length}
 				w = state.minPx - objs[z].container.left;
 				dx = objs[z].container.left + points[w].left - state.minPx;
-				dy = Math.floor(points[w].top * cell.microvoltsToPixel + shift);
+				dy = Math.floor(points[w].top * mcrVtstoPx + shift);
 				left = dx + cell.container.left + 0.5;
 				top = dy + cell.container.midOy + 0.5;
 				this._ct.ctx.moveTo(left, top);
 				w++;
 				for (c = 1; w < points.length, c < state.limitPx; w++ , c++) {
 					dx = objs[z].container.left + points[w].left - state.minPx;
-					dy = Math.floor(points[w].top * cell.microvoltsToPixel) + shift;
+					dy = Math.floor(points[w].top * mcrVtstoPx) + shift;
 					left = dx + cell.container.left + 0.5;
 					top = dy + cell.container.midOy + 0.5;
 					this._ct.ctx.lineTo(left, top);
@@ -589,7 +596,12 @@ export class DrawableComponent implements OnInit {
 		//console.log("draw cursor", objs);
 		this._ct.saveState();
 		let state: XDProxyState = this._dp.state;
-		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
+		let dy: number,
+			z: number = 0,
+			y: number = 0,
+			left: number = 0,
+			top: number = 0,
+			mcrVtstoPx: number;
 		let obj: CursorDrawingObject = objs[0];
 		this._ct.ctx.globalAlpha = this._cursorClient.opacity;
 		// pointer line
@@ -608,8 +620,11 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.fillStyle = this._cursorClient.pointColor;
 		for (let z: number = 0; z < this._dp.layout.cells.length; z++) {
 			// cell index = point index
+			mcrVtstoPx = this._dp.activeZoom ?
+				this._dp.layout.cells[z].microvoltsToPixelZ :
+				this._dp.layout.cells[z].microvoltsToPixel;
 			left = state.container.left + obj.points[z].left + 0.5;
-			dy = Math.floor(obj.points[z].top * this._dp.layout.cells[z].microvoltsToPixel);
+			dy = Math.floor(obj.points[z].top * mcrVtstoPx);
 			top = dy + this._dp.layout.cells[z].container.midOy + testShift + 0.5;
 			this._ct.makeCircle(left, top, this._cursorClient.pointRadius);
 		}
@@ -661,6 +676,7 @@ export class DrawableComponent implements OnInit {
 			dy: number,
 			top: number,
 			left: number,
+			mcrVtstoPx: number,
 			point: XPoint,
 			cell: XWCell,
 			beatRange: BeatsRangeDrawingObject;
@@ -725,11 +741,12 @@ export class DrawableComponent implements OnInit {
 				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
 				if (w < 0) continue;
 				cell = this._dp.layout.cells[w];
+				mcrVtstoPx = this._dp.activeZoom ? cell.microvoltsToPixelZ : cell.microvoltsToPixel;
 
 				point = beatRange.points[x];
 				dx = point.left - state.minPx;
 				if (dx < 0 || point.left > state.maxPx) continue;
-				dy = Math.floor(point.top * cell.microvoltsToPixel);
+				dy = Math.floor(point.top * mcrVtstoPx);
 				left = cell.container.left + dx + 0.5;
 				top = dy + cell.container.midOy + 0.5 + shift;
 				this._ct.makeCircle(left, top, this._beatsClient.radius);

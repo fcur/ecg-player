@@ -78,6 +78,7 @@ export enum XDChangeType {
 	Default,
 	ZoomX,
 	ZoomY,
+	ZoomXY,
 	Scroll,
 	ForceRefresh,
 	Change
@@ -296,9 +297,9 @@ export class XWCell {
 	public get curDxStepLabel(): string { return this._dxStepLabelsList[this.density.dxStepIndex]; }
 	public get curDyStepLabel(): string { return this._dyStepLabelsList[this.density.dyStepIndex]; }
 	public get dxStepIndex(): number { return this.density.dxStepIndex; }
+	public set dxStepIndex(v: number) { this.density.dxStepIndex = v; }
+	public set dyStepIndex(v: number) { this.density.dyStepIndex = v; }
 	public get dyStepIndex(): number { return this.density.dyStepIndex; }
-
-
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
@@ -321,10 +322,9 @@ export class XWCell {
 		let z: number,
 			fsr: number;
 		this._pxToMsList = new Array(this.density.dxStepList.length);
-		let a1: number[] = [];
 		this._pxPerSmpList = new Array(this.density.dxStepList.length);
 		for (z = 0; z < this._pxToMsList.length; z++) {
-			fsr = this.floatingSampleRate(this.density.dxStepList[z], sampleRate); a1.push(fsr);
+			fsr = this.floatingSampleRate(this.density.dxStepList[z], sampleRate);
 			this._pxPerSmpList[z] = fsr / sampleRate;
 			this._pxToMsList[z] = Math.floor(1000 * XWCell.FM / fsr) / XWCell.FM;
 		}
@@ -355,6 +355,18 @@ export class XWCell {
 		}
 	}
 
+	//----------------------------------------------------------------------------------------------
+	public prepareStepLabels() {
+		let z: number;
+		this._dxStepLabelsList = new Array(this.density.dxStepList.length);
+		for (z = 0; z < this.density.dxStepList.length; z++) {
+			this._dxStepLabelsList[z] = `${this.density.getStepLabel(true, z)}  ${this.getUnitLabel(XWDensity.LOWX_LABEL)}`;
+		}
+		this._dyStepLabelsList = new Array(this.density.dyStepList.length);
+		for (z = 0; z < this.density.dyStepList.length; z++) {
+			this._dyStepLabelsList[z] = `${this.density.getStepLabel(false, z)}  ${this.getUnitLabel(XWDensity.LOWY_LABEL)}`;
+		}
+	}
 
 	//-------------------------------------------------------------------------------------
 	private microvoltsMaxValue(dy: number, ssc: number): number {
@@ -379,6 +391,14 @@ export class XWCell {
 			result = sr * dx;
 		}
 		return result;
+	}
+
+	//----------------------------------------------------------------------------------------------
+	public getUnitLabel(lowPart: string): string {
+		if (this.density.units === XWDensityUnit.Percents) {
+			return this.density.unitLabel;
+
+		} else return `unit/${lowPart}`;
 	}
 
 }
@@ -490,7 +510,22 @@ export class XDProxyState {
 	public get dragPosition(): XPoint {
 		return this._dragPosition;
 	}
-
+	//-------------------------------------------------------------------------------------------------
+	public get activeZoom(): boolean {
+		return this.activeXzoom || this.activeYzoom || this.activeXYzoom;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get activeXYzoom(): boolean {
+		return this.type === XDChangeType.ZoomXY;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get activeXzoom(): boolean {
+		return this.type === XDChangeType.ZoomX;
+	}
+	//-------------------------------------------------------------------------------------------------
+	public get activeYzoom(): boolean {
+		return this.type === XDChangeType.ZoomY;
+	}
 
 	//-------------------------------------------------------------------------------------------------
 	constructor() {
@@ -1058,30 +1093,34 @@ export enum XWDensityUnit {
 // Waveform density
 //-------------------------------------------------------------------------------------------------
 export class XWDensity {
+	// prefix step index - data value index
+	// other - step list formula indexes
 
 	static LOWX_LABEL = "s";
 	static LOWY_LABEL = "mV";
-
+	// data value indexes
 	public _dxStepIndex: number;
 	public _dyStepIndex: number;
+	public _dxStepMaxIndex: number;
+	public _dyStepMaxIndex: number;
 
-
+	// lists of zoom steps
 	public dxStepList: number[];
 	public dyStepList: number[];
-
-
-	public scrollLock: boolean;
-	public units: XWDensityUnit;
-
+	// step list formula indexes
 	public dxMinIndex: number;
 	public dyMinIndex: number;
-
 	public dxMaxIndex: number;
 	public dyMaxIndex: number;
-
 	public dxDefIndex: number;
 	public dyDefIndex: number;
-
+	// settings
+	public scrollLock: boolean;
+	public units: XWDensityUnit;
+	//-------------------------------------------------------------------------------------
+	public get dxStepMaxIndex(): number { return this._dxStepMaxIndex; }
+	//-------------------------------------------------------------------------------------
+	public get dyStepMaxIndex(): number { return this._dyStepMaxIndex; }
 	//-------------------------------------------------------------------------------------
 	public get unitLabel(): string {
 		let label: string = "";
@@ -1098,9 +1137,7 @@ export class XWDensity {
 		return label;
 	}
 	//-------------------------------------------------------------------------------------
-	public get dxStepIndex(): number {
-		return this._dxStepIndex;
-	}
+	public get dxStepIndex(): number { return this._dxStepIndex; }
 	//-------------------------------------------------------------------------------------
 	public set dxStepIndex(v: number) {
 		if (!Number.isInteger(v) || v < 0 || v > this.dxStepList.length) {
@@ -1108,12 +1145,9 @@ export class XWDensity {
 			return;
 		}
 		this._dxStepIndex = v;
-
 	}
 	//-------------------------------------------------------------------------------------
-	public get dyStepIndex(): number {
-		return this._dyStepIndex;
-	}
+	public get dyStepIndex(): number { return this._dyStepIndex; }
 	//-------------------------------------------------------------------------------------
 	public set dyStepIndex(v: number) {
 		if (!Number.isInteger(v) || v < 0 || v > this.dyStepList.length) {
@@ -1121,9 +1155,7 @@ export class XWDensity {
 			return;
 		}
 		this._dyStepIndex = v;
-
 	}
-	//-------------------------------------------------------------------------------------
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
@@ -1131,15 +1163,22 @@ export class XWDensity {
 		this.prepareStepList();
 		this.resetDxStepIndex();
 		this.resetDyStepIndex();
-
 	}
 
 	//-------------------------------------------------------------------------------------
+	/**
+	 * Formula for OX axis.
+	 * @param i some number.
+	 */
 	public getDxStep(i: number): number {
 		return (2 ** i);
 	}
 
 	//-------------------------------------------------------------------------------------
+	/**
+	 * Formula for OY axis.
+	 * @param i some number.
+	 */
 	public getDyStep(i: number): number {
 		return (2 ** i);
 	}
@@ -1148,13 +1187,12 @@ export class XWDensity {
 	public reset() {
 		this.units = XWDensityUnit.Percents;
 		this.scrollLock = false;
-		this.dxMinIndex = -2
-		this.dxMaxIndex = 2;
-		this.dyMinIndex = -2;
-		this.dyMaxIndex = 2;
-		this.dxDefIndex = 0;
-		this.dyDefIndex = 0;
-
+		this.dxMinIndex = -2 // step value = 25%
+		this.dxMaxIndex = 2; // step value = 400%
+		this.dyMinIndex = -2; // step value = 25%
+		this.dyMaxIndex = 2; // step value = 400%
+		this.dxDefIndex = 0; // step value = 100%
+		this.dyDefIndex = 0; // step value = 100%
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -1168,12 +1206,12 @@ export class XWDensity {
 
 	//-------------------------------------------------------------------------------------
 	public resetDxStepIndex() {
-		this.dxStepIndex = this.dxStepList.indexOf(this.getDxStep(this.dxDefIndex));
+		this._dxStepIndex = this.dxStepList.indexOf(this.getDxStep(this.dxDefIndex));
 	}
 
 	//-------------------------------------------------------------------------------------
 	public resetDyStepIndex() {
-		this.dyStepIndex = this.dyStepList.indexOf(this.getDyStep(this.dyDefIndex));
+		this._dyStepIndex = this.dyStepList.indexOf(this.getDyStep(this.dyDefIndex));
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -1189,8 +1227,8 @@ export class XWDensity {
 		for (z = this.dxMinIndex; z <= this.dxMaxIndex; z++) {
 			this.dxStepList.push(this.getDxStep(z));
 		}
+		this._dxStepMaxIndex = this.dxStepList.length - 1;
 	}
-
 
 	//-------------------------------------------------------------------------------------
 	public resetDyStepList() {
@@ -1199,6 +1237,7 @@ export class XWDensity {
 		for (z = this.dyMinIndex; z <= this.dyMaxIndex; z++) {
 			this.dyStepList.push(this.getDyStep(z));
 		}
+		this._dyStepMaxIndex = this.dyStepList.length - 1;
 	}
 
 }
@@ -1244,18 +1283,31 @@ export class XWLayout {
 
 	//-------------------------------------------------------------------------------------
 	public resetMicrVoltCoef(p: number, up: boolean) {
+		//console.log(up ? "up / zoom in" : "down / zoom out");
 		let pv: number = this.cells[0].microvoltsToPixel;
 		let pi: number = this.cells[0].density.dyStepIndex;
 		let ni: number = up ?
-			Math.min(this.cells[0].density.dyMaxIndex, pv + 1) :
-			Math.max(this.cells[0].density.dyMinIndex, pv - 1);
+			Math.min(this.cells[0].density.dyStepMaxIndex, pi + 1) :
+			Math.max(0, pi - 1);
 		let nv: number = this.cells[0].mcrvToPixList[ni];
 		let v: number = pv + (nv - pv) * p;
-
 
 		for (let z: number = 0; z < this.cells.length; z++) {
 			this.cells[z].microvoltsToPixelZ = v;
 		}
+	}
+
+	//-------------------------------------------------------------------------------------
+	public updateMicrVoltCoef(up: boolean) {
+		let pv: number = this.cells[0].microvoltsToPixel;
+		let pi: number = this.cells[0].density.dyStepIndex;
+		let ni: number = up ?
+			Math.min(this.cells[0].density.dyStepMaxIndex, pi + 1) :
+			Math.max(0, pi - 1);
+		for (let z: number = 0; z < this.cells.length; z++) {
+			this.cells[z].dyStepIndex = ni;
+		}
+		//console.log(this.cells[0].curDxStepLabel, this.cells[0].curDyStepLabel);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -1343,8 +1395,8 @@ export class XWLayout {
 				cell.rowIndex = rowIndex;
 				cell.colIndex = colIndex;
 				cell.container = new XRectangle(cellLeft, cellTop, cellWidth, cellHeight);
-				cell.density.dxStepIndex = this._dxStepIndex;
-				cell.density.dyStepIndex = this._dyStepIndex;
+				//cell.density.dxStepIndex = this._dxStepIndex;
+				//cell.density.dyStepIndex = this._dyStepIndex;
 				this.cells[cellIndex] = cell;
 				this._rowsCells[rowIndex][colIndex] = cell;
 				this._columsCells[colIndex][rowIndex] = cell;
@@ -1362,6 +1414,7 @@ export class XWLayout {
 		for (let z: number = 0; z < this.cells.length; z++) {
 			this.cells[z].prepareDxStepList(osr);
 			this.cells[z].prepareDyStepList(this.microVoltsClip, this.maxSampleVal, sss);
+			this.cells[z].prepareStepLabels();
 		}
 	}
 
