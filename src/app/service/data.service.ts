@@ -4,7 +4,7 @@ import {
 	EcgParser, EcgRecord, EcgSignal, EcgWavePoint,
 	EcgWavePointType
 } from "../model/ecgdata";
-
+import { LiteResampler } from "../model/literesampler";
 import { BehaviorSubject } from "rxjs";
 
 
@@ -19,6 +19,7 @@ export class DataService {
 	public isStandard12Leads: boolean = false;
 
 	public onLoadDataBs: BehaviorSubject<EcgRecord[]>;
+	public onResampleDataBs: BehaviorSubject<EcgRecord[]>;
 
 	//-------------------------------------------------------------------------------------
 	public get leads(): EcgLeadCode[] {
@@ -48,6 +49,7 @@ export class DataService {
 	constructor() {
 		this._ecgleadsDescriptionMap = new Map<EcgLeadCode, string>();
 		this.onLoadDataBs = new BehaviorSubject<EcgRecord[]>([]);
+		this.onResampleDataBs = new BehaviorSubject<EcgRecord[]>([]);
 		//console.info("DataService constructor");
 	}
 
@@ -136,5 +138,24 @@ export class DataService {
 			return this.onLoadDataBs.value;
 		return [];
 	}
+
+	//-------------------------------------------------------------------------------------
+	public resampleRecords(srl: number[]) {
+		let z: number,
+			y: number,
+			rec: EcgRecord,
+			rr: EcgRecord[] = [],
+			records: EcgRecord[] = this.ecgrecords;
+
+		for (z = 0; z < records.length; z++) {
+			for (y = 0; y < srl.length; y++) {
+				rec = LiteResampler.Resample(records[z], srl[y]);
+				if (rec === null) continue;
+				rr.push(rec);
+			}
+		}
+		this.onResampleDataBs.next(rr);
+	}
+
 
 }

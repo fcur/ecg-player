@@ -60,8 +60,10 @@ export class DrawableComponent implements OnInit {
 	private _hideFileDrop: boolean;
 	/** Canvas tool. */
 	private _ct: XCanvasTool;
+	/** Matrix operations tool. */
 	private _mt: XMatrixTool;
 	private _loadDataSubs: Subscription;
+	private _resDataSubs: Subscription;
 	private _changeStateSubs: Subscription;
 	private _prepareDrawingSubs: Subscription;
 	private _pinBeatsToSignal: boolean;
@@ -222,6 +224,7 @@ export class DrawableComponent implements OnInit {
 		this._clipCanvas = false;
 		this._pinBeatsToSignal = true;
 		this._loadDataSubs = null;
+		this._resDataSubs = null;
 		this._drawingScrollSubs = null;
 		this._threshold = 100;
 		this._clickThreshold = 300;
@@ -236,6 +239,7 @@ export class DrawableComponent implements OnInit {
 	public ngOnInit() {
 		//console.info("DrawableComponent: init");
 		this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord[]));
+		this._resDataSubs = this._ds.onResampleDataBs.subscribe(v => this.onResampledData(v as EcgRecord[]));
 		//this._drawingScrollSubs = this._dp.state.onScrollBs.subscribe(v => this.onScrollDrawings(v as number));
 		this._changeStateSubs = this._dp.onChangeState.subscribe((v: XDPSEvent) => this.onStateChanges(v));
 		//this._prepareDrawingSubs = this._dp.onPrepareDrawings.subscribe((v: IDObject[][]) => this.onReceiveDObjects(v));
@@ -258,6 +262,7 @@ export class DrawableComponent implements OnInit {
 	public ngOnDestroy() {
 		//console.info("DrawableComponent: destroy");
 		if (this._loadDataSubs) this._loadDataSubs.unsubscribe();
+		if (this._resDataSubs) this._loadDataSubs.unsubscribe();
 		if (this._changeStateSubs) this._dp.onChangeState.unsubscribe();
 		if (this._drawingScrollSubs) this._drawingScrollSubs.unsubscribe();
 		if (this._prepareDrawingSubs) this._prepareDrawingSubs.unsubscribe();
@@ -335,19 +340,30 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private onReceiveData(v: EcgRecord[]) {
 		if (!v || !Array.isArray(v) || v.length === 0) return;
-		let osr: number = this._ds.ecgrecords[0].sampleRateForCls;
+		let osr: number = v[0].sampleRateForCls;
 		// save sample rate in state
 		this._dp.state.sampleRate = osr;
 		this._dp.layout.prepareStepList(5000, osr, 32767);
 		// save original sample rate
 		this._dp.drawingData.originalSampleRate = osr;
-		this._dp.drawingData.recordHeaders = this._ds.ecgrecords;
+		this._dp.drawingData.recordHeaders = v;
 		// on real project we receive data in other place
-		this._dp.drawingData.projection = this._ds.ecgrecords;
+		this._dp.drawingData.projection = v;
 		this._dp.reset();
 		this._dp.rebuildDrawObjGroupsF3();
 		this._dp.scrollDrawObjGroupsF3();
 		this._dp.forceDrRefresh();
+		this._ds.resampleRecords(this._dp.layout.samplerateList);
+		
+	}
+
+	//-------------------------------------------------------------------------------------
+	private onResampledData(v: EcgRecord[]) {
+		if (!Array.isArray(v) || v.length === 0) return;
+		console.log("resampled records:", v.length);
+
+		//this._dp.drawingData.recordHeaders = v;
+		//this._dp.drawingData.projection = v;
 	}
 
 	//-------------------------------------------------------------------------------------

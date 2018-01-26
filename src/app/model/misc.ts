@@ -246,10 +246,12 @@ export class XDPSEvent {
 export class XWCell {
 
 	static FM: number = 100000;
+
 	private _smpValToPixList: number[];
 	private _mcrvToPixList: number[];
 	private _pxToMsList: number[];
 	private _pxPerSmpList: number[];
+	private _smpRtList: number[];
 	private _dxStepLabelsList: string[];
 	private _dyStepLabelsList: string[];
 	private _mcrvToPixZ: number;
@@ -301,6 +303,7 @@ export class XWCell {
 	public set dxStepIndex(v: number) { this.density.dxStepIndex = v; }
 	public set dyStepIndex(v: number) { this.density.dyStepIndex = v; }
 	public get dyStepIndex(): number { return this.density.dyStepIndex; }
+	public get samplerateList(): number[] { return this._smpRtList; }
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
@@ -324,10 +327,11 @@ export class XWCell {
 			fsr: number;
 		this._pxToMsList = new Array(this.density.dxStepList.length);
 		this._pxPerSmpList = new Array(this.density.dxStepList.length);
+		this._smpRtList = new Array(this.density.dxStepList.length);
 		for (z = 0; z < this._pxToMsList.length; z++) {
-			fsr = this.floatingSampleRate(this.density.dxStepList[z], sampleRate);
-			this._pxPerSmpList[z] = fsr / sampleRate;
-			this._pxToMsList[z] = Math.floor(1000 * XWCell.FM / fsr) / XWCell.FM;
+			this._smpRtList[z] = this.floatingSampleRate(this.density.dxStepList[z], sampleRate);
+			this._pxPerSmpList[z] = this._smpRtList[z] / sampleRate;
+			this._pxToMsList[z] = Math.floor(1000 * XWCell.FM / this._smpRtList[z]) / XWCell.FM;
 		}
 	}
 
@@ -1271,15 +1275,72 @@ export class XWLayout {
 	public cm: number;
 	/** Layout margin. */
 	public lm: number;
-
+	prepareDxStepList	/** Surface relative size & position.*/
+	public container: XRectangle;
+	/** Maximum sample value in microvolts from input signal. */
+	public signalScale: number;
+	/** Maximum/minimum visible (calculated) sample value in microvolts. */
+	public microVoltsClip: number;
+	/** Maximum declared sample value. */
+	public maxSampleVal: number;
+	/** Original signal sample rate. */
+	public sampleRate: number;
 	/** Grid cells containers. */
 	//public cells: XRectangle[];
 
+	//-------------------------------------------------------------------------------------
+	public get samplerateList(): number[] {
+		return Array.isArray(this.cells) && this.cells.length > 0 ?
+			this.cells[0].samplerateList : [];
+	}
 	//-------------------------------------------------------------------------------------
 	public get cellWidth(): number {
 		if (Array.isArray(this.cells) && this.cells.length > 0)
 			return this.cells[0].container.width;
 		return 0;
+	}
+	//-------------------------------------------------------------------------------------
+	get gridMode(): XDGridMode { return this._gridMode; }
+	//-------------------------------------------------------------------------------------
+	set gridMode(layout: XDGridMode) {
+		this._gridMode = layout;
+		this.rwc = 0;
+		this.clc = 0;
+		if (layout === XDGridMode.LEADS3CH111 ||
+			layout === XDGridMode.LEADS3CH211 ||
+			layout === XDGridMode.LEADS3CH121 ||
+			layout === XDGridMode.LEADS3CH112) {
+			this.clc = 1;
+			this.rwc = 3;
+		} else if (layout === XDGridMode.LEADS2CH11 ||
+			layout === XDGridMode.LEADS2CH21 ||
+			layout === XDGridMode.LEADS2CH12) {
+			this.clc = 1;
+			this.rwc = 2;
+		} else if (layout === XDGridMode.LEADS1CH1) {
+			this.clc = 1;
+			this.rwc = 1;
+		} else if (layout === XDGridMode.Leads12R3C4) {
+			this.rwc = 3;
+			this.clc = 4;
+		} else if (layout === XDGridMode.Leads15R3C5) {
+			this.rwc = 3;
+			this.clc = 5;
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	constructor() {
+		this._dxStepIndex = 0;
+		this._dyStepIndex = 0;
+		this.gridMode = XDGridMode.LEADS3CH111;
+		this.rm = 10;
+		this.lm = 20;
+		this.cm = 10;
+		this.microVoltsClip = 5000; // from settings
+		this.maxSampleVal = 32767; // from input signal
+		this.sampleRate = 175;// from input signal
+		this.cells = [];
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -1309,63 +1370,6 @@ export class XWLayout {
 			this.cells[z].dyStepIndex = ni;
 		}
 		//console.log(this.cells[0].curDxStepLabel, this.cells[0].curDyStepLabel);
-	}
-
-	//-------------------------------------------------------------------------------------
-	get gridMode(): XDGridMode {
-		return this._gridMode;
-	}
-
-	/** Surface relative size & position.*/
-	public container: XRectangle;
-	/** Maximum sample value in microvolts from input signal. */
-	public signalScale: number;
-	/** Maximum/minimum visible (calculated) sample value in microvolts. */
-	public microVoltsClip: number;
-	/** Maximum declared sample value. */
-	public maxSampleVal: number;
-	/** Original signal sample rate. */
-	public sampleRate: number;
-
-	//-------------------------------------------------------------------------------------
-	set gridMode(layout: XDGridMode) {
-		this._gridMode = layout;
-		this.rwc = 0;
-		this.clc = 0;
-		if (layout === XDGridMode.LEADS3CH111 ||
-			layout === XDGridMode.LEADS3CH211 ||
-			layout === XDGridMode.LEADS3CH121 ||
-			layout === XDGridMode.LEADS3CH112) {
-			this.clc = 1;
-			this.rwc = 3;
-		} else if (layout === XDGridMode.LEADS2CH11 ||
-			layout === XDGridMode.LEADS2CH21 ||
-			layout === XDGridMode.LEADS2CH12) {
-			this.clc = 1;
-			this.rwc = 2;
-		} else if (layout === XDGridMode.LEADS1CH1) {
-			this.clc = 1;
-			this.rwc = 1;
-		} else if (layout === XDGridMode.Leads12R3C4) {
-			this.rwc = 3;
-			this.clc = 4;
-		} else if (layout === XDGridMode.Leads15R3C5) {
-			this.rwc = 3;
-			this.clc = 5;
-		}
-	}
-	//-------------------------------------------------------------------------------------------------
-	constructor() {
-		this._dxStepIndex = 0;
-		this._dyStepIndex = 0;
-		this.gridMode = XDGridMode.LEADS3CH111;
-		this.rm = 10;
-		this.lm = 20;
-		this.cm = 10;
-		this.microVoltsClip = 5000; // from settings
-		this.maxSampleVal = 32767; // from input signal
-		this.sampleRate = 175;// from input signal
-		this.cells = [];
 	}
 
 	//-------------------------------------------------------------------------------------------------
