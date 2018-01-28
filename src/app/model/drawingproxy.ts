@@ -420,7 +420,7 @@ export class XDProxy {
 		);
 
 		animation.animation = (progress: number) => {
-			this.layout.resetMicrVoltCoef(progress, zf);
+			//this.layout.resetMicrVoltCoef(progress, zf);
 			if (zy) this.layout.resetMicrVoltCoef(progress, zf);
 			this.pushUpdate();
 		};

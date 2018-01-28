@@ -108,6 +108,58 @@ export class DrawingData {
 	}
 
 	//-------------------------------------------------------------------------------------
+	public set recordHeadersR(er: EcgRecord[]) {
+		if (!Array.isArray(er) || er.length === 0) return;
+
+		let ohp: { [recordId: string]: RecordProjection } = this.headers[this._osrKey];
+		let prevId: string = "", // previous record id
+			skipPx: number, // skip pixels
+			srKey: string, // current samplerate
+			recProj: RecordProjection; // new record projection
+
+		for (let recordId in ohp) {
+			if (!ohp.hasOwnProperty(recordId)) continue;
+			//proj = ohp[recordId];
+
+			for (let z: number = 0; z < er.length; z++) {
+				if (er[z].id !== recordId) continue;
+
+				srKey = er[z].sampleRateForCls.toString();
+				if (!this.headers[srKey]) this.headers[srKey] = {};
+				skipPx = prevId === "" ? 0 : this.headers[srKey][prevId].endPx;
+
+				recProj = new RecordProjection();
+				recProj.skipPixels = skipPx;
+				recProj.record = er[z];
+				this.headers[srKey][recProj.id] = recProj;
+			}
+
+			prevId = recordId;
+			//console.log(ohp[recordId]);
+
+			//if (ohp[recordId].endPx < minPx || ohp[recordId].startPx > maxPx) continue;
+			//result.push(projections[recordId]);
+		}
+
+
+		//let recProj: RecordProjection;
+		//let skipPx: number = 0;
+		//let srKey: string = er[0].sampleRateForCls.toString();
+
+		//if (!this.headers[srKey]) this.headers[srKey] = {};
+
+		//for (let z: number = 0; z < er.length; z++) {
+		//	recProj = new RecordProjection();
+		//	recProj.skipPixels = skipPx;
+		//	recProj.record = er[z];
+		//	skipPx += recProj.limitPixels;
+		//	this.headers[srKey][recProj.id] = recProj;
+		//}
+	}
+
+
+
+	//-------------------------------------------------------------------------------------
 	public set projection(er: EcgRecord[]) {
 		if (!Array.isArray(er) || er.length === 0) return;
 
@@ -124,6 +176,25 @@ export class DrawingData {
 			// TODO: save annotations, wave points, other
 		}
 	}
+
+	//-------------------------------------------------------------------------------------
+	public set projectionR(er: EcgRecord[]) {
+		//if (!Array.isArray(er) || er.length === 0) return;
+
+		//let srKey: string;
+		//let rdData: RecordDrawingData;
+		//for (let z: number = 0; z < er.length; z++) {
+		//	srKey = er[z].signal.sampleRate.toString();
+		//	if (!this.data[srKey]) this.data[srKey] = {};
+		//	if (!this.data[srKey][er[z].id]) this.data[srKey][er[z].id] = new RecordDrawingData();
+		//	rdData = this.data[srKey][er[z].id];
+		//	rdData.leads = er[z].signal.leads;
+		//	rdData.trySaveSignalPoints(er[z].signal);
+		//	rdData.trySaveBeatsPoints(er[z].beats, this.leadsForBeats);
+		//	// TODO: save annotations, wave points, other
+		//}
+	}
+
 
 }
 

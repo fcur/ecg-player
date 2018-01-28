@@ -362,8 +362,8 @@ export class DrawableComponent implements OnInit {
 		if (!Array.isArray(v) || v.length === 0) return;
 		console.log("resampled records:", v.length);
 
-		//this._dp.drawingData.recordHeaders = v;
-		//this._dp.drawingData.projection = v;
+		this._dp.drawingData.recordHeadersR = v;
+		this._dp.drawingData.projectionR = v;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -416,7 +416,7 @@ export class DrawableComponent implements OnInit {
 	private onWheelScroll(event: WheelEvent) {
 		// Normalize wheel to +1 or -1
 		let wheel: number = event.wheelDelta / 120;
-		let zx: boolean = false, zy: boolean = true;
+		let zx: boolean = true, zy: boolean = false;
 		this._dp.performZoom(wheel > 0, zx, zy);
 
 		// Skip animation
