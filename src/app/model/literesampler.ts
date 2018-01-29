@@ -145,7 +145,7 @@ export class LiteResampler {
 		if (!Array.isArray(inp) || inp.length === 0) return [];
 		let out: number[] = new Array(inp.length);
 		for (let z: number = 0; z < inp.length; z++) {
-			out[z] = inp[z] * coef;
+			out[z] = Math.floor(inp[z] * coef);
 		}
 		return out;
 	}

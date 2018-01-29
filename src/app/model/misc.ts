@@ -20,6 +20,10 @@ import {
 	XLabel, XLine, XPeak, XPoint, XPolyline,
 	XRectangle
 } from "./geometry";
+import {
+	DrawingData, RecordDrawingData,
+	RecordProjection
+} from "./drawingdata";
 import { LiteResampler } from "./literesampler";
 import { ElementRef } from "@angular/core";
 
@@ -273,6 +277,10 @@ export class XWCell {
 	/** Cell signal height to pixels.  */
 	public vhp: number;
 
+	/** Points for animation. */
+	public pointsZ: XPoint[];
+
+
 	/** Sample value to pixel convertion MUL coefficient. pixels = sample_value * coef */
 	public get sampleValueToPixel(): number { return this._smpValToPixList[this.density.dyStepIndex]; }
 	/** Microvolts value to pixel convertion MUL coefficient. pixels = millivolts * coef */
@@ -314,6 +322,7 @@ export class XWCell {
 	//-------------------------------------------------------------------------------------
 	public reset() {
 		this.density = new XWDensity();
+		this.pointsZ = [];
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -1275,7 +1284,7 @@ export class XWLayout {
 	public cm: number;
 	/** Layout margin. */
 	public lm: number;
-	prepareDxStepList	/** Surface relative size & position.*/
+	/** Surface relative size & position.*/
 	public container: XRectangle;
 	/** Maximum sample value in microvolts from input signal. */
 	public signalScale: number;
@@ -1292,6 +1301,10 @@ export class XWLayout {
 	public get samplerateList(): number[] {
 		return Array.isArray(this.cells) && this.cells.length > 0 ?
 			this.cells[0].samplerateList : [];
+	}
+	//-------------------------------------------------------------------------------------
+	public get cellStepIndex(): number {
+		return this.cells.length > 0 ? this.cells[0].dxStepIndex : -1;
 	}
 	//-------------------------------------------------------------------------------------
 	public get cellWidth(): number {
@@ -1344,13 +1357,13 @@ export class XWLayout {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public resetMicrVoltCoef(p: number, up: boolean) {
+	public resetMicrVoltCoef(p: number, up: boolean, val: number) {
 		//console.log(up ? "up / zoom in" : "down / zoom out");
 		let pv: number = this.cells[0].microvoltsToPixel;
 		let pi: number = this.cells[0].density.dyStepIndex;
 		let ni: number = up ?
-			Math.min(this.cells[0].density.dyStepMaxIndex, pi + 1) :
-			Math.max(0, pi - 1);
+			Math.min(this.cells[0].density.dyStepMaxIndex, pi + val) :
+			Math.max(0, pi - val);
 		let nv: number = this.cells[0].mcrvToPixList[ni];
 		let v: number = pv + (nv - pv) * p;
 
@@ -1360,17 +1373,52 @@ export class XWLayout {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public updateMicrVoltCoef(up: boolean) {
-		let pv: number = this.cells[0].microvoltsToPixel;
+	public resetSamplerate(p: number, up: boolean, val: number, st: XDProxyState, dt: DrawingData) {
+		// save in cells temporaty points
+
+		let pi: number = this.cells[0].dxStepIndex;
+		let pv: number = this.cells[0].samplerateList[pi];
+		let ni: number = up ?
+			Math.min(this.cells[0].density.dxStepMaxIndex, pi + val) :
+			Math.max(0, pi - val);
+		let nv: number = this.cells[0].samplerateList[ni];
+
+		let header: RecordProjection = dt.getHeader(st.skipPx + st.pointerX, st.sampleRate);
+		//let drawData: RecordDrawingData = dt.data[this.sampleRate][header.id].signal;
+		//drawData.s
+
+		//console.log(`sr=${nv}, ${nv / this.sampleRate * 100}%`);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public updateMicrVoltCoef(up: boolean, val: number) {
+		//let pv: number = this.cells[0].microvoltsToPixel;
 		let pi: number = this.cells[0].density.dyStepIndex;
 		let ni: number = up ?
-			Math.min(this.cells[0].density.dyStepMaxIndex, pi + 1) :
-			Math.max(0, pi - 1);
+			Math.min(this.cells[0].density.dyStepMaxIndex, pi + val) :
+			Math.max(0, pi - val);
 		for (let z: number = 0; z < this.cells.length; z++) {
 			this.cells[z].dyStepIndex = ni;
 		}
 		//console.log(this.cells[0].curDxStepLabel, this.cells[0].curDyStepLabel);
 	}
+
+	//-------------------------------------------------------------------------------------
+	public updateSamplerateIndex(up: boolean, val: number) {
+		let pi: number = this.cells[0].dxStepIndex;
+		//let pv: number = this.cells[0].samplerateList[pi];
+
+		let ni: number = up ?
+			Math.min(this.cells[0].density.dxStepMaxIndex, pi + val) :
+			Math.max(0, pi - val);
+
+		//let nv: number = this.cells[0].samplerateList[ni];
+		for (let z: number = 0; z < this.cells.length; z++) {
+			this.cells[z].dxStepIndex = ni;
+		}
+	}
+
+
 
 	//-------------------------------------------------------------------------------------------------
 	public rebuild(c: XRectangle) {

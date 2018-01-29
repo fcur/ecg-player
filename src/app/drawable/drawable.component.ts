@@ -35,7 +35,7 @@ import {
 	EcgAnnotation, EcgAnnotationCode, EcgLeadCode
 } from "../model/ecgdata";
 import { Subscription, BehaviorSubject } from "rxjs";
-import {LiteResampler } from "../model/literesampler";
+import { LiteResampler } from "../model/literesampler";
 
 @Component({
 	selector: 'app-drawable',
@@ -68,7 +68,6 @@ export class DrawableComponent implements OnInit {
 	private _prepareDrawingSubs: Subscription;
 	private _pinBeatsToSignal: boolean;
 	private _clipCanvas: boolean;
-	private _threshold: number;
 	private _drawingScrollSubs: Subscription;
 
 	private _zoomAnimation: XAnimation;
@@ -77,6 +76,9 @@ export class DrawableComponent implements OnInit {
 	private _clickThreshold: number;
 	private _inDrag: boolean;
 	private _skipClick: boolean;
+	private _wheelThreshold: number;
+	private _wheelTimeout: any;
+	private _wheelValue: number;
 
 
 	//----------------------------------------------------------------------------------------------
@@ -213,20 +215,27 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:wheel", ["$event"]) onMouseWheel(event: WheelEvent) {
 		event.preventDefault();
-		this.onWheelScroll(event);
+		let wheel: number = event.wheelDelta / 120;
+		clearTimeout(this._wheelTimeout);
+		this._wheelValue++;
+		this._wheelTimeout = setTimeout(() => {
+			this.onWheelScroll(event, wheel, this._wheelValue);
+			this._wheelValue = 0;
+		}, this._wheelThreshold);
 	}
 
 	//-------------------------------------------------------------------------------------
 	constructor(private _el: ElementRef, private _ds: DataService) {
 		this._hideFileDrop = false;
 		this._skipClick = true;
-
 		this._clipCanvas = false;
 		this._pinBeatsToSignal = true;
 		this._loadDataSubs = null;
 		this._resDataSubs = null;
 		this._drawingScrollSubs = null;
-		this._threshold = 100;
+		this._wheelThreshold = 100;
+		this._wheelValue = 0;
+		this._wheelTimeout = 100;
 		this._clickThreshold = 300;
 		this._zoomIntensity = 0.2;
 		this._dp = new XDProxy();
@@ -346,7 +355,7 @@ export class DrawableComponent implements OnInit {
 		this._dp.layout.prepareStepList(5000, osr, 32767);
 		// save original sample rate
 		this._dp.drawingData.originalSampleRate = osr;
-		this._dp.drawingData.recordHeaders = v;
+		this._dp.drawingData.origHeaders = v;
 		// on real project we receive data in other place
 		this._dp.drawingData.projection = v;
 		this._dp.reset();
@@ -354,16 +363,16 @@ export class DrawableComponent implements OnInit {
 		this._dp.scrollDrawObjGroupsF3();
 		this._dp.forceDrRefresh();
 		this._ds.resampleRecords(this._dp.layout.samplerateList);
-		
+
 	}
 
 	//-------------------------------------------------------------------------------------
 	private onResampledData(v: EcgRecord[]) {
+		// TODO: move to onComplete handler
 		if (!Array.isArray(v) || v.length === 0) return;
-		console.log("resampled records:", v.length);
-
-		this._dp.drawingData.recordHeadersR = v;
-		this._dp.drawingData.projectionR = v;
+		//console.log("resampled records:", v.length);
+		this._dp.drawingData.resmpHeaders = v;
+		this._dp.drawingData.resmpData = v;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -413,54 +422,12 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	private onWheelScroll(event: WheelEvent) {
-		// Normalize wheel to +1 or -1
-		let wheel: number = event.wheelDelta / 120;
+	private onWheelScroll(event: WheelEvent, wheel: number, value: number) {
+		//console.log("WheelScroll", wheel > 0, value);
 		let zx: boolean = true, zy: boolean = false;
-		this._dp.performZoom(wheel > 0, zx, zy);
-
-		// Skip animation
-		//if (this._zoomAnimation != null) return;
-
-
-
-		//this._dp.layout.resetMicrVoltCoef(1, wheel > 0);
-
-		//let prewZoom: number = this._cursorClient.zoomStep;
-		//this._cursorClient.zoomIndex += wheel;
-		//if (this._cursorClient.zoomIndex < 0 || this._cursorClient.zoomIndex >= this._cursorClient.zoomSteps.length)
-		//	this._cursorClient.zoomIndex = this._cursorClient.zoomSteps.indexOf(1);
-
-		//let localDelta: number = this._cursorClient.zoomStep - prewZoom;
-		//let localZoom: number = prewZoom;
-
-		//this._zoomAnimation = new XAnimation();
-		//this._zoomAnimation.length = 400;
-
-		//this._zoomAnimation.animation = (progress: number) => {
-		//	this._cursorClient.zoom = prewZoom + progress * localDelta;
-		//	this._mt.scale(this._cursorClient.zoom, this._cursorClient.zoom);
-		//	this._ct.clear();
-		//	this.renderVisibleGroups();
-		//	this.drawCursotPosition();
-		//	this.drawTargeRectangle("red"); //control
-		//	this.drawTargeRectangle("blue");
-		//};
-
-		//this._zoomAnimation.animationEnd = () => {
-		//	this._cursorClient.zoom = this._cursorClient.zoomStep;
-		//	this._mt.scale(this._cursorClient.zoom, this._cursorClient.zoom);
-		//	this._zoomAnimation = null;
-		//	this._ct.clear();
-		//	this.renderVisibleGroups();
-		//	this.drawCursotPosition();
-		//	//this.drawTargeRectangle("red"); //control
-		//	this.drawTargeRectangle("blue");
-		//};
-		//this._zoomAnimation.start();
+		this._dp.performZoom(wheel > 0, zx, zy, value);
 	}
-
-
+	
 	//-------------------------------------------------------------------------------------
 	//private onScrollDrawings(val: number) {
 	//	if (!Number.isInteger(val)) return;
@@ -578,8 +545,9 @@ export class DrawableComponent implements OnInit {
 
 				cell = this._dp.layout.cells[y];
 				mcrVtstoPx = this._dp.activeZoom ? cell.microvoltsToPixelZ : cell.microvoltsToPixel;
+				points = this._dp.activeZoom ? cell.pointsZ : objs[z].polylines[polInd].points;
+				if (points.length === 0) continue;
 
-				points = objs[z].polylines[polInd].points;
 				//console.info(points.length);
 				// calc start position
 				// TODO: check {start+length < points.length}

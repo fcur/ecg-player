@@ -21,7 +21,10 @@ import {
 	XDrawingObject, SignalDrawingObject,
 	WaveDrawingObject, XDOChangeType
 } from "./drawingobject";
-import { DrawingData } from "./drawingdata";
+import {
+	DrawingData, RecordDrawingData,
+	RecordProjection
+} from "./drawingdata";
 import {
 	EcgWavePoint, EcgWavePointType, EcgAnnotation, EcgSignal,
 	EcgAnnotationCode, EcgLeadCode, EcgRecord
@@ -407,7 +410,7 @@ export class XDProxy {
 	 * @param zx zoom on OX axis / pixels, milliseconds
 	 * @param zy zoom on OY axis / microvolts
 	 */
-	public performZoom(zf: boolean, zx: boolean = false, zy: boolean = false) {
+	public performZoom(zf: boolean, zx: boolean = false, zy: boolean = false, v: number = 1) {
 		// TODO: check row & layout type
 		if (this.doVisible.length === 0 || (!zx && !zy) || this.state.activeZoom) return;
 
@@ -421,13 +424,16 @@ export class XDProxy {
 
 		animation.animation = (progress: number) => {
 			//this.layout.resetMicrVoltCoef(progress, zf);
-			if (zy) this.layout.resetMicrVoltCoef(progress, zf);
+
+			if (zx) this.layout.resetSamplerate(progress, zf, v, this.state, this.drawingData);
+			if (zy) this.layout.resetMicrVoltCoef(progress, zf, v);
 			this.pushUpdate();
 		};
 
 		animation.animationEnd = () => {
 			this.state.type = XDChangeType.ForceRefresh;
-			if (zy) this.layout.updateMicrVoltCoef(zf);
+			if (zx) this.layout.updateSamplerateIndex(zf, v);
+			if (zy) this.layout.updateMicrVoltCoef(zf, v);
 			this.pushUpdate();
 		};
 		animation.start();
