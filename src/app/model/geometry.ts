@@ -2,19 +2,20 @@
 //-------------------------------------------------------------------------------------------------
 // Drawing primitive state
 //-------------------------------------------------------------------------------------------------
-export enum XDrawingPrimitiveState {
+export enum XDPrimitiveState {
 	Default = 0,
-	Activated,
+	Active,
 	Selected,
-	Hidden
+	Hidden,
+	AS
 }
 
 //-------------------------------------------------------------------------------------------------
 // Drawing primitives
 //-------------------------------------------------------------------------------------------------
 export class XDrawingPrimitive {
-	zindex: number;
-	state: XDrawingPrimitiveState;
+	zIndex: number;
+	state: XDPrimitiveState;
 	//floatingX: boolean;
 	//floatingY: boolean;
 
@@ -25,10 +26,10 @@ export class XDrawingPrimitive {
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
-		this.zindex = 0;
+		this.zIndex = 0;
 		//this.floatingX = false;
 		//this.floatingY = false;
-		this.state = XDrawingPrimitiveState.Default;
+		this.state = XDPrimitiveState.Default;
 	}
 
 }
@@ -257,7 +258,7 @@ export class XPoint extends XDrawingPrimitive {
 
 	//-------------------------------------------------------------------------------------------------
 	/**
-	 * Rectangle constructor.
+	 * Point constructor.
 	 * @param t position on Y axis in pixels
 	 * @param l position on X axis in pixels
 	 */
@@ -268,7 +269,7 @@ export class XPoint extends XDrawingPrimitive {
 
 	//-------------------------------------------------------------------------------------------------
 	/**
-	 * Rebuild rectangle
+	 * Rebuild point
 	 * @param t position on Y axis in pixels
 	 * @param l position on X axis in pixels
 	 */

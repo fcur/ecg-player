@@ -78,7 +78,7 @@ export class EcgSignal {
 	public channels: number[][]; // [channel_index], [microvolts_value]
 	public sampleRate: number;
 	public leads: EcgLeadCode[];
-
+	/** Channel contains sample value(TRUE) or microvolts (FALSE). */
 	public asSamples: boolean;
 
 	//-------------------------------------------------------------------------------------

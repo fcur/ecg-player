@@ -4,8 +4,15 @@ import {
 	EcgParser, EcgRecord, EcgSignal, EcgWavePoint,
 	EcgWavePointType
 } from "../model/ecgdata";
+import { LiteResampler } from "../model/literesampler";
+import {
+	XDPSEvent, XDProxyState, XDChangeSender, XAnimation,
+	XAnimationType, XCanvasTool, XWCell, XDChangeType,
+	XDCoordinates, XDGridMode, XMatrixTool, CursorType,
+	XWDensity, XWLayout, XWDensityUnit, EcgDb
+} from "../model/misc";
+import { Subscription, BehaviorSubject, Observable, Subscriber } from "rxjs";
 
-import { BehaviorSubject } from "rxjs";
 
 
 // -------------------------------------------------------------------------------------------------
@@ -13,12 +20,19 @@ import { BehaviorSubject } from "rxjs";
 // -------------------------------------------------------------------------------------------------
 @Injectable()
 export class DataService {
+	// save & share data in session storage
 	private _ecgleadsDescriptionMap: Map<EcgLeadCode, string>;
 
 	public isEasiLeads: boolean = true;
 	public isStandard12Leads: boolean = false;
 
 	public onLoadDataBs: BehaviorSubject<EcgRecord[]>;
+	public onResampleDataBs: BehaviorSubject<EcgRecord[]>;
+
+	public ecgStorageKey: string;
+
+	private _db: EcgDb;
+
 
 	//-------------------------------------------------------------------------------------
 	public get leads(): EcgLeadCode[] {
@@ -48,7 +62,25 @@ export class DataService {
 	constructor() {
 		this._ecgleadsDescriptionMap = new Map<EcgLeadCode, string>();
 		this.onLoadDataBs = new BehaviorSubject<EcgRecord[]>([]);
+		this.onResampleDataBs = new BehaviorSubject<EcgRecord[]>([]);
 		//console.info("DataService constructor");
+		this._db = new EcgDb();
+	}
+
+	//-------------------------------------------------------------------------------------
+	public openDb(name: string) {
+		this._db.open(name, () => {
+			this.tryReadSessionStorage();
+		});
+	}
+
+	//-------------------------------------------------------------------------------------
+	public tryReadSessionStorage() {
+		//let records: EcgRecord[] = JSON.parse(sessionStorage.getItem(this.ecgStorageKey));
+		let loadSubsr: Subscription = this._db.readOriginalData().subscribe(
+			v => this.onLoadDataBs.next(v),
+			e => console.warn(e)
+		);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -127,6 +159,8 @@ export class DataService {
 			records[z].annotations = ecgrecord.annotations;
 			records[z].wavePoints = ecgrecord.wavePoints;
 		}
+		//sessionStorage.setItem(this.ecgStorageKey, JSON.stringify(records));
+		this._db.saveOriginalData(records);
 		this.onLoadDataBs.next(records);
 	}
 
@@ -136,5 +170,24 @@ export class DataService {
 			return this.onLoadDataBs.value;
 		return [];
 	}
+
+	//-------------------------------------------------------------------------------------
+	public resampleRecords(srl: number[]) {
+		let z: number,
+			y: number,
+			rec: EcgRecord,
+			rr: EcgRecord[] = [],
+			records: EcgRecord[] = this.ecgrecords;
+
+		for (z = 0; z < records.length; z++) {
+			for (y = 0; y < srl.length; y++) {
+				rec = LiteResampler.Resample(records[z], srl[y]);
+				if (rec === null) continue;
+				rr.push(rec);
+			}
+		}
+		this.onResampleDataBs.next(rr);
+	}
+
 
 }

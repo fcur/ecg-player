@@ -2,36 +2,40 @@ import {
 	Component, OnInit, ElementRef, HostListener,
 	ViewChild, Input
 } from '@angular/core';
-import { XDrawingProxy } from "../model/drawingproxy"
+import { XDProxy } from "../model/drawingproxy"
 import { DataService } from "../service/data.service"
 import {
-	XDrawingCell, XDrawingChangeSender, XDrawingGridMode,
-	XDrawingChange, XDrawingProxyState, XCanvasTool
+	XWCell, XDChangeSender, XDGridMode,
+	XDPSEvent, XDProxyState, XCanvasTool,
+	XMatrixTool, XAnimation, XAnimationType,
+	XDChangeType, XDCoordinates, CursorType,
+	XWDensity, XWDensityUnit, XWLayout
 } from "../model/misc";
 import {
-	XDrawingPrimitive, XDrawingPrimitiveState, XLabel,
+	XDrawingPrimitive, XDPrimitiveState, XLabel,
 	XLine, XPeak, XPoint, XPolyline, XRectangle
 } from "../model/geometry";
 import {
 	ClickablePointDrawingClient, CursorDrawingClient,
 	XDrawingClient, XDrawingMode, IDrawingClient,
 	SignalDrawingClient, CellDrawingClient,
-	GridCellDrawingClient, WavepointClient,
+	GridClient, WavepointClient,
 	AnsDrawingClient, BeatsDrawingClient,
-	TargetRectangleClient
+	DemoRectangleClient
 } from "../model/drawingclient";
 import {
-	BeatsRangeDrawingObject, IDrawingObject, ClPointDrawingObject,
+	BeatsRangeDrawingObject, IDObject, ClPointDrawingObject,
 	GridCellDrawingObject, CursorDrawingObject, PeakDrawingObject,
-	XDrawingObjectType, AnsDrawingObject, WaveDrawingObject,
+	WavepointDrawingObject, DemoRectDrawingObject, XDOChangeType,
 	CellDrawingObject, SignalDrawingObject, XDrawingObject,
-	WavepointDrawingObject
+	XDOType, AnsDrawingObject, WaveDrawingObject
 } from "../model/drawingobject";
 import {
 	EcgRecord, EcgSignal, EcgWavePoint, EcgWavePointType, EcgParser,
 	EcgAnnotation, EcgAnnotationCode, EcgLeadCode
 } from "../model/ecgdata";
 import { Subscription, BehaviorSubject } from "rxjs";
+import { LiteResampler } from "../model/literesampler";
 
 @Component({
 	selector: 'app-drawable',
@@ -45,29 +49,48 @@ import { Subscription, BehaviorSubject } from "rxjs";
 // -------------------------------------------------------------------------------------------------
 export class DrawableComponent implements OnInit {
 
-	private _dp: XDrawingProxy;
+	private _dp: XDProxy;
 	private _signalClient: SignalDrawingClient;
-	private _gridClient: GridCellDrawingClient;
+	private _gridClient: GridClient;
 	private _beatsClient: BeatsDrawingClient;
 	private _cursorClient: CursorDrawingClient;
-	private _targRectClient: TargetRectangleClient;
+	private _demoRectClient: DemoRectangleClient;
 	private _zoomIntensity: number;
 	private _fileReader: FileReader;
 	private _hideFileDrop: boolean;
 	/** Canvas tool. */
 	private _ct: XCanvasTool;
+	/** Matrix operations tool. */
+	private _mt: XMatrixTool;
 	private _loadDataSubs: Subscription;
-	private _waveformDragStartPosition: XPoint;
+	private _resDataSubs: Subscription;
+	private _changeStateSubs: Subscription;
+	private _prepareDrawingSubs: Subscription;
 	private _pinBeatsToSignal: boolean;
 	private _clipCanvas: boolean;
-	private _threshold: number;
-	private _lastEmitTime: number;
+	private _ecgStorageKey: string;
 	private _drawingScrollSubs: Subscription;
+
+	private _zoomAnimation: XAnimation;
+
+	private _mousemoveTime: number;
+	private _clickThreshold: number;
+	private _inDrag: boolean;
+	private _skipClick: boolean;
+	private _wheelThreshold: number;
+	private _wheelTimeout: any;
+	private _wheelValue: number;
+
 
 	//----------------------------------------------------------------------------------------------
 	@Input("clip-canvas")
 	set clipCanvas(value: boolean) {
 		this._clipCanvas = value;
+	}
+	@Input("ecg-storage-key")
+	set dataStorageKey(value: string) {
+		this._ecgStorageKey = value;
+		this._ds.ecgStorageKey = this._ecgStorageKey;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -94,7 +117,7 @@ export class DrawableComponent implements OnInit {
 	@HostListener("window:mousemove", ["$event"])
 	private onWindowMousemove(event: MouseEvent) {
 		//console.info("window:mousemove", event);
-		//console.info(event);
+		this._skipClick = this._skipClick || event.movementX != 0 && event.movementY != 0;
 		event.preventDefault();
 		event.stopPropagation();
 		this.onDragMove(event);
@@ -102,6 +125,7 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mousedown", ["$event"])
 	private onWindowMousedown(event: MouseEvent) {
+		this._skipClick = false;
 		//console.info("window:mousedown", event);
 		event.preventDefault();
 		event.stopPropagation();
@@ -113,7 +137,7 @@ export class DrawableComponent implements OnInit {
 		//console.info("window:mouseleave", event);
 		event.preventDefault();
 		event.stopPropagation();
-		this.onDragEnd(event);
+		//this.onDragEnd(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mouseout", ["$event"])
@@ -121,7 +145,7 @@ export class DrawableComponent implements OnInit {
 		//console.info("window:mouseout", event);
 		event.preventDefault();
 		event.stopPropagation();
-		this.onDragEnd(event);
+		//this.onDragEnd(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mouseup", ["$event"])
@@ -134,16 +158,20 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:auxclick", ["$event"])
 	private onWindowAuxclick(event: MouseEvent) {
+		// right/center mouse click
 		event.preventDefault();
 		event.stopPropagation();
-		//console.info("window:auxclick", event);
+		console.info("window:auxclick", event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:click", ["$event"])
 	private onWindowClick(event: MouseEvent) {
+		if (this._skipClick) return;
+		//console.info("window:click", event);
 		event.preventDefault();
 		event.stopPropagation();
-		//console.info("window:click", event);
+		//this.onMouseClick(event);
+		this._dp.performMouseClick(event);
 	}
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:dblclick", ["$event"])
@@ -191,28 +219,34 @@ export class DrawableComponent implements OnInit {
 		this.prepareCanvasSize();
 		this._ct.drawInfo();
 	}
-
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:wheel", ["$event"]) onMouseWheel(event: WheelEvent) {
 		event.preventDefault();
-		//this.onWheelScroll(event);
+		let wheel: number = event.wheelDelta / 120;
+		clearTimeout(this._wheelTimeout);
+		this._wheelValue++;
+		this._wheelTimeout = setTimeout(() => {
+			this.onWheelScroll(event, wheel, this._wheelValue);
+			this._wheelValue = 0;
+		}, this._wheelThreshold);
 	}
 
 	//-------------------------------------------------------------------------------------
 	constructor(private _el: ElementRef, private _ds: DataService) {
-		//console.info("DrawableComponent constructor");
 		this._hideFileDrop = false;
+		this._skipClick = true;
 		this._clipCanvas = false;
 		this._pinBeatsToSignal = true;
 		this._loadDataSubs = null;
+		this._resDataSubs = null;
 		this._drawingScrollSubs = null;
-		this._waveformDragStartPosition = null;
-		this._threshold = 100;
-		this._lastEmitTime = 0;
+		this._wheelThreshold = 100;
+		this._wheelValue = 0;
+		this._wheelTimeout = 100;
+		this._clickThreshold = 300;
 		this._zoomIntensity = 0.2;
-		this._dp = new XDrawingProxy();
-		//this._dp.onChangeState.subscribe((v: XDrawingChange) => this.onProxyStateChanges(v));
-		this._dp.onPrepareDrawings.subscribe((v: IDrawingObject[][]) => this.onReceiveDrawingObjects(v));
+		this._dp = new XDProxy(this._ds);
+		this._mt = new XMatrixTool();
 		this._fileReader = new FileReader();
 		this.prepareClients();
 	}
@@ -220,11 +254,17 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	public ngOnInit() {
 		//console.info("DrawableComponent: init");
-		this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
 		this._loadDataSubs = this._ds.onLoadDataBs.subscribe(v => this.onReceiveData(v as EcgRecord[]));
-		this._drawingScrollSubs = this._dp.state.onScrollBs.subscribe(v => this.onScrollDrawings(v as number));
+		this._resDataSubs = this._ds.onResampleDataBs.subscribe(v => this.onResampledData(v as EcgRecord[]));
+		//this._drawingScrollSubs = this._dp.state.onScrollBs.subscribe(v => this.onScrollDrawings(v as number));
+		this._changeStateSubs = this._dp.onChangeState.subscribe((v: XDPSEvent) => this.onStateChanges(v));
+		//this._prepareDrawingSubs = this._dp.onPrepareDrawings.subscribe((v: IDObject[][]) => this.onReceiveDObjects(v));
+		this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
 		this._canvasContainer.nativeElement.addEventListener("dragover", this.onDragOver.bind(this), false);
 		this._canvasContainer.nativeElement.addEventListener("drop", this.onDragDrop.bind(this), false);
+		this._ds.openDb(this._ecgStorageKey);
+
+
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -240,7 +280,10 @@ export class DrawableComponent implements OnInit {
 	public ngOnDestroy() {
 		//console.info("DrawableComponent: destroy");
 		if (this._loadDataSubs) this._loadDataSubs.unsubscribe();
+		if (this._resDataSubs) this._loadDataSubs.unsubscribe();
+		if (this._changeStateSubs) this._dp.onChangeState.unsubscribe();
 		if (this._drawingScrollSubs) this._drawingScrollSubs.unsubscribe();
+		if (this._prepareDrawingSubs) this._prepareDrawingSubs.unsubscribe();
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -260,19 +303,26 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onDragStart(event: any) {
-		this._waveformDragStartPosition = this.getEventPosition(event);
+		this._dp.performDragStart(event);
+		//this._dp.state.dragPosition = this.getEventPosition(event);
 	}
 
 	//-------------------------------------------------------------------------------------
 	private onDragMove(event: any) {
-		if (this._waveformDragStartPosition) {
-			this.scroll(event);
+		if (this._dp.state.canDrag) {
+			this._dp.performDragMove(event);
+		} else {
+			this._dp.performCursorMove(event);
 		}
-		this.pointerMove(event);
 	}
 
 	//-------------------------------------------------------------------------------------
-	private performanceCounter() {
+	//private onMouseClick(event: any) {
+	//	this._dp.preformClick(event);
+	//}
+
+	//-------------------------------------------------------------------------------------
+	private canvasPerformanceTest() {
 		let t0: number, t1: number, l0: number, l1: number;
 		t0 = performance.now();
 		let imageData: ImageData = this._ct.ctx.getImageData(0, 0, this._ct.ctx.canvas.width, this._ct.ctx.canvas.height);
@@ -298,40 +348,41 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private onDragEnd(event: any) {
-		if (!this._waveformDragStartPosition) return;
-		this._waveformDragStartPosition = null;
-	}
-
-	//----------------------------------------------------------------------------------------------
-	private getEventPosition(event: any): XPoint {
-		// TODO: handle device pixel ratio
-		let left: number = 0, top: number = 0;
-		if (event.clientX) {
-			left = event.clientX;
-			top = event.clientY;
-		} else if (event.touches && event.touches[0]) {
-			left = event.touches[0].clientX;
-			top = event.touches[0].clientY;
+		if (this._dp.canDragWaveform) {
+			this._dp.performDragStop();
+		} else {
+			this._dp.performMouseClick(event);
 		}
-		return new XPoint(left, top);
 	}
 
 	//-------------------------------------------------------------------------------------
 	private onReceiveData(v: EcgRecord[]) {
 		if (!v || !Array.isArray(v) || v.length === 0) return;
+		let osr: number = v[0].sampleRateForCls;
 		// save sample rate in state
-		this._dp.state.sampleRate = this._ds.ecgrecords[0].sampleRateForCls;
+		this._dp.state.sampleRate = osr;
+		this._dp.layout.prepareStepList(5000, osr, 32767);
 		// save original sample rate
-		this._dp.drawingData.originalSampleRate = this._ds.ecgrecords[0].sampleRateForCls;
-		this._dp.drawingData.recordHeaders = this._ds.ecgrecords;
+		this._dp.drawingData.originalSampleRate = osr;
+		this._dp.drawingData.origHeaders = v;
 		// on real project we receive data in other place
-		this._dp.drawingData.projection = this._ds.ecgrecords;
+		this._dp.drawingData.projection = v;
 		this._dp.reset();
 		this._dp.rebuildDrawObjGroupsF3();
 		this._dp.scrollDrawObjGroupsF3();
-		this._dp.refreshDrawings();
+		this._dp.forceDrRefresh();
+		this._ds.resampleRecords(this._dp.layout.samplerateList);
+
 	}
 
+	//-------------------------------------------------------------------------------------
+	private onResampledData(v: EcgRecord[]) {
+		// TODO: move to onComplete handler
+		if (!Array.isArray(v) || v.length === 0) return;
+		//console.log("resampled records:", v.length);
+		this._dp.drawingData.resmpHeaders = v;
+		this._dp.drawingData.resmpData = v;
+	}
 
 	//-------------------------------------------------------------------------------------
 	private onLoadFile(event: ProgressEvent) {
@@ -339,43 +390,59 @@ export class DrawableComponent implements OnInit {
 	}
 
 	//-------------------------------------------------------------------------------------
-	//private onProxyStateChanges(change: XDrawingChange) {
-	//  //console.info("onProxyStateChanges:", change);
-	//  // refresh drawings
-	//  this._ct.clear();
-	//  //this._ct.saveState();
-	//  //let state: XDrawingProxyState = this._dp.state;
-	//  //this._ct.ctx.rect(state.container.left, state.container.top, state.container.width, state.container.height);
-	//  //this._ct.ctx.stroke();
-	//  //this._ct.restoreState();
-	//  for (let z: number = 0; z < change.objects.length; z++) {
-	//    if (!change.objects[z].owner.draw) continue;
-	//    change.objects[z].owner.draw(change.objects[z]);
-	//  }
-	//}
-
-
-	//-------------------------------------------------------------------------------------
-	private onWheelScroll(event: WheelEvent) {
-		// Normalize wheel to +1 or -1
-		let wheel: number = event.wheelDelta / 120;
-		// Compute zoom factor
-		let zoom: number = Math.exp(wheel * 2 * this._zoomIntensity);
-		this._cursorClient.scale *= zoom;
-
-		//console.info("zoom:", zoom, wheel);
-
+	private onStateChanges(v: XDPSEvent) {
+		switch (v.cursor) {
+			case CursorType.Default:
+				this._el.nativeElement.style.cursor = "default";
+				break;
+			case CursorType.AllScroll:
+				this._el.nativeElement.style.cursor = "all-scroll";
+				break;
+			case CursorType.NeResize:
+				this._el.nativeElement.style.cursor = "ne-resize";
+				break;
+			case CursorType.NwResize:
+				this._el.nativeElement.style.cursor = "nw-resize";
+				break;
+			case CursorType.EResize:
+				this._el.nativeElement.style.cursor = "e-resize";
+				break;
+			case CursorType.NResize:
+				this._el.nativeElement.style.cursor = "n-resize";
+				break;
+			case CursorType.Move:
+				this._el.nativeElement.style.cursor = "move";
+				break;
+			case CursorType.Pointer:
+				this._el.nativeElement.style.cursor = "pointer";
+				break;
+			case CursorType.Grab:
+				this._el.nativeElement.style.cursor = "grab";
+				break;
+			case CursorType.Grabing:
+				this._el.nativeElement.style.cursor = "grabbing";
+				break;
+			default:
+				this._el.nativeElement.style.cursor = "default";
+		}
 		this._ct.clear();
 		this.renderVisibleGroups();
 		this.drawCursotPosition();
 	}
 
 	//-------------------------------------------------------------------------------------
-	private onScrollDrawings(val: number) {
-		if (!Number.isInteger(val)) return;
-		this._dp.scrollDrawObjGroupsF3();
-		this._dp.refreshDrawings();
+	private onWheelScroll(event: WheelEvent, wheel: number, value: number) {
+		//console.log("WheelScroll", wheel > 0, value);
+		let zx: boolean = true, zy: boolean = true;
+		this._dp.performZoom(wheel > 0, zx, zy, value);
 	}
+
+	//-------------------------------------------------------------------------------------
+	//private onScrollDrawings(val: number) {
+	//	if (!Number.isInteger(val)) return;
+	//	this._dp.scrollDrawObjGroupsF3();
+	//	this._dp.refreshDrawings();
+	//}
 
 	//-------------------------------------------------------------------------------------
 	private renderVisibleGroups() {
@@ -387,44 +454,47 @@ export class DrawableComponent implements OnInit {
 			//console.log(`drawObjectsF3 for  ${this._dp.drawingClients[z].constructor.name}`);
 			this._dp.drawingClients[z].drawObjects(this._dp.doCGroups[z]);
 		}
-
 		for (z = 0; z < this._dp.doHud.length; z++) {
 			console.log("draw hud:", z);
 		}
-
 		this.printState();
 	}
 
-
 	//-------------------------------------------------------------------------------------
-	private onReceiveDrawingObjects(p: IDrawingObject[][]) {
+	private onReceiveDObjects(p: IDObject[][]) {
 		this._ct.clear();
 		this.renderVisibleGroups();
 		this.drawCursotPosition();
+		//this.drawTargeRectangle(this._cursorClient.zoomStep, "red");
 	}
 
 	//-------------------------------------------------------------------------------------
 	private prepareClients() {
 		// prepare clients
 		this._signalClient = new SignalDrawingClient();
-		this._gridClient = new GridCellDrawingClient();
+		this._gridClient = new GridClient();
 		this._beatsClient = new BeatsDrawingClient();
 		this._cursorClient = new CursorDrawingClient();
-		this._targRectClient = new TargetRectangleClient();
+		this._demoRectClient = new DemoRectangleClient();
 
 		this._signalClient.drawObjects = this.drawSignalObjects.bind(this);
 		this._gridClient.drawObjects = this.drawGridObjects.bind(this);
 		this._beatsClient.drawObjects = this.drawBeatsRangesObjects.bind(this);
 		this._cursorClient.drawObjects = this.drawCursorObjects.bind(this);
+		this._demoRectClient.drawObjects = this.drawDemoRect.bind(this);
 
-		this._dp.pushClients(this._gridClient, this._signalClient, this._beatsClient, this._cursorClient);
+		this._dp.pushClients(this._gridClient, this._signalClient, this._beatsClient, this._cursorClient, this._demoRectClient);
 	}
 
 	//-------------------------------------------------------------------------------------
 	private prepareGrid() {
 		let leads: EcgLeadCode[] = this._ds.leads;
 		let leadsLabels: string[] = this._ds.getLeadCodesLabels(leads);
-		this._dp.state.prepareGridCells(leads, leadsLabels);
+		this._dp.layout.rebuild(this._dp.state.container);
+		this._dp.state.leadsCodes = leads;
+		this._dp.state.leadsCaptions = leadsLabels;
+		//this._dp.state.prepareGridCells(leads, leadsLabels);
+		this._dp.state.limitPx = this._dp.layout.cellWidth;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -434,77 +504,68 @@ export class DrawableComponent implements OnInit {
 		let space: number = 33;
 		let proxyContainer: XRectangle = new XRectangle(space, space, this._ct.width - space * 2, this._ct.height - space * 2);
 		this._dp.state.container = proxyContainer;
-		let clientContainer: XRectangle = new XRectangle(
+
+		this._dp.state.screen = new XRectangle(
 			space + this._drawingElement.nativeElement.offsetLeft,
 			space + this._drawingElement.nativeElement.offsetTop,
 			proxyContainer.width,
 			proxyContainer.height);
-		this._dp.state.screen = clientContainer;
-	}
 
-	//-------------------------------------------------------------------------------------
-	private scroll(event: any) {
-		this._dp.prepareCursor(event);
-		let endpoint: XPoint = this.getEventPosition(event);
-		let actionPoint: XPoint = this._waveformDragStartPosition.subtract(endpoint);
-		this._waveformDragStartPosition = endpoint;
-		if (actionPoint.left === 0) return; // skip scrolling
-		this._dp.scroll(actionPoint.left);
-	}
-
-	//-------------------------------------------------------------------------------------
-	private pointerMove(event: any) {
-		//let timeNow: number = Date.now();
-		//if (timeNow - this._lastEmitTime > this._threshold) {
-		// this._lastEmitTime = timeNow;
-		// this._dp.performMouseMove(event);
-		//}
-		this._dp.performMouseMove(event);
+		this._dp.state.canvas = new XRectangle(
+			this._drawingElement.nativeElement.offsetLeft,
+			this._drawingElement.nativeElement.offsetTop,
+			this._drawingElement.nativeElement.offsetWidth,
+			this._drawingElement.nativeElement.offsetHeight);
 	}
 
 	//-------------------------------------------------------------------------------------
 	private drawSignalObjects(objs: SignalDrawingObject[]) {
-		let shift: number = 0; // #DEBUG_ONLY
-		let state: XDrawingProxyState = this._dp.state;
+		let state: XDProxyState = this._dp.state;
 		// z - drawing object index
 		// y - grid cell index = lead code index
 		// x - polyline index
 		let z: number,
 			y: number,
-			x: number,
+			polInd: number,
 			w: number,
 			c: number,
 			dx: number,
 			dy: number,
 			top: number,
 			left: number,
+			cell: XWCell,
+			mcrVtstoPx: number,
+			lead: EcgLeadCode,
 			points: XPoint[];
 
 		this._ct.saveState();
 		// lead code index = grid cell index
 		this._ct.ctx.beginPath();
 		for (z = 0; z < objs.length; z++) {
+			for (y = 0; y < this._dp.state.leadsCodes.length; y++) {
+				lead = this._dp.state.leadsCodes[y];
+				polInd = objs[z].leadCodes.indexOf(this._dp.state.leadsCodes[y]);
+				if (polInd < 0) continue;
+				if (y >= this._dp.layout.cells.length) break;
 
-			for (y = 0; y < state.leadsCodes.length; y++) {
-				x = objs[z].leadCodes.indexOf(state.leadsCodes[y]);
-				if (x < 0) continue;
-				points = objs[z].polylines[x].points;
-				//console.info(points.length);
-				// calc start position
-				// TODO: check {start+length < points.length}
+				cell = this._dp.layout.cells[y];
+				mcrVtstoPx = this._dp.activeZoomY ? cell.microvoltsToPixelZ : cell.microvoltsToPixel;
+				points = this._dp.activeZoomX ? cell.pointsZ : objs[z].polylines[polInd].points;
+				//console.log(points.length);
+				if (points.length === 0) continue;
 				w = state.minPx - objs[z].container.left;
 				dx = objs[z].container.left + points[w].left - state.minPx;
-				dy = Math.floor(points[w].top * state.gridCells[y].microvoltsToPixel + shift);
-				left = dx + state.gridCells[y].container.left + 0.5;
-				top = dy + state.gridCells[y].container.midOy + 0.5;
+				dy = Math.floor(points[w].top * mcrVtstoPx);
+				left = dx + cell.container.left + 0.5;
+				top = dy + cell.container.midOy + 0.5;
 				this._ct.ctx.moveTo(left, top);
 				w++;
 				for (c = 1; w < points.length, c < state.limitPx; w++ , c++) {
 					dx = objs[z].container.left + points[w].left - state.minPx;
-					dy = Math.floor(points[w].top * state.gridCells[y].microvoltsToPixel) + shift;
-					left = dx + state.gridCells[y].container.left + 0.5;
-					top = dy + state.gridCells[y].container.midOy + 0.5;
-					this._ct.ctx.lineTo(left, top);
+					dy = Math.floor(points[w].top * mcrVtstoPx);
+					left = dx + cell.container.left;
+					top = dy + cell.container.midOy;
+					this._ct.ctx.lineTo(left + 0.5, top + 0.5);
 				}
 			}
 		}
@@ -517,13 +578,18 @@ export class DrawableComponent implements OnInit {
 		this._ct.restoreState();
 	}
 
-
 	//-------------------------------------------------------------------------------------
 	private drawCursorObjects(objs: CursorDrawingObject[]) {
+		if (this._dp.activeZoom) return;
 		//console.log("draw cursor", objs);
 		this._ct.saveState();
-		let state: XDrawingProxyState = this._dp.state;
-		let z: number = 0, y: number = 0, left: number = 0, top: number = 0, dy: number;
+		let state: XDProxyState = this._dp.state;
+		let dy: number,
+			z: number = 0,
+			y: number = 0,
+			left: number = 0,
+			top: number = 0,
+			mcrVtstoPx: number;
 		let obj: CursorDrawingObject = objs[0];
 		this._ct.ctx.globalAlpha = this._cursorClient.opacity;
 		// pointer line
@@ -540,11 +606,14 @@ export class DrawableComponent implements OnInit {
 		let testShift: number = 0;
 		this._ct.ctx.beginPath();
 		this._ct.ctx.fillStyle = this._cursorClient.pointColor;
-		for (let z: number = 0; z < state.gridCells.length; z++) {
+		for (let z: number = 0; z < this._dp.layout.cells.length; z++) {
 			// cell index = point index
+			mcrVtstoPx = this._dp.activeZoom ?
+				this._dp.layout.cells[z].microvoltsToPixelZ :
+				this._dp.layout.cells[z].microvoltsToPixel;
 			left = state.container.left + obj.points[z].left + 0.5;
-			dy = Math.floor(obj.points[z].top * state.gridCells[z].microvoltsToPixel);
-			top = dy + state.gridCells[z].container.midOy + testShift + 0.5;
+			dy = Math.floor(obj.points[z].top * mcrVtstoPx);
+			top = dy + this._dp.layout.cells[z].container.midOy + testShift + 0.5;
 			this._ct.makeCircle(left, top, this._cursorClient.pointRadius);
 		}
 		this._ct.ctx.closePath();
@@ -558,7 +627,7 @@ export class DrawableComponent implements OnInit {
 			top: number,
 			text: string,
 			radius: number;
-		radius = this._cursorClient.scale * baseRadius;
+		radius = this._cursorClient.zoom * baseRadius * 2;
 		let textSize: number = 12;
 		this._ct.saveState();
 		this._ct.ctx.beginPath();
@@ -578,27 +647,13 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.fillText(text, left, top);
 
 		this._ct.restoreState();
-		//this.drawTargeRectangle();
 	}
-
-	//-------------------------------------------------------------------------------------
-	private drawTargeRectangle() {
-		//this._targRectClient
-
-		this._ct.saveState();
-		this._ct.ctx.strokeRect(
-			this._targRectClient.figure.left,
-			this._targRectClient.figure.top,
-			this._targRectClient.figure.width,
-			this._targRectClient.figure.height,
-		);
-		this._ct.restoreState();
-	}
-
 
 	//-------------------------------------------------------------------------------------
 	private drawBeatsRangesObjects(objs: BeatsRangeDrawingObject[]) {
+		if (this._dp.activeZoom) return;
 		this._ct.saveState();
+		//this._ct.clipRect(this._dp.state.container);// TODO remove
 		// draw beat ranges: drawObj.container for all channels
 		// draw beat peaks: drawObj.points for each channel
 		let z: number,
@@ -609,21 +664,21 @@ export class DrawableComponent implements OnInit {
 			dy: number,
 			top: number,
 			left: number,
+			mcrVtstoPx: number,
 			point: XPoint,
-			cell: XDrawingCell,
+			cell: XWCell,
 			beatRange: BeatsRangeDrawingObject;
 
 		let shift: number = 0;
 		let textSize: number = 10;
-		let state: XDrawingProxyState = this._dp.state;
+		let state: XDProxyState = this._dp.state;
 		let printText: boolean;
-
 
 		// fill beat background
 		this._ct.ctx.font = `${textSize}px Roboto`;
 		this._ct.ctx.textBaseline = "middle";
 		this._ct.ctx.textAlign = "center";
-		this._ct.ctx.globalAlpha = 0.05;
+		//this._ct.ctx.globalAlpha = 0.05;
 		for (y = 0; y < objs.length; y++) {
 			beatRange = objs[y];
 
@@ -634,19 +689,29 @@ export class DrawableComponent implements OnInit {
 			for (x = 0; x < beatRange.leadCodes.length; x++) {
 				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
 				if (w < 0) continue;
-				cell = state.gridCells[w];
+				cell = this._dp.layout.cells[w];
 				this._ct.ctx.fillStyle = beatRange.index % 2 == 0 ?
 					this._beatsClient.backgroundColor1 :
 					this._beatsClient.backgroundColor2;
+				// TODO: combine different states with bitwise operations
+				if (beatRange.state === XDPrimitiveState.AS) {
+					this._ct.ctx.globalAlpha = 0.05 * 3;
+				} else if (beatRange.state === XDPrimitiveState.Active) {
+					this._ct.ctx.globalAlpha = 0.05 * 1.5;
+				} else if (beatRange.state === XDPrimitiveState.Selected) {
+					this._ct.ctx.globalAlpha = 0.05 * 2;
+				} else {
+					this._ct.ctx.globalAlpha = 0.05;
+				}
 
 				dx = beatRange.container.minOx - state.minPx;
 				left = cell.container.left + dx;
-				//this._ct.ctx.fillRect(
-				//	left,
-				//	cell.container.top,
-				//	beatRange.container.width,
-				//	cell.container.height
-				//);
+				this._ct.ctx.fillRect(
+					left,
+					cell.container.top,
+					beatRange.container.width,
+					cell.container.height
+				);
 			}
 		}
 
@@ -663,12 +728,13 @@ export class DrawableComponent implements OnInit {
 			for (x = 0; x < beatRange.leadCodes.length; x++) {
 				w = state.leadsCodes.indexOf(beatRange.leadCodes[x]);
 				if (w < 0) continue;
-				cell = state.gridCells[w];
+				cell = this._dp.layout.cells[w];
+				mcrVtstoPx = this._dp.activeZoom ? cell.microvoltsToPixelZ : cell.microvoltsToPixel;
 
 				point = beatRange.points[x];
 				dx = point.left - state.minPx;
 				if (dx < 0 || point.left > state.maxPx) continue;
-				dy = Math.floor(point.top * cell.microvoltsToPixel);
+				dy = Math.floor(point.top * mcrVtstoPx);
 				left = cell.container.left + dx + 0.5;
 				top = dy + cell.container.midOy + 0.5 + shift;
 				this._ct.makeCircle(left, top, this._beatsClient.radius);
@@ -706,7 +772,7 @@ export class DrawableComponent implements OnInit {
 			cellIndex: number,
 			renderCell: boolean,
 			leadCode: EcgLeadCode,
-			state: XDrawingProxyState;
+			state: XDProxyState;
 
 		state = this._dp.state;
 
@@ -730,7 +796,7 @@ export class DrawableComponent implements OnInit {
 				leadCode = objs[z].leadCodes[y];
 				cellIndex = state.leadsCodes.indexOf(leadCode);
 				if (cellIndex < 0) continue;
-				renderCell = state.gridCells[cellIndex].container.state != XDrawingPrimitiveState.Hidden;
+				renderCell = this._dp.layout.cells[cellIndex].container.state != XDPrimitiveState.Hidden;
 				if (!renderCell) continue;
 
 				for (x = 0; x < objs[z].horizontal.length; x++) {
@@ -771,7 +837,7 @@ export class DrawableComponent implements OnInit {
 				leadCode = objs[z].leadCodes[y];
 				cellIndex = state.leadsCodes.indexOf(leadCode);
 				if (cellIndex < 0) continue;
-				renderCell = state.gridCells[cellIndex].container.state != XDrawingPrimitiveState.Hidden;
+				renderCell = this._dp.layout.cells[cellIndex].container.state != XDPrimitiveState.Hidden;
 				if (!renderCell) continue;
 
 				for (x = 0; x < objs[z].ox.length; x++) {
@@ -786,6 +852,42 @@ export class DrawableComponent implements OnInit {
 		}
 		this._ct.ctx.stroke();
 		this._ct.restoreState();
+	}
+
+	//-------------------------------------------------------------------------------------
+	private drawDemoRect(objs: DemoRectDrawingObject[]) {
+		if (this._dp.activeZoom) return;
+		let f: XRectangle = objs[0].figure;
+		let p: XRectangle = objs[0].container;
+		let l: number = this._dp.state.minPx;
+		let t: number = this._dp.state.container.top;
+
+		this._ct.saveState();
+		this._ct.clipRect(this._dp.state.container);
+		this._ct.ctx.translate(this._dp.state.container.left, this._dp.state.container.top);
+
+		//this._ct.ctx.beginPath();
+		//this._ct.makeLine(0, 0, this._demoRectClient.left, this._demoRectClient.top);
+		//this._ct.ctx.stroke();
+
+		//this._targRectClient
+		let fa: XPoint = new XPoint(p.minOx + f.minOx - l, p.minOy + f.minOy),
+			fb: XPoint = new XPoint(p.minOx + f.maxOx - l, p.minOy + f.minOy),
+			fc: XPoint = new XPoint(p.minOx + f.maxOx - l, p.minOy + f.maxOy),
+			fd: XPoint = new XPoint(p.minOx + f.minOx - l, p.minOy + f.maxOy);
+		//this._mt.applyForPoints(fa, fb, fc, fd); // zoom not connected
+		//console.log(a, b, c, d);
+		this._ct.ctx.strokeStyle = this._demoRectClient.strokeStyle;
+		this._ct.strokePointsPath(fa, fb, fc, fd);
+
+		let pa: XPoint = new XPoint(p.minOx - l, p.minOy),
+			pb: XPoint = new XPoint(p.maxOx - l, p.minOy),
+			pc: XPoint = new XPoint(p.maxOx - l, p.maxOy),
+			pd: XPoint = new XPoint(p.minOx - l, p.maxOy);
+		//this._ct.ctx.strokeStyle = "blue";
+		//this._ct.strokePointsPath(pa, pb, pc, pd);
+		this._ct.restoreState();
+
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -804,18 +906,18 @@ export class DrawableComponent implements OnInit {
 		// min pixels
 		text = `${this._dp.state.minPx}`;
 		textWidth = this._ct.ctx.measureText(text).width;
-		left = this._dp.state.gridCells[0].container.left + textWidth / 2;
-		top = this._dp.state.gridCells[0].container.top - textSize;
+		left = this._dp.layout.cells[0].container.left + textWidth / 2;
+		top = this._dp.layout.cells[0].container.top - textSize;
 		this._ct.ctx.fillText(text, left, top);
 		// max pixels
 		text = `${this._dp.state.maxPx}`;
 		textWidth = this._ct.ctx.measureText(text).width;
-		left = this._dp.state.gridCells[0].container.maxOx - textWidth / 2;
-		top = this._dp.state.gridCells[0].container.top - textSize;
+		left = this._dp.layout.cells[0].container.maxOx - textWidth / 2;
+		top = this._dp.layout.cells[0].container.top - textSize;
 		this._ct.ctx.fillText(text, left, top);
 
 		// size
-		text = `${Math.floor(this._ct.width)}X${Math.floor(this._ct.height)}  W=${this._dp.state.limitPx}  H=${this._dp.state.signalScale}`;
+		text = `${Math.floor(this._ct.width)}X${Math.floor(this._ct.height)}  W=${this._dp.state.limitPx}  H=${this._dp.layout.signalScale}`;
 		textWidth = this._ct.ctx.measureText(text).width;
 		left = this._ct.width / 2;
 		top = this._ct.height - textSize;
@@ -826,15 +928,22 @@ export class DrawableComponent implements OnInit {
 
 
 	//-------------------------------------------------------------------------------------
-	private calcScaling(left: number, top: number, zoomX: number = 1, zoomY: number = 1): number[] {
-		// TODO: replace with matrix mul
-		return [left * zoomX, top * zoomY];
+	// TODO: add affine transform tests for rectangle
+	private drawTargeRectangle(cl: string) {
+		this._ct.saveState();
+		//this._targRectClient
+		let a: XPoint = new XPoint(this._demoRectClient.figure.minOx, this._demoRectClient.figure.minOy),
+			b: XPoint = new XPoint(this._demoRectClient.figure.maxOx, this._demoRectClient.figure.minOy),
+			c: XPoint = new XPoint(this._demoRectClient.figure.maxOx, this._demoRectClient.figure.maxOy),
+			d: XPoint = new XPoint(this._demoRectClient.figure.minOx, this._demoRectClient.figure.maxOy);
+
+		this._mt.applyForPoints(a, b, c, d);
+		//console.log(a, b, c, d);
+		this._ct.ctx.strokeStyle = cl;
+		this._ct.strokePointsPath(a, b, c, d);
+		this._ct.restoreState();
 	}
 
-	//-------------------------------------------------------------------------------------
-	private calcPointScaling(point: XPoint, zx: number = 1, zy: number = 1): number[] {
-		return this.calcScaling(point.left, point.top, zx, zy);
-	}
 
 
 

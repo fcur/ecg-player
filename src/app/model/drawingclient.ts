@@ -2,9 +2,9 @@
 import {
 	WavepointDrawingObject, CursorDrawingObject, GridCellDrawingObject,
 	ClPointDrawingObject, CellDrawingObject, BeatsRangeDrawingObject,
-	IDrawingObject, XDrawingObjectType, AnsDrawingObject,
-	XDrawingObject, SignalDrawingObject,
-	PeakDrawingObject, WaveDrawingObject
+	SignalDrawingObject, PeakDrawingObject, WaveDrawingObject,
+	IDObject, XDOType, AnsDrawingObject, XDrawingObject,
+	DemoRectDrawingObject, XDOChangeType
 } from "./drawingobject";
 import {
 	EcgWavePoint, EcgWavePointType, EcgAnnotation, EcgSignal,
@@ -14,14 +14,16 @@ import {
 	DrawingData, RecordDrawingData, RecordProjection
 } from "./drawingdata";
 import {
-	XDrawingChange, XDrawingChangeSender, XDrawingCoordinates,
-	XDrawingProxyState, XCanvasTool, XDrawingCell,
-	XDrawingGridMode
+	XDGridMode, XAnimation, XAnimationType, XWDensityUnit,
+	XDPSEvent, XDChangeSender, XDCoordinates, XWLayout,
+	XDProxyState, XCanvasTool, XWCell, XWDensity,
+	XDChangeType, XMatrixTool, CursorType
 } from "./misc";
 import {
-	XDrawingPrimitive, XDrawingPrimitiveState, XLabel, XPeak,
+	XDrawingPrimitive, XDPrimitiveState, XLabel, XPeak,
 	XPoint, XLine, XRectangle, XPolyline
 } from "./geometry";
+import { LiteResampler } from "./literesampler";
 
 // -------------------------------------------------------------------------------------------------
 // Drawing mode
@@ -46,7 +48,7 @@ export interface IDrawingClient {
 	/** Drawing mode (required). */
 	mode: XDrawingMode;
 	/** Object type (required). */
-	type: XDrawingObjectType;
+	type: XDOType;
 	/** Client drawing method (required). */
 	draw: Function;
 	/** Init drawing client (required). */
@@ -58,12 +60,14 @@ export interface IDrawingClient {
 	/** Client groups drawing method(required). */
 	drawObjects: Function;
 	/** Prepare drawing objects. */
-	prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[];
+	prepareAllDrawings(data: DrawingData, state: XDProxyState, wl: XWLayout): IDObject[];
 	/** Draw client drawing objects. */
-	render(obj: IDrawingObject[], st: XDrawingProxyState, ct: XCanvasTool);
+	render(obj: IDObject[], st: XDProxyState, ct: XCanvasTool);
 
 	// add mouse/touch events handlers
-
+	select(obj: IDObject, st: XDProxyState, wl: XWLayout);
+	hover(v: boolean, obj: IDObject, st: XDProxyState, wl: XWLayout);
+	drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData, wl: XWLayout);
 }
 
 
@@ -81,7 +85,7 @@ export class XDrawingClient implements IDrawingClient {
 	/** Drawing mode */
 	public mode: XDrawingMode;
 	/** Object type. */
-	public type: XDrawingObjectType;
+	public type: XDOType;
 	/** Client drawing method (required). */
 	public draw: Function;
 	/** Init drawing client (required). */
@@ -102,12 +106,28 @@ export class XDrawingClient implements IDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): IDrawingObject[] {
+	public prepareAllDrawings(data: DrawingData, state: XDProxyState, wl: XWLayout): IDObject[] {
 		return [];
 	}
 
+	//-------------------------------------------------------------------------------------
 	/** Draw client drawing objects. */
-	public render(obj: IDrawingObject[], st: XDrawingProxyState, ct: XCanvasTool) {
+	public render(obj: IDObject[], st: XDProxyState, ct: XCanvasTool) {
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public select(obj: IDObject, st: XDProxyState, wl: XWLayout) {
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public hover(v: boolean, obj: IDObject, st: XDProxyState, wl: XWLayout) {
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData, wl: XWLayout) {
 
 	}
 }
@@ -123,7 +143,7 @@ export class AnsDrawingClient extends XDrawingClient {
 	constructor() {
 		super();
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Annotations;
+		this.type = XDOType.Annotations;
 		this.draw = this.drawAnnotations.bind(this);
 		this.afterDraw = this.afterdrawAnnotations.bind(this);
 		this.createDrawingObject = this.createAnsDrawingObject.bind(this);
@@ -148,7 +168,7 @@ export class AnsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(data: DrawingData, state: XDrawingProxyState): AnsDrawingObject[] {
+	public prepareAllDrawings(data: DrawingData, state: XDProxyState, wl: XWLayout): AnsDrawingObject[] {
 		console.info("AnsDrawingClient.prepareAllDrawings", "not implemented");
 		return [];
 	}
@@ -173,11 +193,13 @@ export class BeatsDrawingClient extends XDrawingClient {
 	recordsThreshold: number;
 	recordSpace: number; // count of pixels between two records with  
 	layoutSpace: number; // count of pixels between two grid layouts
+	zindex: number;
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
 		this.radius = 2;
+		this.zindex = 100;
 		this.color = "orange";
 		this.colorF3 = "#00f8cd";
 		this.backgroundOpacity = 0.15;
@@ -188,7 +210,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 		this.layoutSpace = 30;
 		this.opacity = 1;
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Beats;
+		this.type = XDOType.Beats;
 		this.draw = this.drawBeats.bind(this);
 		this.afterDraw = this.afterDrawBeats.bind(this);
 		this.createDrawingObject = this.createBeatsDrawingObject.bind(this);
@@ -214,9 +236,12 @@ export class BeatsDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): BeatsRangeDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): BeatsRangeDrawingObject[] {
 		// TODO: add drawings merge method (example: signal for other leads)
-		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
+		if (!dd.headers.hasOwnProperty(ps.sampleRate) ||
+			!dd.data.hasOwnProperty(ps.sampleRate) ||
+			!dd.data[ps.sampleRate]) return [];
+		//if (dd.haveData(ps.sampleRate)) return [];
 
 		let recData: RecordDrawingData,
 			recProj: RecordProjection,
@@ -283,6 +308,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 				left = recLeftPos + Math.floor(curBeatLeft - (curBeatLeft - prewBeatLeft) / 2);
 				width = Math.floor((nextBeatLeft - prewBeatLeft) / 2);
 				drawObj.container = new XRectangle(left, 0, width, 0);
+				drawObj.container.zIndex = this.zindex;
 				drawObj.index = results.length;
 				results.push(drawObj);
 			}
@@ -292,20 +318,50 @@ export class BeatsDrawingClient extends XDrawingClient {
 		return results;
 	}
 
+	//-------------------------------------------------------------------------------------
+	public select(obj: IDObject, st: XDProxyState, wwl: XWLayout) {
+		// TODO: combine different states with bitwise operations
+		if (obj.state === XDPrimitiveState.Selected) {
+			obj.state = XDPrimitiveState.Default;
+		} else if (obj.state === XDPrimitiveState.AS) {
+			obj.state = XDPrimitiveState.Active;
+		} else if (obj.state === XDPrimitiveState.Active) {
+			obj.state = XDPrimitiveState.AS;
+		} else {
+			obj.state = XDPrimitiveState.Selected;
+		}
+	}
+
+	//-------------------------------------------------------------------------------------
+	public hover(v: boolean, obj: IDObject, st: XDProxyState, wwl: XWLayout) {
+		// TODO: combine different states with bitwise operations
+		if (obj.state === XDPrimitiveState.Selected || obj.state === XDPrimitiveState.AS) {
+			obj.state = v ? XDPrimitiveState.AS : XDPrimitiveState.Selected;
+		} else {
+			obj.state = v ? XDPrimitiveState.Active : XDPrimitiveState.Default;
+		}
+	}
+
+	//-------------------------------------------------------------------------------------
+	public drag(l: number, t: number, obj: IDObject, st: XDProxyState, allData: DrawingData, wwl: XWLayout) {
+
+	}
+
+
 }
 
 // -------------------------------------------------------------------------------------------------
 // Grid cell drawing glient
 // -------------------------------------------------------------------------------------------------
-export class GridCellDrawingClient extends XDrawingClient {
+export class GridClient extends XDrawingClient {
 
-	color: string;
-	opacity: number;
-	lineJoin: string;
-	borderColor: string;
-	borderOpacity: number;
-	axisColor: string;
-	axisOpacity: number;
+	public color: string;
+	public opacity: number;
+	public lineJoin: string;
+	public borderColor: string;
+	public borderOpacity: number;
+	public axisColor: string;
+	public axisOpacity: number;
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
@@ -318,7 +374,7 @@ export class GridCellDrawingClient extends XDrawingClient {
 		this.axisOpacity = 1;
 		this.lineJoin = "miter";// round|miter|bevel
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Grid;
+		this.type = XDOType.Grid;
 		this.draw = this.drawGrid.bind(this);
 		this.afterDraw = this.afterDrawGrid.bind(this);
 		this.createDrawingObject = this.createGridDrawingObject.bind(this);
@@ -351,7 +407,7 @@ export class GridCellDrawingClient extends XDrawingClient {
 	 * @param dd drawing data
 	 * @param ps proxy state
 	 */
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): GridCellDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): GridCellDrawingObject[] {
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 		// TODO: merge record leads count & proxy state grid layout
 		// Add grid layouts presets to client
@@ -415,19 +471,19 @@ export class GridCellDrawingClient extends XDrawingClient {
 				//drawObj.polylines[z] = new XPolyline(recData.signal[leadCode]);
 			}
 
-			drawObj.ox = new Array(ps.gridCells.length);
-			drawObj.horizontal = new Array(ps.gridCells.length);
-			drawObj.vertical = new Array(ps.gridCells.length);
+			drawObj.ox = new Array(wl.cells.length);
+			drawObj.horizontal = new Array(wl.cells.length);
+			drawObj.vertical = new Array(wl.cells.length);
 
 			// TODO: grab borders & axis lisnes from client getter(width, height, layout)
-			for (z = 0; z < ps.gridCells.length; z++) {
-				container = ps.gridCells[z].container;
+			for (z = 0; z < wl.cells.length; z++) {
+				container = wl.cells[z].container;
 
-				left = ps.gridCells[z].container.left - ps.container.left;
-				top = ps.gridCells[z].container.top;
-				height = ps.gridCells[z].container.height;
-				axisTop = ps.gridCells[z].container.top + ps.gridCells[z].container.hHeight;
-				axisTop = ps.gridCells[z].container.midOy;
+				left = container.left - ps.container.left;
+				top = container.top;
+				height = container.height;
+				axisTop = container.top + container.hHeight;
+				axisTop = container.midOy;
 
 				drawObj.horizontal[z] = [
 					// top
@@ -480,7 +536,7 @@ export class SignalDrawingClient extends XDrawingClient {
 		this.opacity = 1;
 		this.lineJoin = "miter";// round|miter|bevel
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Signal;
+		this.type = XDOType.Signal;
 		this.draw = this.drawSignal.bind(this);
 		this.afterDraw = this.afterDrawSignal.bind(this);
 		this.createDrawingObject = this.createSignalDrawingObject.bind(this);
@@ -505,7 +561,7 @@ export class SignalDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): SignalDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): SignalDrawingObject[] {
 		// TODO: add drawings merge method (example: signal for other leads)
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
@@ -571,7 +627,7 @@ export class ClickablePointDrawingClient extends XDrawingClient {
 	constructor() {
 		super();
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Signal;
+		this.type = XDOType.Signal;
 		this.draw = this.drawPonint.bind(this);
 		this.afterDraw = this.afterDrawPoint.bind(this);
 		this.createDrawingObject = this.createPointDrawingObject.bind(this);
@@ -608,7 +664,7 @@ export class CellDrawingClient extends XDrawingClient {
 	constructor() {
 		super();
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Signal;
+		this.type = XDOType.Signal;
 		this.draw = this.drawCell.bind(this);
 		this.afterDraw = this.afterDrawCell.bind(this);
 		this.createDrawingObject = this.createCellDrawingObject.bind(this);
@@ -644,13 +700,47 @@ export class CursorDrawingClient extends XDrawingClient {
 	pointColor: string;
 	pointRadius: number;
 	clientHalfWidth: number;
-	scale: number;
 
+	zoom: number;
+	zoom2: number;
+
+
+	zoomSteps: number[];
+	zoomIndex: number;
+
+	private _scale: number;
+	private _prewScale: number;
+
+	get zoomStep(): number {
+		return this.zoomSteps[this.zoomIndex];
+	}
+
+	//-------------------------------------------------------------------------------------
+	set scale(val: number) {
+		this._prewScale = this._scale;
+		this._scale = val;
+	}
+
+	//-------------------------------------------------------------------------------------
+	get scale(): number {
+		return this._scale;
+	}
+
+	//-------------------------------------------------------------------------------------
+	get prewScale(): number {
+		return this._prewScale;
+	}
 
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
-		this.scale = 1;
+		this.zoomSteps = [0.25, 0.33, 0.5, 0.75, 1, 1.5, 3, 5, 8, 12];
+		this.zoomIndex = this.zoomSteps.indexOf(1);
+
+		this._scale = 1;
+		this.zoom = 1;
+		this.zoom2 = 1;
+		this._prewScale = 1;
 		this.clientHalfWidth = 4;
 		this.pointColor = "red";
 		this.lineColor = "#ccc";
@@ -658,11 +748,12 @@ export class CursorDrawingClient extends XDrawingClient {
 		this.clientHalfWidth = 3;
 		this.pointRadius = 3;
 		this.mode = XDrawingMode.Canvas;
-		this.type = XDrawingObjectType.Object;
+		this.type = XDOType.Object;
 		this.draw = this.drawCursor.bind(this);
 		this.afterDraw = this.afterDrawFCursor.bind(this);
 		this.createDrawingObject = this.createCursorDrawingObject.bind(this);
 	}
+
 
 	//-------------------------------------------------------------------------------------
 	public drawCursor() {
@@ -682,7 +773,7 @@ export class CursorDrawingClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): CursorDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): CursorDrawingObject[] {
 		if (!dd.headers.hasOwnProperty(ps.sampleRate) || !dd.data.hasOwnProperty(ps.sampleRate) || !dd.data[ps.sampleRate]) return [];
 
 		let obj: CursorDrawingObject = new CursorDrawingObject();
@@ -690,11 +781,11 @@ export class CursorDrawingClient extends XDrawingClient {
 		//obj.container = new XRectangle(ps.pointerX - this.clientHalfWidth, 0, this.clientHalfWidth * 2, ps.container.height);
 		obj.container = new XRectangle(ps.minPx, 0, ps.limitPx, ps.container.height);
 
-		let lineHeight: number = ps.gridCells[ps.gridCells.length - 1].container.maxOy -
-			ps.gridCells[0].container.minOy;
+		let lineHeight: number = ps.container.maxOy -
+			ps.container.minOy;
 
 		obj.lines = [new XLine(new XPoint(ps.pointerX, 0), new XPoint(ps.pointerX, lineHeight))];
-		obj.points = new Array(ps.gridCells.length);
+		obj.points = new Array(ps.leadsCodes.length);
 		// TODO move to state getter
 		let header: RecordProjection = dd.getHeader(ps.skipPx + ps.pointerX, ps.sampleRate);
 		let z: number,
@@ -702,9 +793,11 @@ export class CursorDrawingClient extends XDrawingClient {
 			left: number,
 			signal: XPoint[];
 
+
+
 		left = ps.pointerX; // merge with 12ch grid layout
-		for (z = 0; z < ps.gridCells.length; z++) {
-			signal = dd.data[ps.sampleRate][header.id].signal[ps.gridCells[z].lead];
+		for (z = 0; z < ps.leadsCodes.length; z++) {
+			signal = dd.data[ps.sampleRate][header.id].signal[ps.leadsCodes[z]];
 			if (!Array.isArray(signal) || signal.length === 0) continue;
 			top = signal[ps.skipPx + ps.pointerX].top;
 			obj.points[z] = new XPoint(left, top);
@@ -725,7 +818,7 @@ export class WavepointClient extends XDrawingClient {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public prepareAllDrawings(dd: DrawingData, ps: XDrawingProxyState): WavepointDrawingObject[] {
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): WavepointDrawingObject[] {
 		return [];
 	}
 }
@@ -735,23 +828,169 @@ export class WavepointClient extends XDrawingClient {
 // -------------------------------------------------------------------------------------------------
 // Target rectangle client
 // -------------------------------------------------------------------------------------------------
-export class TargetRectangleClient {
+export class DemoRectangleClient extends XDrawingClient {
+
+	/** Cursor inner thresold in pixels. */
+	private _cursThrInner: number;
+	/** Cursor outer thresold in pixels. */
+	private _cursThrOut: number;
 
 	public figure: XRectangle;
-
 	public left: number;
 	public top: number;
 	public width: number;
 	public height: number;
 
+	public originX: number;
+	public originY: number;
+	public zIndex: number;
+	public strokeStyle: string;
+
+
+
 	//-------------------------------------------------------------------------------------
 	constructor() {
-		this.left = 200;
-		this.top = 123;
-		this.width = 300;
-		this.height = 224;
+		super();
+		this.zIndex = Number.MAX_SAFE_INTEGER;
+		this.left = 95;
+		this.top = 36;
+		this.width = 321;
+		this.height = 123;
+		this.originX = 0;
+		this.originY = 0;
+		this._cursThrInner = 1;
+		this._cursThrOut = 1;
+		this.strokeStyle = "red";
 		this.figure = new XRectangle(this.left, this.top, this.width, this.height);
+	}
+
+	//-------------------------------------------------------------------------------------
+	public prepareAllDrawings(dd: DrawingData, ps: XDProxyState, wl: XWLayout): DemoRectDrawingObject[] {
+		let obj: DemoRectDrawingObject = new DemoRectDrawingObject();
+		obj.owner = this;
+		obj.draggable = true;
+		obj.changeable = true;
+		obj.figure = new XRectangle(this._cursThrOut, this._cursThrOut, this.width, this.height);
+		obj.container = new XRectangle(
+			this.left - this._cursThrOut,
+			this.top - this._cursThrOut,
+			this.width + this._cursThrOut * 2,
+			this.height + this._cursThrOut * 2);
+		obj.container.zIndex = this.zIndex;
+		return [obj];
+	}
+
+	//-------------------------------------------------------------------------------------
+	public select(obj: DemoRectDrawingObject, st: XDProxyState, wl: XWLayout) {
 
 	}
 
+	//-------------------------------------------------------------------------------------
+	public hover(v: boolean, obj: DemoRectDrawingObject, st: XDProxyState, wl: XWLayout) {
+		if (!v) return;
+		let left: number = st.pointerX + st.skipPx,
+			top: number = st.pointerY,
+			c = obj.container;
+		let onLeft: boolean = left - c.left < this._cursThrInner + this._cursThrOut,
+			onRight: boolean = c.right - left < this._cursThrInner + this._cursThrOut,
+			onTop: boolean = top - c.top < this._cursThrInner + this._cursThrOut,
+			onBottom: boolean = c.bottom - top < this._cursThrInner + this._cursThrOut;
+
+		// prepare changeState
+		let changeType: number = 0;
+		if (onLeft) changeType |= XDOChangeType.Left;
+		if (onRight) changeType |= XDOChangeType.Width;
+		if (onTop) changeType |= XDOChangeType.Top;
+		if (onBottom) changeType |= XDOChangeType.Height;
+
+		if (!onLeft && !onRight && !onTop && !onBottom) changeType |= XDOChangeType.Move;
+		// parse changeState
+		let stateText: string;
+		switch (changeType) {
+			case XDOChangeType.Default:
+				stateText = "default";
+				break;
+			case XDOChangeType.Left:
+				st.cursor = CursorType.EResize;
+				stateText = "left";
+				break;
+			case XDOChangeType.Width:
+				st.cursor = CursorType.EResize;
+				stateText = "right";
+				break;
+			case XDOChangeType.Top:
+				st.cursor = CursorType.NResize;
+				stateText = "top";
+				break;
+			case XDOChangeType.Height:
+				st.cursor = CursorType.NResize;
+				stateText = "bottom";
+				break;
+			case XDOChangeType.Left | XDOChangeType.Top:
+				st.cursor = CursorType.NwResize;
+				stateText = "left-top";
+				break;
+			case XDOChangeType.Width | XDOChangeType.Top:
+				st.cursor = CursorType.NeResize;
+				stateText = "right-top";
+				break;
+			case XDOChangeType.Left | XDOChangeType.Height:
+				st.cursor = CursorType.NeResize;
+				stateText = "left-bottom";
+				break;
+			case XDOChangeType.Width | XDOChangeType.Height:
+				st.cursor = CursorType.NwResize;
+				stateText = "right-bottom";
+				break;
+			case XDOChangeType.Move:
+				stateText = "move";
+				break;
+			default:
+				stateText = "none";
+		}
+		obj.changeType = changeType;
+		//console.log(stateText);
+
+		//if (onLeft || onRight || onTop || onBottom) {
+		//	console.log(`${onLeft ? " left" : ""}${onRight ? " right" : ""}${onTop ? " top" : ""}${onBottom ? " bottom" : ""}`);
+		//}
+
+	}
+
+	//-------------------------------------------------------------------------------------
+	public drag(l: number, t: number, obj: DemoRectDrawingObject, st: XDProxyState, allData: DrawingData, wl: XWLayout) {
+		let stop: number = 0,
+			mask: number = 1,
+			c = obj.container,
+			f: XRectangle = obj.figure,
+			ct: number = obj.changeType;
+
+		while (ct != 0 && stop < 20) {
+			stop++;
+			switch (ct & mask) {
+				case XDOChangeType.Default:
+					break;
+				case XDOChangeType.Left:
+					c.left += l;
+					c.width += -l; f.width += -l;
+					break;
+				case XDOChangeType.Width:
+					c.width += l; f.width += l;
+					break;
+				case XDOChangeType.Top:
+					c.top += t;
+					c.height += -t; f.height += -t;
+					break;
+				case XDOChangeType.Height:
+					c.height += t; f.height += t;
+					break;
+				case XDOChangeType.Move:
+					c.left += l;
+					c.top += t;
+					break;
+			}
+			ct &= ~mask;
+			mask <<= 1;
+		}
+	}
 }
