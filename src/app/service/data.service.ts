@@ -74,10 +74,6 @@ export class DataService {
 		});
 	}
 
-
-	//this._ds.tryReadSessionStorage();
-
-
 	//-------------------------------------------------------------------------------------
 	public tryReadSessionStorage() {
 		//let records: EcgRecord[] = JSON.parse(sessionStorage.getItem(this.ecgStorageKey));

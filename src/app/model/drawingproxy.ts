@@ -12,6 +12,7 @@ import {
 	CursorDrawingClient, GridClient,
 	WavepointClient
 } from "./drawingclient";
+import { DataService } from "./../service/data.service"
 import {
 	CursorDrawingObject, GridCellDrawingObject,
 	WavepointDrawingObject, PeakDrawingObject,
@@ -94,7 +95,15 @@ export class XDProxy {
 		return this.state ? this.state.activeZoom : false;
 	}
 	//-------------------------------------------------------------------------------------
-	constructor() {
+	public get activeZoomX(): boolean {
+		return this.state ? this.state.activeXYzoom || this.state.activeXzoom : false;
+	}
+	//-------------------------------------------------------------------------------------
+	public get activeZoomY(): boolean {
+		return this.state ? this.state.activeXYzoom || this.state.activeYzoom : false;
+	}
+	//-------------------------------------------------------------------------------------
+	constructor(private _ds: DataService) {
 		//console.info("DrawingProxy constructor");
 		this.init();
 	}
@@ -416,22 +425,25 @@ export class XDProxy {
 		let animation: XAnimation = new XAnimation();
 		animation.length = 200;
 
-		this.state.type = zx && zy ? XDChangeType.ZoomXY : (
-			zx ? XDChangeType.ZoomX :
-				XDChangeType.ZoomY
-		);
+		this.state.type = zx && zy ? XDChangeType.ZoomXY : (zx ? XDChangeType.ZoomX : XDChangeType.ZoomY);
 
 		animation.animation = (progress: number) => {
 			//this.layout.resetMicrVoltCoef(progress, zf);
-
-			if (zx) this.layout.resetSamplerate(progress, zf, v, this.state, this.drawingData);
+			//console.log("zoom", this.state.activeZoom);
+			if (zx) this.layout.resetSamplerate(progress, zf, v, this.state, this.drawingData, this._ds.ecgrecords);
 			if (zy) this.layout.resetMicrVoltCoef(progress, zf, v);
 			this.pushUpdate();
 		};
 
 		animation.animationEnd = () => {
 			this.state.type = XDChangeType.ForceRefresh;
-			if (zx) this.layout.updateSamplerateIndex(zf, v);
+			//console.log("zoom-end", this.state.activeZoom);
+			if (zx) {
+				this.layout.updateSamplerateIndex(zf, v);
+				this.state.sampleRate = this.layout.curSampleRate;
+				this.rebuildDrawObjGroupsF3();
+				this.scrollDrawObjGroupsF3();
+			}
 			if (zy) this.layout.updateMicrVoltCoef(zf, v);
 			this.pushUpdate();
 		};

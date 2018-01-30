@@ -1293,6 +1293,12 @@ export class XWLayout {
 	//public cells: XRectangle[];
 
 	//-------------------------------------------------------------------------------------
+	public get curSampleRate(): number {
+		if (Array.isArray(this.cells) && this.cells.length > 0)
+			return this.cells[0].samplerateList[this.cells[0].dxStepIndex];
+		return this.sampleRate;
+	}
+	//-------------------------------------------------------------------------------------
 	public get samplerateList(): number[] {
 		return Array.isArray(this.cells) && this.cells.length > 0 ?
 			this.cells[0].samplerateList : [];
@@ -1368,21 +1374,48 @@ export class XWLayout {
 	}
 
 	//-------------------------------------------------------------------------------------
-	public resetSamplerate(p: number, up: boolean, val: number, st: XDProxyState, dt: DrawingData) {
+	public resetSamplerate(p: number, up: boolean, val: number, st: XDProxyState, dt: DrawingData, rec: EcgRecord[]) {
 		// save in cells temporaty points
 
-		let pi: number = this.cells[0].dxStepIndex;
-		let pv: number = this.cells[0].samplerateList[pi];
+		let header: RecordProjection = dt.getHeader(st.skipPx + st.pointerX, st.sampleRate),
+			origSign: EcgSignal = null,
+			z: number,
+			pt: number = 2;
+
+		for (z = 0; z < rec.length; z++) {
+			if (rec[z].id != header.id) continue;
+			origSign = rec[z].signal;
+			break;
+		}
+		if (origSign === null) return;
+
+		let pi: number = this.cells[0].dxStepIndex,
+			pv: number = this.cells[0].samplerateList[pi];
 		let ni: number = up ?
 			Math.min(this.cells[0].density.dxStepMaxIndex, pi + val) :
 			Math.max(0, pi - val);
 		let nv: number = this.cells[0].samplerateList[ni];
+		let v: number = pv + (nv - pv) * p;
 
-		let header: RecordProjection = dt.getHeader(st.skipPx + st.pointerX, st.sampleRate);
-		//let drawData: RecordDrawingData = dt.data[this.sampleRate][header.id].signal;
-		//drawData.s
-
-		//console.log(`sr=${nv}, ${nv / this.sampleRate * 100}%`);
+		let targSign: EcgSignal = LiteResampler.ResampleSignal(origSign, v),
+			ci: number = -1, // channel index
+			start: number = Math.max(st.skipPx - header.skipPixels - pt, 0); // start position
+		let end: number = Math.min(st.limitPx + pt * 2 + start, targSign.sampleCount); // points count
+		let limit: number = Math.max(0, end - start);
+		//console.log(start, end);
+		for (z = 0; z < this.cells.length; z++) {
+			ci = targSign.leads.indexOf(st.leadsCodes[z]);
+			if (ci < 0) {
+				this.cells[z].pointsZ = [];
+				continue;
+			}
+			this.cells[z].pointsZ = new Array(targSign.sampleCount);
+			//start = 0;
+			//end = targSign.sampleCount;
+			for (let y: number = start; y < end; y++) {
+				this.cells[z].pointsZ[y] = new XPoint(y, targSign.channels[ci][y]);
+			}
+		}
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -1409,6 +1442,7 @@ export class XWLayout {
 
 		//let nv: number = this.cells[0].samplerateList[ni];
 		for (let z: number = 0; z < this.cells.length; z++) {
+			this.cells[z].pointsZ = [];
 			this.cells[z].dxStepIndex = ni;
 		}
 	}

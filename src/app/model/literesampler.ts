@@ -17,16 +17,7 @@ export class LiteResampler {
 		output.startTime = input.startTime;
 		output.totalBeatsCount = input.totalBeatsCount;
 		output.sampleRateForCls = sampleRate;
-
-		let dwnsmpl: boolean = input.sampleRateForCls > sampleRate;
-		let inCount: number = input.signal.sampleCount;
-		let outCount: number = Math.floor(inCount * sampleRate / input.sampleRateForCls);
-
-		let batchMap: number[] = dwnsmpl ?
-			LiteResampler.PrepareDownsample(inCount, outCount) :
-			LiteResampler.PrepareUpsample(inCount, outCount);
-
-		output.signal = LiteResampler.ResampleSignal(input.signal, batchMap, sampleRate);
+		output.signal = LiteResampler.ResampleSignal(input.signal, sampleRate);
 		output.beats = LiteResampler.ResampleBeats(input.beats, sampleRate / input.sampleRateForCls);
 		output.wavePoints = LiteResampler.ResampleWavepoints(input.wavePoints, input.sampleRateForCls, sampleRate);
 		output.annotations = LiteResampler.ResampleAnnotations(input.annotations, input.sampleRateForCls, sampleRate);
@@ -92,7 +83,17 @@ export class LiteResampler {
 	}
 
 	//-------------------------------------------------------------------------------------
-	static ResampleSignal(input: EcgSignal, map: number[], sampleRate: number): EcgSignal {
+	static ResampleSignal(input: EcgSignal, sampleRate: number): EcgSignal {
+
+		let dwnsmpl: boolean = input.sampleRate > sampleRate;
+
+		let inCount: number = input.sampleCount;
+		let outCount: number = Math.floor(inCount * sampleRate / input.sampleRate);
+
+		let map: number[] = dwnsmpl ?
+			LiteResampler.PrepareDownsample(inCount, outCount) :
+			LiteResampler.PrepareUpsample(inCount, outCount);
+
 		let result: EcgSignal = new EcgSignal();
 		result.sampleCount = map.length;
 		result.channels = new Array(input.length);
@@ -108,7 +109,6 @@ export class LiteResampler {
 			ri: number, // result value index
 			si: number, // sample index
 			bs: number; // current batch size
-		let dwnsmpl: boolean = input.sampleCount > map.length;
 
 		for (ci = 0; ci < input.channels.length; ci++) {
 			result.channels[ci] = new Array(map.length);

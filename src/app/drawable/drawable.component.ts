@@ -245,7 +245,7 @@ export class DrawableComponent implements OnInit {
 		this._wheelTimeout = 100;
 		this._clickThreshold = 300;
 		this._zoomIntensity = 0.2;
-		this._dp = new XDProxy();
+		this._dp = new XDProxy(this._ds);
 		this._mt = new XMatrixTool();
 		this._fileReader = new FileReader();
 		this.prepareClients();
@@ -263,7 +263,7 @@ export class DrawableComponent implements OnInit {
 		this._canvasContainer.nativeElement.addEventListener("dragover", this.onDragOver.bind(this), false);
 		this._canvasContainer.nativeElement.addEventListener("drop", this.onDragDrop.bind(this), false);
 		this._ds.openDb(this._ecgStorageKey);
-		
+
 
 	}
 
@@ -433,10 +433,10 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	private onWheelScroll(event: WheelEvent, wheel: number, value: number) {
 		//console.log("WheelScroll", wheel > 0, value);
-		let zx: boolean = true, zy: boolean = false;
+		let zx: boolean = true, zy: boolean = true;
 		this._dp.performZoom(wheel > 0, zx, zy, value);
 	}
-	
+
 	//-------------------------------------------------------------------------------------
 	//private onScrollDrawings(val: number) {
 	//	if (!Number.isInteger(val)) return;
@@ -520,7 +520,6 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private drawSignalObjects(objs: SignalDrawingObject[]) {
-		let shift: number = 0; // #DEBUG_ONLY
 		let state: XDProxyState = this._dp.state;
 		// z - drawing object index
 		// y - grid cell index = lead code index
@@ -543,36 +542,30 @@ export class DrawableComponent implements OnInit {
 		// lead code index = grid cell index
 		this._ct.ctx.beginPath();
 		for (z = 0; z < objs.length; z++) {
-
 			for (y = 0; y < this._dp.state.leadsCodes.length; y++) {
 				lead = this._dp.state.leadsCodes[y];
-
 				polInd = objs[z].leadCodes.indexOf(this._dp.state.leadsCodes[y]);
-
 				if (polInd < 0) continue;
 				if (y >= this._dp.layout.cells.length) break;
 
 				cell = this._dp.layout.cells[y];
-				mcrVtstoPx = this._dp.activeZoom ? cell.microvoltsToPixelZ : cell.microvoltsToPixel;
-				points = this._dp.activeZoom ? cell.pointsZ : objs[z].polylines[polInd].points;
+				mcrVtstoPx = this._dp.activeZoomY ? cell.microvoltsToPixelZ : cell.microvoltsToPixel;
+				points = this._dp.activeZoomX ? cell.pointsZ : objs[z].polylines[polInd].points;
+				//console.log(points.length);
 				if (points.length === 0) continue;
-
-				//console.info(points.length);
-				// calc start position
-				// TODO: check {start+length < points.length}
 				w = state.minPx - objs[z].container.left;
 				dx = objs[z].container.left + points[w].left - state.minPx;
-				dy = Math.floor(points[w].top * mcrVtstoPx + shift);
+				dy = Math.floor(points[w].top * mcrVtstoPx);
 				left = dx + cell.container.left + 0.5;
 				top = dy + cell.container.midOy + 0.5;
 				this._ct.ctx.moveTo(left, top);
 				w++;
 				for (c = 1; w < points.length, c < state.limitPx; w++ , c++) {
 					dx = objs[z].container.left + points[w].left - state.minPx;
-					dy = Math.floor(points[w].top * mcrVtstoPx) + shift;
-					left = dx + cell.container.left + 0.5;
-					top = dy + cell.container.midOy + 0.5;
-					this._ct.ctx.lineTo(left, top);
+					dy = Math.floor(points[w].top * mcrVtstoPx);
+					left = dx + cell.container.left;
+					top = dy + cell.container.midOy;
+					this._ct.ctx.lineTo(left + 0.5, top + 0.5);
 				}
 			}
 		}
@@ -587,6 +580,7 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private drawCursorObjects(objs: CursorDrawingObject[]) {
+		if (this._dp.activeZoom) return;
 		//console.log("draw cursor", objs);
 		this._ct.saveState();
 		let state: XDProxyState = this._dp.state;
@@ -657,7 +651,7 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private drawBeatsRangesObjects(objs: BeatsRangeDrawingObject[]) {
-
+		if (this._dp.activeZoom) return;
 		this._ct.saveState();
 		//this._ct.clipRect(this._dp.state.container);// TODO remove
 		// draw beat ranges: drawObj.container for all channels
@@ -862,6 +856,7 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	private drawDemoRect(objs: DemoRectDrawingObject[]) {
+		if (this._dp.activeZoom) return;
 		let f: XRectangle = objs[0].figure;
 		let p: XRectangle = objs[0].container;
 		let l: number = this._dp.state.minPx;
