@@ -5,7 +5,14 @@ import {
 	EcgWavePointType
 } from "../model/ecgdata";
 import { LiteResampler } from "../model/literesampler";
-import { BehaviorSubject } from "rxjs";
+import {
+	XDPSEvent, XDProxyState, XDChangeSender, XAnimation,
+	XAnimationType, XCanvasTool, XWCell, XDChangeType,
+	XDCoordinates, XDGridMode, XMatrixTool, CursorType,
+	XWDensity, XWLayout, XWDensityUnit, EcgDb
+} from "../model/misc";
+import { Subscription, BehaviorSubject, Observable, Subscriber } from "rxjs";
+
 
 
 // -------------------------------------------------------------------------------------------------
@@ -13,6 +20,7 @@ import { BehaviorSubject } from "rxjs";
 // -------------------------------------------------------------------------------------------------
 @Injectable()
 export class DataService {
+	// save & share data in session storage
 	private _ecgleadsDescriptionMap: Map<EcgLeadCode, string>;
 
 	public isEasiLeads: boolean = true;
@@ -20,6 +28,11 @@ export class DataService {
 
 	public onLoadDataBs: BehaviorSubject<EcgRecord[]>;
 	public onResampleDataBs: BehaviorSubject<EcgRecord[]>;
+
+	public ecgStorageKey: string;
+
+	private _db: EcgDb;
+
 
 	//-------------------------------------------------------------------------------------
 	public get leads(): EcgLeadCode[] {
@@ -51,6 +64,27 @@ export class DataService {
 		this.onLoadDataBs = new BehaviorSubject<EcgRecord[]>([]);
 		this.onResampleDataBs = new BehaviorSubject<EcgRecord[]>([]);
 		//console.info("DataService constructor");
+		this._db = new EcgDb();
+	}
+
+	//-------------------------------------------------------------------------------------
+	public openDb(name: string) {
+		this._db.open(name, () => {
+			this.tryReadSessionStorage();
+		});
+	}
+
+
+	//this._ds.tryReadSessionStorage();
+
+
+	//-------------------------------------------------------------------------------------
+	public tryReadSessionStorage() {
+		//let records: EcgRecord[] = JSON.parse(sessionStorage.getItem(this.ecgStorageKey));
+		let loadSubsr: Subscription = this._db.readOriginalData().subscribe(
+			v => this.onLoadDataBs.next(v),
+			e => console.warn(e)
+		);
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -129,6 +163,8 @@ export class DataService {
 			records[z].annotations = ecgrecord.annotations;
 			records[z].wavePoints = ecgrecord.wavePoints;
 		}
+		//sessionStorage.setItem(this.ecgStorageKey, JSON.stringify(records));
+		this._db.saveOriginalData(records);
 		this.onLoadDataBs.next(records);
 	}
 

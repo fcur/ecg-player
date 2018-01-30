@@ -68,6 +68,7 @@ export class DrawableComponent implements OnInit {
 	private _prepareDrawingSubs: Subscription;
 	private _pinBeatsToSignal: boolean;
 	private _clipCanvas: boolean;
+	private _ecgStorageKey: string;
 	private _drawingScrollSubs: Subscription;
 
 	private _zoomAnimation: XAnimation;
@@ -86,6 +87,12 @@ export class DrawableComponent implements OnInit {
 	set clipCanvas(value: boolean) {
 		this._clipCanvas = value;
 	}
+	@Input("ecg-storage-key")
+	set dataStorageKey(value: string) {
+		this._ecgStorageKey = value;
+		this._ds.ecgStorageKey = this._ecgStorageKey;
+	}
+
 	//-------------------------------------------------------------------------------------
 	@ViewChild("waveformCanvas")
 	private _drawingElement: ElementRef;
@@ -252,10 +259,12 @@ export class DrawableComponent implements OnInit {
 		//this._drawingScrollSubs = this._dp.state.onScrollBs.subscribe(v => this.onScrollDrawings(v as number));
 		this._changeStateSubs = this._dp.onChangeState.subscribe((v: XDPSEvent) => this.onStateChanges(v));
 		//this._prepareDrawingSubs = this._dp.onPrepareDrawings.subscribe((v: IDObject[][]) => this.onReceiveDObjects(v));
-
 		this._fileReader.addEventListener("load", this.onLoadFile.bind(this));
 		this._canvasContainer.nativeElement.addEventListener("dragover", this.onDragOver.bind(this), false);
 		this._canvasContainer.nativeElement.addEventListener("drop", this.onDragDrop.bind(this), false);
+		this._ds.openDb(this._ecgStorageKey);
+		
+
 	}
 
 	//-------------------------------------------------------------------------------------

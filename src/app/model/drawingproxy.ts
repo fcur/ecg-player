@@ -3,7 +3,7 @@ import {
 	XDPSEvent, XDProxyState, XDChangeSender, XAnimation,
 	XAnimationType, XCanvasTool, XWCell, XDChangeType,
 	XDCoordinates, XDGridMode, XMatrixTool, CursorType,
-	XWDensity, XWLayout, XWDensityUnit
+	XWDensity, XWLayout, XWDensityUnit, EcgDb
 } from "./misc";
 import {
 	BeatsDrawingClient, IDrawingClient, SignalDrawingClient,
@@ -157,7 +157,6 @@ export class XDProxy {
 		//	this.onChangeState.emit(this.lastEvent);
 		//}
 		if (!this.lastEvent.notify) return;
-		this.lastEvent.count++;
 		this.onChangeState.emit(this.lastEvent);
 	}
 

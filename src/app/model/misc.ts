@@ -116,10 +116,6 @@ export class XDPSEvent {
 	private _currentState: XDProxyState;
 	private _previousState: XDProxyState;
 
-
-
-	public count: number;
-
 	//-------------------------------------------------------------------------------------------------
 	public get currentState(): XDProxyState {
 		return this._currentState;
@@ -175,7 +171,6 @@ export class XDPSEvent {
 		this._threshold = 25;
 		this._currentState = new XDProxyState();
 		this._previousState = new XDProxyState();
-		this.count = 0;
 		this.cursor = CursorType.Default;
 		this.timeStamp = Date.now();
 	}
@@ -420,7 +415,7 @@ export class XWCell {
 
 
 
-import { Subscription, BehaviorSubject } from "rxjs";
+import { Subscription, BehaviorSubject, Observable, Subscriber } from "rxjs";
 // -------------------------------------------------------------------------------------------------
 // Drawing proxy state
 // -------------------------------------------------------------------------------------------------
@@ -1472,4 +1467,84 @@ export class XWLayout {
 	}
 
 
+}
+
+
+
+//-------------------------------------------------------------------------------------------------
+// Ecg indexed database wrapper
+//-------------------------------------------------------------------------------------------------
+export class EcgDb {
+
+	static ORIGINAL_RECORDS: string = "orig_records";
+	static RW: string = "readwrite";
+	static R: string = "readonly";
+
+	public database: IDBFactory;
+	public db: IDBDatabase;
+
+	//-------------------------------------------------------------------------------------------------
+	constructor() {
+		this.database = window.indexedDB;
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public close() {
+		this.db.close();
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public open(name: string, callback: Function) {
+		if (!this.database) return;
+
+		let request: IDBOpenDBRequest = this.database.open(name, 1);
+		request.onerror = function (event) {
+			console.log("db error: ", this.db);
+		}.bind(this);
+		request.onsuccess = function (event) {
+			this.db = request.result;
+			callback();
+		}.bind(this);
+		request.onupgradeneeded = function (event) {
+			this.db = request.result;
+			let store: IDBObjectStore = this.db.createObjectStore(EcgDb.ORIGINAL_RECORDS, { keyPath: "id" });
+			let idIndex: IDBIndex = store.createIndex("by_id", "id");
+			//console.log("db upgrade: ", this.db, this.store);
+		}.bind(this);
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public saveOriginalData(records: EcgRecord[]) {
+		if (!this.database) return;
+		if (!Array.isArray(records)) return;
+		let tx: IDBTransaction = this.db.transaction(EcgDb.ORIGINAL_RECORDS, EcgDb.RW as IDBTransactionMode);
+		let store: IDBObjectStore = tx.objectStore(EcgDb.ORIGINAL_RECORDS);
+		for (let z: number = 0; z < records.length; z++) {
+			store.put(records[z]);
+		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	public readOriginalData(): Observable<EcgRecord[]> {
+		return new Observable<EcgRecord[]>((observer: Subscriber<EcgRecord[]>) => {
+			if (!this.database) observer.next([]);
+			try {
+				let tx: IDBTransaction = this.db.transaction(EcgDb.ORIGINAL_RECORDS, EcgDb.R as IDBTransactionMode);
+				let store: IDBObjectStore = tx.objectStore(EcgDb.ORIGINAL_RECORDS);
+				let request: IDBRequest = store.openCursor();
+				let results: EcgRecord[] = [];
+				request.onsuccess = (ev: Event) => {
+					if (request.result) {
+						results.push(request.result.value as EcgRecord);
+						request.result.continue();
+					} else {
+						observer.next(results);
+						observer.complete();
+					}
+				}
+			} catch (errMsg) {
+				Observable.throw(errMsg);
+			}
+		});
+	}
 }
