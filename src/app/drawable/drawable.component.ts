@@ -678,7 +678,6 @@ export class DrawableComponent implements OnInit {
 		this._ct.ctx.font = `${textSize}px Roboto`;
 		this._ct.ctx.textBaseline = "middle";
 		this._ct.ctx.textAlign = "center";
-		//this._ct.ctx.globalAlpha = 0.05;
 		for (y = 0; y < objs.length; y++) {
 			beatRange = objs[y];
 

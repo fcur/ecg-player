@@ -117,6 +117,8 @@ export class XDProxy {
 		p.skipPx = c.skipPx;
 		p.dragPosition.rebuild(c.dragPosition.left, c.dragPosition.top);
 		p.target = c.target;
+		p.animOxProgress = c.animOxProgress;
+		p.animOyProgress = c.animOyProgress;
 	}
 
 	//-------------------------------------------------------------------------------------
@@ -423,11 +425,14 @@ export class XDProxy {
 		if (this.doVisible.length === 0 || (!zx && !zy) || this.state.activeZoom) return;
 
 		let animation: XAnimation = new XAnimation();
-		animation.length = 200;
+		animation.length = 300;
 
 		this.state.type = zx && zy ? XDChangeType.ZoomXY : (zx ? XDChangeType.ZoomX : XDChangeType.ZoomY);
 
 		animation.animation = (progress: number) => {
+			this.updatePrevState();
+
+
 			//this.layout.resetMicrVoltCoef(progress, zf);
 			//console.log("zoom", this.state.activeZoom);
 			if (zx) this.layout.resetSamplerate(progress, zf, v, this.state, this.drawingData, this._ds.ecgrecords);
@@ -468,7 +473,7 @@ export class XDProxy {
 
 	//-------------------------------------------------------------------------------------
 	public performCursorMove(event: MouseEvent | TouchEvent) {
-		if (!this.state.container) return;
+		if (!this.state.container || this.state.activeZoom) return;
 		this.updatePrevState();
 		this.moveCursor(event);
 		let l: number = this.state.pointerX + this.state.skipPx,
