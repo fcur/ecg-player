@@ -29,9 +29,9 @@ import { LiteResampler } from "./literesampler";
 // Drawing mode
 // -------------------------------------------------------------------------------------------------
 export enum XDrawingMode {
-	Canvas = 0,
-	SVG,
-	Mix
+	CanvasOnly = 0,
+	SvgOnly,
+	CanvasAndSvg
 }
 
 
@@ -142,7 +142,7 @@ export class AnsDrawingClient extends XDrawingClient {
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
-		this.mode = XDrawingMode.Canvas;
+		this.mode = XDrawingMode.CanvasOnly;
 		this.type = XDOType.Annotations;
 		this.draw = this.drawAnnotations.bind(this);
 		this.afterDraw = this.afterdrawAnnotations.bind(this);
@@ -209,7 +209,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 		this.recordSpace = 10;
 		this.layoutSpace = 30;
 		this.opacity = 1;
-		this.mode = XDrawingMode.Canvas;
+		this.mode = XDrawingMode.CanvasOnly;
 		this.type = XDOType.Beats;
 		this.draw = this.drawBeats.bind(this);
 		this.afterDraw = this.afterDrawBeats.bind(this);
@@ -373,7 +373,7 @@ export class GridClient extends XDrawingClient {
 		this.axisColor = "#ff58ff";
 		this.axisOpacity = 1;
 		this.lineJoin = "miter";// round|miter|bevel
-		this.mode = XDrawingMode.Canvas;
+		this.mode = XDrawingMode.CanvasOnly;
 		this.type = XDOType.Grid;
 		this.draw = this.drawGrid.bind(this);
 		this.afterDraw = this.afterDrawGrid.bind(this);
@@ -535,7 +535,7 @@ export class SignalDrawingClient extends XDrawingClient {
 		this.color = "#0e9aff";
 		this.opacity = 1;
 		this.lineJoin = "miter";// round|miter|bevel
-		this.mode = XDrawingMode.Canvas;
+		this.mode = XDrawingMode.CanvasOnly;
 		this.type = XDOType.Signal;
 		this.draw = this.drawSignal.bind(this);
 		this.afterDraw = this.afterDrawSignal.bind(this);
@@ -626,7 +626,7 @@ export class ClickablePointDrawingClient extends XDrawingClient {
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
-		this.mode = XDrawingMode.Canvas;
+		this.mode = XDrawingMode.CanvasOnly;
 		this.type = XDOType.Signal;
 		this.draw = this.drawPonint.bind(this);
 		this.afterDraw = this.afterDrawPoint.bind(this);
@@ -663,7 +663,7 @@ export class CellDrawingClient extends XDrawingClient {
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
-		this.mode = XDrawingMode.Canvas;
+		this.mode = XDrawingMode.CanvasOnly;
 		this.type = XDOType.Signal;
 		this.draw = this.drawCell.bind(this);
 		this.afterDraw = this.afterDrawCell.bind(this);
@@ -747,7 +747,7 @@ export class CursorDrawingClient extends XDrawingClient {
 		this.opacity = 1;
 		this.clientHalfWidth = 3;
 		this.pointRadius = 3;
-		this.mode = XDrawingMode.Canvas;
+		this.mode = XDrawingMode.CanvasOnly;
 		this.type = XDOType.Object;
 		this.draw = this.drawCursor.bind(this);
 		this.afterDraw = this.afterDrawFCursor.bind(this);

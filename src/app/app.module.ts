@@ -3,12 +3,14 @@ import { NgModule } from '@angular/core';
 
 import { AppComponent } from './app.component';
 import { DrawableComponent } from './drawable/drawable.component';
-import { DataService } from "./service/data.service"
+import { DataService } from "./service/data.service";
+import { DrawingobjectComponent } from './drawingobject/drawingobject.component'
 
 @NgModule({
 	declarations: [
 		AppComponent,
-		DrawableComponent
+		DrawableComponent,
+		DrawingobjectComponent
 	],
 	imports: [
 		BrowserModule

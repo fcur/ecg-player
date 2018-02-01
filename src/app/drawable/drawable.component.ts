@@ -36,6 +36,8 @@ import {
 } from "../model/ecgdata";
 import { Subscription, BehaviorSubject } from "rxjs";
 import { LiteResampler } from "../model/literesampler";
+import { DrawingobjectComponent } from "../drawingobject/drawingobject.component";
+
 
 @Component({
 	selector: 'app-drawable',
@@ -70,9 +72,7 @@ export class DrawableComponent implements OnInit {
 	private _clipCanvas: boolean;
 	private _ecgStorageKey: string;
 	private _drawingScrollSubs: Subscription;
-
 	private _zoomAnimation: XAnimation;
-
 	private _mousemoveTime: number;
 	private _clickThreshold: number;
 	private _inDrag: boolean;
@@ -81,6 +81,11 @@ export class DrawableComponent implements OnInit {
 	private _wheelTimeout: any;
 	private _wheelValue: number;
 
+	//-------------------------------------------------------------------------------------
+	@ViewChild("waveformCanvas")
+	private _drawingElement: ElementRef;
+	@ViewChild("canvasCont")
+	private _canvasContainer: ElementRef;
 
 	//----------------------------------------------------------------------------------------------
 	@Input("clip-canvas")
@@ -92,12 +97,6 @@ export class DrawableComponent implements OnInit {
 		this._ecgStorageKey = value;
 		this._ds.ecgStorageKey = this._ecgStorageKey;
 	}
-
-	//-------------------------------------------------------------------------------------
-	@ViewChild("waveformCanvas")
-	private _drawingElement: ElementRef;
-	@ViewChild("canvasCont")
-	private _canvasContainer: ElementRef;
 
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mouseenter", ["$event"])
@@ -230,6 +229,11 @@ export class DrawableComponent implements OnInit {
 			this._wheelValue = 0;
 		}, this._wheelThreshold);
 	}
+	//-------------------------------------------------------------------------------------
+	public get drawingObjects(): IDObject[] {
+		if (!this._dp || !Array.isArray(this._dp.doVisible)) return [];
+		return this._dp.doVisible;
+	}
 
 	//-------------------------------------------------------------------------------------
 	constructor(private _el: ElementRef, private _ds: DataService) {
@@ -353,6 +357,11 @@ export class DrawableComponent implements OnInit {
 		} else {
 			this._dp.performMouseClick(event);
 		}
+	}
+
+	//-------------------------------------------------------------------------------------------------
+	private trackByCAns(index: number, item: IDObject): number {
+		return index;
 	}
 
 	//-------------------------------------------------------------------------------------

@@ -83,7 +83,7 @@ export interface IDObject {
 	draggable: boolean;
 	/** Enable container changes (left, top, width, height). */
 	changeable: boolean;
-
+	timestamp: number;
 }
 
 
@@ -115,6 +115,8 @@ export class XDrawingObject implements IDObject {
 	public alwaysUpdate: boolean;
 	/** Drawing object change type. */
 	public changeType: number;
+	/** Creation time. */
+	public timestamp: number;
 	/** Enable drag (move).*/
 	draggable: boolean;
 	/** Enable container changes (left, top, width, height). */
@@ -135,6 +137,7 @@ export class XDrawingObject implements IDObject {
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		this.container = new XRectangle(0, 0, 0, 0);
+		this.timestamp = Date.now();
 		this.index = -1; // do not use index
 		this.cellIndex = -1; // do not use cell index fill full container
 		this.hidden = true;
