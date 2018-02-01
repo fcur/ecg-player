@@ -232,7 +232,9 @@ export class DrawableComponent implements OnInit {
 	//-------------------------------------------------------------------------------------
 	public get drawingObjects(): IDObject[] {
 		if (!this._dp || !Array.isArray(this._dp.doVisible)) return [];
-		return this._dp.doVisible;
+		return this._dp.doVisible.filter((v: IDObject) => {
+			return v.owner.mode === XDrawingMode.CanvasAndSvg || v.owner.mode === XDrawingMode.SvgOnly
+		});
 	}
 
 	//-------------------------------------------------------------------------------------

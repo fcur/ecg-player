@@ -142,7 +142,7 @@ export class AnsDrawingClient extends XDrawingClient {
 	//-------------------------------------------------------------------------------------
 	constructor() {
 		super();
-		this.mode = XDrawingMode.CanvasOnly;
+		this.mode = XDrawingMode.CanvasAndSvg;
 		this.type = XDOType.Annotations;
 		this.draw = this.drawAnnotations.bind(this);
 		this.afterDraw = this.afterdrawAnnotations.bind(this);
@@ -209,7 +209,7 @@ export class BeatsDrawingClient extends XDrawingClient {
 		this.recordSpace = 10;
 		this.layoutSpace = 30;
 		this.opacity = 1;
-		this.mode = XDrawingMode.CanvasOnly;
+		this.mode = XDrawingMode.CanvasAndSvg;
 		this.type = XDOType.Beats;
 		this.draw = this.drawBeats.bind(this);
 		this.afterDraw = this.afterDrawBeats.bind(this);

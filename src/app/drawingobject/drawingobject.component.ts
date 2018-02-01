@@ -39,7 +39,7 @@ export class DrawingobjectComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	ngOnInit() {
-
+		//console.log(this.data);
 	}
 
 }
