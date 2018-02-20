@@ -453,12 +453,6 @@ export class XDProxyState {
 	public sampleRate: number;
 	/** Enable development mode.*/
 	public devMode: boolean;
-	/** Maximum sample value in microvolts from input signal. */
-	//public signalScale: number;
-	/** Surface grid cells array. Position on canvas. */
-	//public gridCells: XWCell[];
-	/**  Surface grid cells mode.*/
-	//public gridMode: XDGridMode;
 	/** Cursor pointer X. */
 	public pointerX: number;
 	/** Cursor pointer Y. */
@@ -479,6 +473,10 @@ export class XDProxyState {
 	public leadsCodes: EcgLeadCode[];
 	/** Waveform cells lead captions.*/
 	public leadsCaptions: string[];
+
+	public animOxProgress: number;
+	public animOyProgress: number;
+
 
 	// TODO: add surface dimentions getter
 
