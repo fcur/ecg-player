@@ -9,7 +9,8 @@ import {
 	XDPSEvent, XDProxyState, XCanvasTool,
 	XMatrixTool, XAnimation, XAnimationType,
 	XDChangeType, XDCoordinates, CursorType,
-	XWDensity, XWDensityUnit, XWLayout
+	XWDensity, XWDensityUnit, XWLayout,
+	IDrwblCmpnnt, BaseDrwblCmpnnt
 } from "../model/misc";
 import {
 	XDrawingPrimitive, XDPrimitiveState, XLabel,
@@ -49,7 +50,7 @@ import { DrawingobjectComponent } from "../drawingobject/drawingobject.component
 // -------------------------------------------------------------------------------------------------
 // DrawableComponent
 // -------------------------------------------------------------------------------------------------
-export class DrawableComponent implements OnInit {
+export class DrawableComponent extends BaseDrwblCmpnnt implements OnInit, IDrwblCmpnnt {
 
 	private _dp: XDProxy;
 	private _signalClient: SignalDrawingClient;
@@ -97,6 +98,7 @@ export class DrawableComponent implements OnInit {
 		this._ecgStorageKey = value;
 		this._ds.ecgStorageKey = this._ecgStorageKey;
 	}
+	
 
 	//-------------------------------------------------------------------------------------
 	@HostListener("window:mouseenter", ["$event"])
@@ -239,6 +241,9 @@ export class DrawableComponent implements OnInit {
 
 	//-------------------------------------------------------------------------------------
 	constructor(private _el: ElementRef, private _ds: DataService) {
+		super();
+		//this.requiredMethod1();
+		//this.extention1();
 		this._hideFileDrop = false;
 		this._skipClick = true;
 		this._clipCanvas = false;
@@ -320,6 +325,12 @@ export class DrawableComponent implements OnInit {
 		} else {
 			this._dp.performCursorMove(event);
 		}
+	}
+
+
+	//-------------------------------------------------------------------------------------
+	public requiredMethod1() {
+		console.log("run required");
 	}
 
 	//-------------------------------------------------------------------------------------
