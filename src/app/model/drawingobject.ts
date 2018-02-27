@@ -236,43 +236,6 @@ export class SignalDrawingObject extends XDrawingObject {
 }
 
 
-// -------------------------------------------------------------------------------------------------
-// Clickable point drawing object
-// -------------------------------------------------------------------------------------------------
-export class ClPointDrawingObject extends XDrawingObject {
-	/**Drawing object points (relative coordinates, optional). Beats */
-	public points: XPoint[];
-	/** Drawing object polylines. Signal*/
-	public polylines: XPolyline[];
-	/** Drawing object rectangels (relative coordinates, optional).
-	* Annotations background*/
-	public rectangles: XRectangle[];
-	/** Drawing object lines  (relative coordinates, optional).
-	 * PQRST, measure tool */
-	public lines: XLine[];
-	public labels: XLabel[];
-	public peaks: XPeak[];
-}
-
-
-// -------------------------------------------------------------------------------------------------
-// Clickable point drawing object
-// -------------------------------------------------------------------------------------------------
-export class CellDrawingObject extends XDrawingObject {
-	/**Drawing object points (relative coordinates, optional). Beats */
-	public points: XPoint[];
-	/** Drawing object polylines. Signal*/
-	public polylines: XPolyline[];
-	/** Drawing object rectangels (relative coordinates, optional).
-	* Annotations background*/
-	public rectangles: XRectangle[];
-	/** Drawing object lines  (relative coordinates, optional).
-	 * PQRST, measure tool */
-	public lines: XLine[];
-	public labels: XLabel[];
-	public peaks: XPeak[];
-}
-
 
 // -------------------------------------------------------------------------------------------------
 // Floating point drawing object

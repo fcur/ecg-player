@@ -1,7 +1,7 @@
 
 import {
 	WavepointDrawingObject, CursorDrawingObject, GridCellDrawingObject,
-	ClPointDrawingObject, CellDrawingObject, BeatsRangeDrawingObject,
+	BeatsRangeDrawingObject,
 	SignalDrawingObject, PeakDrawingObject, WaveDrawingObject,
 	IDObject, XDOType, AnsDrawingObject, XDrawingObject,
 	DemoRectDrawingObject, XDOChangeType
@@ -621,73 +621,73 @@ export class SignalDrawingClient extends XDrawingClient {
 // -------------------------------------------------------------------------------------------------
 // Clickable point drawing client
 // -------------------------------------------------------------------------------------------------
-export class ClickablePointDrawingClient extends XDrawingClient {
+//export class ClickablePointDrawingClient extends XDrawingClient {
 
-	//-------------------------------------------------------------------------------------
-	constructor() {
-		super();
-		this.mode = XDrawingMode.CanvasOnly;
-		this.type = XDOType.Signal;
-		this.draw = this.drawPonint.bind(this);
-		this.afterDraw = this.afterDrawPoint.bind(this);
-		this.createDrawingObject = this.createPointDrawingObject.bind(this);
-	}
+//	//-------------------------------------------------------------------------------------
+//	constructor() {
+//		super();
+//		this.mode = XDrawingMode.CanvasOnly;
+//		this.type = XDOType.Signal;
+//		this.draw = this.drawPonint.bind(this);
+//		this.afterDraw = this.afterDrawPoint.bind(this);
+//		this.createDrawingObject = this.createPointDrawingObject.bind(this);
+//	}
 
-	//-------------------------------------------------------------------------------------
-	public drawPonint() {
-		console.info("ClickablePointDrawingClient.drawPonint", "not implemented");
-	}
+//	//-------------------------------------------------------------------------------------
+//	public drawPonint() {
+//		console.info("ClickablePointDrawingClient.drawPonint", "not implemented");
+//	}
 
-	//-------------------------------------------------------------------------------------
-	public afterDrawPoint() {
-		console.info("ClickablePointDrawingClient.afterDrawPoint", "not implemented");
-	}
+//	//-------------------------------------------------------------------------------------
+//	public afterDrawPoint() {
+//		console.info("ClickablePointDrawingClient.afterDrawPoint", "not implemented");
+//	}
 
-	//-------------------------------------------------------------------------------------
-	public createPointDrawingObject(): ClPointDrawingObject {
-		console.info("ClickablePointDrawingClient.createPointDrawingObject", "not implemented");
-		let result: ClPointDrawingObject = new ClPointDrawingObject();
-		return result;
-	}
-}
+//	//-------------------------------------------------------------------------------------
+//	public createPointDrawingObject(): ClPointDrawingObject {
+//		console.info("ClickablePointDrawingClient.createPointDrawingObject", "not implemented");
+//		let result: ClPointDrawingObject = new ClPointDrawingObject();
+//		return result;
+//	}
+//}
 
 
 // -------------------------------------------------------------------------------------------------
 // Cell grid drawing client
 // -------------------------------------------------------------------------------------------------
-export class CellDrawingClient extends XDrawingClient {
+//export class CellDrawingClient extends XDrawingClient {
 
-	color: string;
-	opacity: number;
+//	color: string;
+//	opacity: number;
 
-	//-------------------------------------------------------------------------------------
-	constructor() {
-		super();
-		this.mode = XDrawingMode.CanvasOnly;
-		this.type = XDOType.Signal;
-		this.draw = this.drawCell.bind(this);
-		this.afterDraw = this.afterDrawCell.bind(this);
-		this.createDrawingObject = this.createCellDrawingObject.bind(this);
-	}
+//	//-------------------------------------------------------------------------------------
+//	constructor() {
+//		super();
+//		this.mode = XDrawingMode.CanvasOnly;
+//		this.type = XDOType.Signal;
+//		this.draw = this.drawCell.bind(this);
+//		this.afterDraw = this.afterDrawCell.bind(this);
+//		this.createDrawingObject = this.createCellDrawingObject.bind(this);
+//	}
 
-	//-------------------------------------------------------------------------------------
-	public drawCell() {
-		console.info("CellDrawingClient.drawCell", "not implemented");
-	}
+//	//-------------------------------------------------------------------------------------
+//	public drawCell() {
+//		console.info("CellDrawingClient.drawCell", "not implemented");
+//	}
 
-	//-------------------------------------------------------------------------------------
-	public afterDrawCell() {
-		console.info("CellDrawingClient.afterDrawCell", "not implemented");
-	}
+//	//-------------------------------------------------------------------------------------
+//	public afterDrawCell() {
+//		console.info("CellDrawingClient.afterDrawCell", "not implemented");
+//	}
 
-	//-------------------------------------------------------------------------------------
-	public createCellDrawingObject(): CellDrawingObject {
-		console.info("CellDrawingClient.createCellDrawingObject", "not implemented");
-		let result: CellDrawingObject = new CellDrawingObject();
-		return result;
-	}
+//	//-------------------------------------------------------------------------------------
+//	public createCellDrawingObject(): CellDrawingObject {
+//		console.info("CellDrawingClient.createCellDrawingObject", "not implemented");
+//		let result: CellDrawingObject = new CellDrawingObject();
+//		return result;
+//	}
 
-}
+//}
 
 
 // -------------------------------------------------------------------------------------------------

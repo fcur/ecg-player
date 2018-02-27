@@ -17,18 +17,18 @@ import {
 	XLine, XPeak, XPoint, XPolyline, XRectangle
 } from "../model/geometry";
 import {
-	ClickablePointDrawingClient, CursorDrawingClient,
+	CursorDrawingClient,
 	XDrawingClient, XDrawingMode, IDrawingClient,
-	SignalDrawingClient, CellDrawingClient,
+	SignalDrawingClient,
 	GridClient, WavepointClient,
 	AnsDrawingClient, BeatsDrawingClient,
 	DemoRectangleClient
 } from "../model/drawingclient";
 import {
-	BeatsRangeDrawingObject, IDObject, ClPointDrawingObject,
+	BeatsRangeDrawingObject, IDObject,
 	GridCellDrawingObject, CursorDrawingObject, PeakDrawingObject,
 	WavepointDrawingObject, DemoRectDrawingObject, XDOChangeType,
-	CellDrawingObject, SignalDrawingObject, XDrawingObject,
+	SignalDrawingObject, XDrawingObject,
 	XDOType, AnsDrawingObject, WaveDrawingObject
 } from "../model/drawingobject";
 import {

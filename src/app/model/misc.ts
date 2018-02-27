@@ -6,14 +6,14 @@ import {
 	SignalDrawingObject, WaveDrawingObject, WavepointDrawingObject,
 	CursorDrawingObject, GridCellDrawingObject, PeakDrawingObject,
 	XDOType, AnsDrawingObject, BeatsRangeDrawingObject,
-	CellDrawingObject, ClPointDrawingObject, XDrawingObject,
+	XDrawingObject,
 	IDObject, DemoRectDrawingObject, XDOChangeType
 } from "./drawingobject";
 import {
-	BeatsDrawingClient, IDrawingClient, ClickablePointDrawingClient,
+	BeatsDrawingClient, IDrawingClient,
 	CursorDrawingClient, GridClient, XDrawingClient,
 	XDrawingMode, AnsDrawingClient, SignalDrawingClient,
-	WavepointClient, CellDrawingClient
+	WavepointClient
 } from "./drawingclient";
 import {
 	XDrawingPrimitive, XDPrimitiveState,

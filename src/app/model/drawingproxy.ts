@@ -8,7 +8,6 @@ import {
 import {
 	BeatsDrawingClient, IDrawingClient, SignalDrawingClient,
 	XDrawingClient, XDrawingMode, AnsDrawingClient,
-	CellDrawingClient, ClickablePointDrawingClient,
 	CursorDrawingClient, GridClient,
 	WavepointClient
 } from "./drawingclient";
@@ -16,7 +15,6 @@ import { DataService } from "./../service/data.service"
 import {
 	CursorDrawingObject, GridCellDrawingObject,
 	WavepointDrawingObject, PeakDrawingObject,
-	ClPointDrawingObject, CellDrawingObject,
 	BeatsRangeDrawingObject, IDObject,
 	XDOType, AnsDrawingObject,
 	XDrawingObject, SignalDrawingObject,
