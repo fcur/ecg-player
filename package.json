@@ -1,6 +1,6 @@
 {
-	"name": "ecg-visualisation-client",
-	"version": "0.0.0",
+	"name": "ecg-player",
+	"version": "1.0.0",
 	"license": "MIT",
 	"scripts": {
 		"ng": "ng",
