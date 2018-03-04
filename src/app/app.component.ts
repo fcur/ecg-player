@@ -1,3 +1,5 @@
+// src/app/app.component.ts
+
 import { Component, HostListener } from '@angular/core';
 
 @Component({

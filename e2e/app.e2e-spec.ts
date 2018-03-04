@@ -1,6 +1,6 @@
 import { AppPage } from './app.po';
 
-describe('ecgapp App', () => {
+describe('ecg-player App', () => {
   let page: AppPage;
 
   beforeEach(() => {
